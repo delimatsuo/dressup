@@ -21,12 +21,21 @@ interface PhotoData {
 
 interface PhotoUploadInterfaceProps {
   onComplete?: (data: PhotoData) => void;
+  existingUserPhotos?: {
+    front: string;
+    side: string;
+    back: string;
+  };
 }
 
-export function PhotoUploadInterface({ onComplete }: PhotoUploadInterfaceProps) {
+export function PhotoUploadInterface({ onComplete, existingUserPhotos }: PhotoUploadInterfaceProps) {
   const { sessionId } = useSessionContext();
-  const [step, setStep] = useState<'user' | 'garment' | 'complete'>('user');
-  const [userPhotos, setUserPhotos] = useState<Record<string, string> | null>(null);
+  const [step, setStep] = useState<'user' | 'garment' | 'complete'>(
+    existingUserPhotos ? 'garment' : 'user'
+  );
+  const [userPhotos, setUserPhotos] = useState<Record<string, string> | null>(
+    existingUserPhotos || null
+  );
   const [garmentPhotos, setGarmentPhotos] = useState<Record<string, string> | null>(null);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   
@@ -111,7 +120,7 @@ export function PhotoUploadInterface({ onComplete }: PhotoUploadInterfaceProps) 
               flex items-center justify-center w-10 h-10 rounded-full
               ${step === 'user' ? 'bg-blue-600 text-white' : 'bg-green-600 text-white'}
             `}>
-              {userPhotos ? <CheckCircle className="w-6 h-6" /> : <User className="w-6 h-6" />}
+              {(userPhotos || existingUserPhotos) ? <CheckCircle className="w-6 h-6" /> : <User className="w-6 h-6" />}
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-900">Step 1</p>
@@ -140,7 +149,9 @@ export function PhotoUploadInterface({ onComplete }: PhotoUploadInterfaceProps) 
         <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500"
-            style={{ width: step === 'user' ? '50%' : '100%' }}
+            style={{ 
+              width: step === 'user' && !existingUserPhotos ? '50%' : '100%' 
+            }}
           />
         </div>
       </div>

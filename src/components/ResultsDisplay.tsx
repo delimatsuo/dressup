@@ -28,6 +28,7 @@ interface ResultsDisplayProps {
   showComparison?: boolean;
   onDownload?: (result: Result) => void;
   onTryAnother?: () => void;
+  onStartOver?: () => void;
   onShare?: (result: Result) => void;
 }
 
@@ -38,6 +39,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
   showComparison = false,
   onDownload,
   onTryAnother,
+  onStartOver,
   onShare,
 }) => {
   if (loading) {
@@ -165,10 +167,19 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
 
           <button
             onClick={onTryAnother}
-            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
           >
-            Try Another
+            Try Another Outfit
           </button>
+          
+          {onStartOver && (
+            <button
+              onClick={onStartOver}
+              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+            >
+              Start Over
+            </button>
+          )}
         </div>
       </div>
     </div>

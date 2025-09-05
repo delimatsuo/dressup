@@ -32,6 +32,7 @@ export default function HomePage() {
   const { hasConsented, isLoading: consentLoading, shouldShowConsentModal, grantConsent } = useConsent();
   const [sessionId, setSessionId] = useState<string>('');
   const [photoData, setPhotoData] = useState<PhotoData | null>(null);
+  const [savedUserPhotos, setSavedUserPhotos] = useState<PhotoData['userPhotos'] | null>(null);
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +61,7 @@ export default function HomePage() {
 
   const handlePhotoUploadComplete = (data: PhotoData) => {
     setPhotoData(data);
+    setSavedUserPhotos(data.userPhotos); // Save user photos for "Try Another" functionality
     setStep('generate');
   };
 
@@ -120,7 +122,17 @@ export default function HomePage() {
 
   const handleTryAnother = () => {
     setResult(null);
+    setError(null);
+    
+    // Keep user photos and go back to upload step for new garment selection
+    setPhotoData(null); // Reset photoData so PhotoUploadInterface starts fresh
+    setStep('upload');   // Go back to upload step
+  };
+
+  const handleStartOver = () => {
+    setResult(null);
     setPhotoData(null);
+    setSavedUserPhotos(null);
     setError(null);
     setStep('upload');
   };
@@ -212,7 +224,10 @@ export default function HomePage() {
       )}
 
       {step === 'upload' && (
-        <PhotoUploadInterface onComplete={handlePhotoUploadComplete} />
+        <PhotoUploadInterface 
+          onComplete={handlePhotoUploadComplete}
+          existingUserPhotos={savedUserPhotos}
+        />
       )}
 
       {step === 'generate' && photoData && (
@@ -267,6 +282,7 @@ export default function HomePage() {
             error={error}
             showComparison={true}
             onTryAnother={handleTryAnother}
+            onStartOver={handleStartOver}
             onDownload={(result) => {
               // Implement download functionality
               console.log('Download:', result);
