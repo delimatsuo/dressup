@@ -165,10 +165,10 @@ export default function HomePage() {
             // In a production app, you might redirect or show a different message
           }}
         />
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">DressUp AI</h1>
-            <p className="text-gray-600">Please review and accept our terms to continue.</p>
+            <h1 className="text-responsive-3xl font-bold text-gray-900 mb-4">DressUp AI</h1>
+            <p className="text-responsive-base text-gray-600">Please review and accept our terms to continue.</p>
           </div>
         </div>
       </>
@@ -176,24 +176,24 @@ export default function HomePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <header className="text-center mb-12">
-        <h1 className="text-5xl font-bold mb-4 text-gray-900">DressUp</h1>
-        <p className="text-xl text-gray-600">
+    <div className="mobile-container py-4 sm:py-8 max-w-7xl">
+      <header className="text-center mb-6 sm:mb-12">
+        <h1 className="text-responsive-3xl font-bold mb-2 sm:mb-4 text-gray-900">DressUp</h1>
+        <p className="text-responsive-lg text-gray-600">
           Transform your look with AI-powered virtual outfit try-on
         </p>
       </header>
 
-      <div className="mb-8 bg-blue-50 rounded-lg p-6">
-        <h2 className="text-2xl font-semibold mb-4">How It Works</h2>
-        <ol className="grid md:grid-cols-3 gap-4">
+      <div className="mb-6 sm:mb-8 bg-blue-50 rounded-lg p-4 sm:p-6">
+        <h2 className="text-responsive-2xl font-semibold mb-4">How It Works</h2>
+        <ol className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <li className="flex items-start">
             <span className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-3">
               1
             </span>
             <div>
-              <h3 className="font-semibold">Upload Your Photos</h3>
-              <p className="text-gray-600">Upload photos of yourself and the garment (front, side views)</p>
+              <h3 className="font-semibold text-responsive-base">Upload Your Photos</h3>
+              <p className="text-responsive-sm text-gray-600">Upload photos of yourself and the garment (front, side views)</p>
             </div>
           </li>
           <li className="flex items-start">
@@ -201,8 +201,8 @@ export default function HomePage() {
               2
             </span>
             <div>
-              <h3 className="font-semibold">Generate Poses</h3>
-              <p className="text-gray-600">Our AI creates multiple outfit poses for you</p>
+              <h3 className="font-semibold text-responsive-base">Generate Poses</h3>
+              <p className="text-responsive-sm text-gray-600">Our AI creates multiple outfit poses for you</p>
             </div>
           </li>
           <li className="flex items-start">
@@ -210,8 +210,8 @@ export default function HomePage() {
               3
             </span>
             <div>
-              <h3 className="font-semibold">See Your Results</h3>
-              <p className="text-gray-600">View realistic outfit visualizations</p>
+              <h3 className="font-semibold text-responsive-base">See Your Results</h3>
+              <p className="text-responsive-sm text-gray-600">View realistic outfit visualizations</p>
             </div>
           </li>
         </ol>
@@ -231,15 +231,15 @@ export default function HomePage() {
       )}
 
       {step === 'generate' && photoData && (
-        <div className="max-w-2xl mx-auto text-center py-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Ready to Generate!</h2>
-          <p className="text-gray-600 mb-8">
+        <div className="max-w-2xl mx-auto text-center py-6 sm:py-12">
+          <h2 className="text-responsive-2xl font-bold text-gray-900 mb-2 sm:mb-4">Ready to Generate!</h2>
+          <p className="text-responsive-base text-gray-600 mb-6 sm:mb-8">
             All photos uploaded successfully. Click below to generate your virtual outfit poses.
           </p>
           
-          <div className="grid grid-cols-2 gap-4 mb-8">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-6 sm:mb-8">
             <div>
-              <h3 className="font-medium text-gray-900 mb-2">Your Photo</h3>
+              <h3 className="font-medium text-responsive-base text-gray-900 mb-1 sm:mb-2">Your Photo</h3>
               <img 
                 src={photoData.userPhotos.front} 
                 alt="Your photo"
@@ -247,7 +247,7 @@ export default function HomePage() {
               />
             </div>
             <div>
-              <h3 className="font-medium text-gray-900 mb-2">Garment</h3>
+              <h3 className="font-medium text-responsive-base text-gray-900 mb-1 sm:mb-2">Garment</h3>
               <img 
                 src={photoData.garmentPhotos.front} 
                 alt="Garment"
@@ -256,17 +256,17 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="flex justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
             <button
               onClick={() => setStep('upload')}
-              className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              className="touch-button bg-gray-100 text-gray-700 hover:bg-gray-200 w-full sm:w-auto"
             >
               ← Back to Upload
             </button>
             <button
               onClick={handleGenerateOutfit}
               disabled={processing}
-              className="px-8 py-3 bg-green-600 text-white text-lg font-semibold rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+              className="touch-button bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 w-full sm:w-auto"
             >
               {processing ? 'Generating...' : 'Generate My Poses!'}
             </button>

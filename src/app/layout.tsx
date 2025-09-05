@@ -17,6 +17,19 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "DressUp - Virtual Outfit Try-On",
   description: "Try on outfits virtually with AI-powered fashion technology",
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+  themeColor: '#8B5CF6',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'DressUp AI',
+  },
 };
 
 export default function RootLayout({

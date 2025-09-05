@@ -958,7 +958,7 @@
           12,
           13
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -966,7 +966,7 @@
             "description": "Set up the foundational CSS for the mobile-first approach. This includes configuring the viewport meta tag, defining global styles for typography and layout for the smallest screen size, and establishing the primary breakpoints for mobile, tablet, and desktop.",
             "dependencies": [],
             "details": "In the main HTML file, add the `<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">`. In the global stylesheet, define base styles for `body`, `h1-h6`, `p`, `button`, and `input` targeting a ~375px screen. Establish standard media query breakpoints (e.g., 768px for tablet, 1024px for desktop) using CSS variables or a preprocessor for consistent use across components.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify the viewport meta tag is present in the HTML head. Using browser developer tools on a mobile viewport (e.g., 375px), confirm that base font sizes and element styles are applied correctly without any horizontal scrolling on the main app container."
           },
           {
@@ -977,7 +977,7 @@
               "15.1"
             ],
             "details": "Use Flexbox to stack form controls and labels vertically on mobile viewports. Ensure input fields and buttons have a `min-height` of 44px and appropriate padding to serve as effective touch targets. Implement media queries to transition the form layout to a multi-column or wider format on screens larger than 768px.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test the upload forms on a 375px viewport. Verify that all text is readable, buttons are easily tappable, and there is no horizontal overflow. Check the layout on 768px and 1024px viewports to ensure it adapts correctly without breaking."
           },
           {
@@ -988,7 +988,7 @@
               "15.1"
             ],
             "details": "Use CSS Grid Layout for the gallery container. Set the default layout to a single column (`grid-template-columns: 1fr`). Use the media queries defined in subtask 15.1 to change `grid-template-columns` to `repeat(2, 1fr)` for tablets and `repeat(auto-fit, minmax(300px, 1fr))` for desktops. Ensure images scale correctly within their grid cells using `width: 100%` and `object-fit: cover`.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "On a 375px viewport, verify images are displayed in a single column and fill the available width. On 768px and 1024px viewports, confirm the grid adjusts to show multiple columns without distorting images or causing layout breaks."
           },
           {
@@ -1225,7 +1225,7 @@
     ],
     "metadata": {
       "created": "2025-09-04T23:54:08.172Z",
-      "updated": "2025-09-05T18:19:35.714Z",
+      "updated": "2025-09-05T19:25:09.159Z",
       "description": "Tasks for master context"
     }
   }

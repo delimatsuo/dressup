@@ -1,0 +1,407 @@
+/* Mobile-First Responsive Design System for DressUp AI */
+
+/* Base mobile-first breakpoints */
+/* 
+  xs: 0px - 475px (default mobile)
+  sm: 475px - 640px (large mobile)
+  md: 640px - 768px (tablet)
+  lg: 768px - 1024px (small desktop)
+  xl: 1024px - 1280px (desktop)
+  2xl: 1280px+ (large desktop)
+*/
+
+@layer base {
+  /* Ensure full viewport on mobile browsers */
+  html {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    touch-action: manipulation;
+  }
+
+  /* Prevent horizontal scroll on mobile */
+  body {
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Mobile-optimized tap targets */
+  button, 
+  a, 
+  input, 
+  select, 
+  textarea {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Improve touch responsiveness */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer components {
+  /* Mobile-first container with responsive padding */
+  .mobile-container {
+    @apply w-full px-4 mx-auto;
+    max-width: 100%;
+  }
+
+  @media (min-width: 475px) {
+    .mobile-container {
+      @apply px-6;
+    }
+  }
+
+  @media (min-width: 640px) {
+    .mobile-container {
+      @apply px-8;
+      max-width: 640px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .mobile-container {
+      @apply px-10;
+      max-width: 768px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .mobile-container {
+      @apply px-12;
+      max-width: 1024px;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .mobile-container {
+      max-width: 1280px;
+    }
+  }
+
+  /* Mobile-optimized card layout */
+  .mobile-card {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-sm;
+    @apply p-4;
+  }
+
+  @media (min-width: 640px) {
+    .mobile-card {
+      @apply p-6 shadow-md;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .mobile-card {
+      @apply p-8 shadow-lg;
+    }
+  }
+
+  /* Touch-friendly button styles */
+  .touch-button {
+    @apply inline-flex items-center justify-center;
+    @apply px-4 py-3 min-h-[44px];
+    @apply text-base font-medium;
+    @apply rounded-lg transition-all;
+    @apply active:scale-95 active:opacity-80;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  @media (min-width: 640px) {
+    .touch-button {
+      @apply px-6 py-3;
+    }
+  }
+
+  /* Mobile-optimized grid for photo uploads */
+  .photo-grid-mobile {
+    @apply grid gap-3;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 475px) {
+    .photo-grid-mobile {
+      grid-template-columns: repeat(2, 1fr);
+      @apply gap-4;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .photo-grid-mobile {
+      grid-template-columns: repeat(3, 1fr);
+      @apply gap-6;
+    }
+  }
+
+  /* Responsive image container */
+  .responsive-image {
+    @apply relative w-full;
+    padding-bottom: 100%; /* 1:1 aspect ratio */
+  }
+
+  .responsive-image img {
+    @apply absolute inset-0 w-full h-full object-cover rounded-lg;
+  }
+
+  /* Mobile-friendly modal */
+  .mobile-modal {
+    @apply fixed inset-0 z-50 flex items-end;
+  }
+
+  .mobile-modal-content {
+    @apply w-full bg-white dark:bg-gray-800;
+    @apply rounded-t-3xl;
+    @apply max-h-[90vh] overflow-y-auto;
+    @apply animate-slide-up;
+  }
+
+  @media (min-width: 640px) {
+    .mobile-modal {
+      @apply items-center justify-center p-4;
+    }
+
+    .mobile-modal-content {
+      @apply max-w-lg rounded-2xl;
+      @apply max-h-[80vh];
+    }
+  }
+
+  /* Bottom navigation for mobile */
+  .mobile-bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 z-40;
+    @apply bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700;
+    @apply px-4 py-2;
+    padding-bottom: env(safe-area-inset-bottom, 0.5rem);
+  }
+
+  @media (min-width: 768px) {
+    .mobile-bottom-nav {
+      @apply hidden;
+    }
+  }
+
+  /* Swipeable gallery for mobile */
+  .swipe-gallery {
+    @apply flex overflow-x-auto snap-x snap-mandatory;
+    @apply -mx-4 px-4;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .swipe-gallery::-webkit-scrollbar {
+    display: none;
+  }
+
+  .swipe-gallery-item {
+    @apply flex-shrink-0 snap-center;
+    @apply w-[85vw] max-w-sm;
+    @apply mr-4;
+  }
+
+  @media (min-width: 640px) {
+    .swipe-gallery-item {
+      @apply w-[45vw] max-w-md;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .swipe-gallery {
+      @apply grid grid-cols-3 gap-6;
+      @apply mx-0 px-0;
+      overflow-x: visible;
+    }
+
+    .swipe-gallery-item {
+      @apply w-full mr-0;
+    }
+  }
+
+  /* Responsive typography */
+  .text-responsive-xs {
+    @apply text-xs;
+  }
+
+  .text-responsive-sm {
+    @apply text-sm;
+  }
+
+  .text-responsive-base {
+    @apply text-sm;
+  }
+
+  .text-responsive-lg {
+    @apply text-base;
+  }
+
+  .text-responsive-xl {
+    @apply text-lg;
+  }
+
+  .text-responsive-2xl {
+    @apply text-xl;
+  }
+
+  .text-responsive-3xl {
+    @apply text-2xl;
+  }
+
+  @media (min-width: 640px) {
+    .text-responsive-xs { @apply text-xs; }
+    .text-responsive-sm { @apply text-sm; }
+    .text-responsive-base { @apply text-base; }
+    .text-responsive-lg { @apply text-lg; }
+    .text-responsive-xl { @apply text-xl; }
+    .text-responsive-2xl { @apply text-2xl; }
+    .text-responsive-3xl { @apply text-3xl; }
+  }
+
+  @media (min-width: 1024px) {
+    .text-responsive-base { @apply text-base; }
+    .text-responsive-lg { @apply text-lg; }
+    .text-responsive-xl { @apply text-xl; }
+    .text-responsive-2xl { @apply text-2xl; }
+    .text-responsive-3xl { @apply text-4xl; }
+  }
+
+  /* Mobile-optimized form inputs */
+  .mobile-input {
+    @apply w-full px-4 py-3;
+    @apply text-base;
+    @apply border border-gray-300 dark:border-gray-600;
+    @apply rounded-lg;
+    @apply focus:outline-none focus:ring-2 focus:ring-purple-500;
+    @apply placeholder-gray-400;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  @media (min-width: 640px) {
+    .mobile-input {
+      @apply px-4 py-2.5;
+    }
+  }
+
+  /* Responsive spacing utilities */
+  .space-y-mobile {
+    @apply space-y-3;
+  }
+
+  @media (min-width: 640px) {
+    .space-y-mobile {
+      @apply space-y-4;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .space-y-mobile {
+      @apply space-y-6;
+    }
+  }
+
+  /* Loading spinner optimized for mobile */
+  .mobile-spinner {
+    @apply w-8 h-8;
+  }
+
+  @media (min-width: 640px) {
+    .mobile-spinner {
+      @apply w-10 h-10;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .mobile-spinner {
+      @apply w-12 h-12;
+    }
+  }
+
+  /* Safe area padding for iOS devices */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left, 0);
+  }
+
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right, 0);
+  }
+}
+
+/* Animations for mobile */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* Touch gesture indicators */
+.touch-indicator {
+  position: relative;
+}
+
+.touch-indicator::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+}
+
+@media (min-width: 768px) {
+  .touch-indicator::after {
+    display: none;
+  }
+}
+
+/* Responsive utilities for common patterns */
+.hide-mobile {
+  @apply hidden;
+}
+
+@media (min-width: 640px) {
+  .hide-mobile {
+    @apply block;
+  }
+}
+
+.show-mobile {
+  @apply block;
+}
+
+@media (min-width: 640px) {
+  .show-mobile {
+    @apply hidden;
+  }
+}

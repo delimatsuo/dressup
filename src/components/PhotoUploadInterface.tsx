@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { MultiPhotoUpload } from './MultiPhotoUpload';
+import { MobilePhotoUpload } from './MobilePhotoUpload';
 import { ChevronRight, CheckCircle, User, Shirt, Sparkles, Loader2 } from 'lucide-react';
 import { generateOutfitPose } from '@/services/generationService';
 import { useSessionContext } from './SessionProvider';
+import { useMobileDetection } from '@/hooks/useIsMobile';
 
 interface PhotoData {
   userPhotos: {
@@ -30,6 +32,7 @@ interface PhotoUploadInterfaceProps {
 
 export function PhotoUploadInterface({ onComplete, existingUserPhotos }: PhotoUploadInterfaceProps) {
   const { sessionId } = useSessionContext();
+  const { isMobileOrTouch } = useMobileDetection();
   const [step, setStep] = useState<'user' | 'garment' | 'complete'>(
     existingUserPhotos ? 'garment' : 'user'
   );
@@ -111,7 +114,7 @@ export function PhotoUploadInterface({ onComplete, existingUserPhotos }: PhotoUp
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="mobile-container max-w-4xl">
       {/* Progress Indicator */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
@@ -157,42 +160,60 @@ export function PhotoUploadInterface({ onComplete, existingUserPhotos }: PhotoUp
       </div>
 
       {/* Upload Steps */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
         {step === 'user' && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Upload Your Photos</h2>
-              <p className="text-gray-600">
+              <h2 className="text-responsive-2xl font-bold text-gray-900 mb-2">Upload Your Photos</h2>
+              <p className="text-responsive-base text-gray-600">
                 Please upload photos of yourself from different angles. This helps our AI create
                 more accurate outfit visualizations.
               </p>
             </div>
             
-            <MultiPhotoUpload 
-              category="user" 
-              onUploadComplete={handleUserPhotosComplete}
-            />
+            {isMobileOrTouch ? (
+              <MobilePhotoUpload
+                views={['front', 'side', 'back']}
+                onComplete={handleUserPhotosComplete}
+                title="Your Photos"
+                description="Take photos from different angles for best results"
+              />
+            ) : (
+              <MultiPhotoUpload 
+                category="user" 
+                onUploadComplete={handleUserPhotosComplete}
+              />
+            )}
           </div>
         )}
 
         {step === 'garment' && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Upload Garment Photos</h2>
-              <p className="text-gray-600">
+              <h2 className="text-responsive-2xl font-bold text-gray-900 mb-2">Upload Garment Photos</h2>
+              <p className="text-responsive-base text-gray-600">
                 Now upload photos of the garment you want to try on. Multiple angles help
                 create better results.
               </p>
             </div>
             
-            <MultiPhotoUpload 
-              category="garment" 
-              onUploadComplete={handleGarmentPhotosComplete}
-            />
+            {isMobileOrTouch ? (
+              <MobilePhotoUpload
+                views={['front', 'side', 'back']}
+                onComplete={handleGarmentPhotosComplete}
+                title="Garment Photos"
+                description="Capture the garment from different angles"
+              />
+            ) : (
+              <MultiPhotoUpload 
+                category="garment" 
+                onUploadComplete={handleGarmentPhotosComplete}
+              />
+            )}
 
             <button
               onClick={() => setStep('user')}
-              className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+              className="touch-button bg-gray-100 text-gray-700 hover:bg-gray-200 w-full sm:w-auto"
             >
               ← Back to previous step
             </button>
@@ -211,9 +232,9 @@ export function PhotoUploadInterface({ onComplete, existingUserPhotos }: PhotoUp
             )}
             
             <div className={`transition-all duration-500 ${showSuccessAnimation ? 'scale-110' : 'scale-100'}`}>
-              <CheckCircle className={`w-16 h-16 mx-auto mb-4 transition-colors duration-500 ${showSuccessAnimation ? 'text-yellow-500' : 'text-green-600'}`} />
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">All Photos Uploaded!</h2>
-              <p className="text-gray-600 mb-6">
+              <CheckCircle className={`w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 transition-colors duration-500 ${showSuccessAnimation ? 'text-yellow-500' : 'text-green-600'}`} />
+              <h2 className="text-responsive-2xl font-bold text-gray-900 mb-2">All Photos Uploaded!</h2>
+              <p className="text-responsive-base text-gray-600 mb-6">
                 Your photos have been successfully uploaded. You can now generate your outfit visualization.
               </p>
             </div>
@@ -228,26 +249,26 @@ export function PhotoUploadInterface({ onComplete, existingUserPhotos }: PhotoUp
             {/* Generated Result Display */}
             {generatedImageUrl && generationResult && (
               <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <h3 className="text-lg font-semibold mb-4 text-green-900">Generated Result</h3>
+                <h3 className="text-responsive-lg font-semibold mb-4 text-green-900">Generated Result</h3>
                 <div className="space-y-4">
                   <img
                     src={generatedImageUrl}
                     alt="Generated outfit result"
                     className="max-w-md mx-auto rounded-lg shadow-lg"
                   />
-                  <div className="text-sm text-green-700 space-y-1">
+                  <div className="text-responsive-sm text-green-700 space-y-1">
                     <p>Processing time: {generationResult.processingTime.toFixed(1)} seconds</p>
                     <p>Confidence: {Math.round(generationResult.confidence * 100)}%</p>
-                    <p className="text-xs">{generationResult.description}</p>
+                    <p className="text-responsive-xs">{generationResult.description}</p>
                   </div>
                 </div>
               </div>
             )}
             
-            <div className="flex justify-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
               <button
                 onClick={handleReset}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                className="touch-button bg-gray-100 text-gray-700 hover:bg-gray-200 flex-1 sm:flex-initial"
               >
                 Upload Different Photos
               </button>
@@ -255,7 +276,7 @@ export function PhotoUploadInterface({ onComplete, existingUserPhotos }: PhotoUp
               <button
                 onClick={handleGenerate}
                 disabled={isLoading}
-                className={`px-6 py-2 text-white rounded-lg transition-colors flex items-center gap-2 ${
+                className={`touch-button text-white flex items-center justify-center gap-2 flex-1 sm:flex-initial ${
                   isLoading 
                     ? 'bg-gray-400 cursor-not-allowed' 
                     : 'bg-blue-600 hover:bg-blue-700'
