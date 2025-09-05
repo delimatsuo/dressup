@@ -44,3 +44,6 @@ next-env.d.ts
 functions/serviceAccount.json
 *-key.json
 *.key.json
+
+# MCP configuration with sensitive data
+.mcp.json
