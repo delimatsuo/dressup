@@ -9,7 +9,7 @@
         "testStrategy": "Verify that Firebase Hosting deploys a sample page. Confirm that the Vertex AI API is enabled in the GCP console. Manually upload a file to Cloud Storage to test permissions.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -28,7 +28,7 @@
               "1.1"
             ],
             "details": "In the Firebase console's 'Build' menu, navigate to 'Hosting' and complete the 'Get Started' wizard. Repeat this process for 'Cloud Storage', selecting a default bucket location. Finally, go to 'Functions', click 'Get Started', and ensure the environment is prepared for 2nd Gen functions.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Confirm that the Hosting, Storage, and Functions sections in the Firebase console display their respective dashboards instead of the 'Get Started' prompts."
           },
           {
@@ -39,7 +39,7 @@
               "1.1"
             ],
             "details": "Open the Google Cloud console and select the project corresponding to the new Firebase project. Use the navigation menu or search bar to find the 'API Library'. Search for 'Vertex AI API' and click the 'Enable' button.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "In the GCP console, navigate to the 'Vertex AI' dashboard. The page should load without any prompts to enable the API. Also, verify 'Vertex AI API' is listed in the 'Enabled APIs & services' dashboard."
           },
           {
@@ -50,7 +50,7 @@
               "1.1"
             ],
             "details": "In the GCP console, navigate to 'IAM & Admin' > 'Service Accounts'. Click 'Create Service Account', provide a descriptive name (e.g., 'virtual-stylist-functions-sa'), and add a description. Click 'Create and Continue' to provision the account.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify that the newly created service account is listed on the 'Service Accounts' page within the 'IAM & Admin' section of the GCP console."
           },
           {
@@ -63,7 +63,7 @@
               "1.4"
             ],
             "details": "In the GCP 'IAM' page, locate the principal (service account) created in the previous step and add new role bindings. Assign the 'Vertex AI User' (roles/aiplatform.user) role to allow it to make predictions. Assign the 'Storage Object Admin' (roles/storage.objectAdmin) role to allow it to manage files in the project's Cloud Storage buckets.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Use the GCP 'Policy Troubleshooter' to simulate whether the service account has the 'aiplatform.endpoints.predict' permission for a model endpoint and the 'storage.objects.create' permission for the storage bucket."
           }
         ]
@@ -78,7 +78,7 @@
         "dependencies": [
           1
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -108,7 +108,7 @@
               "2.2"
             ],
             "details": "Run `firebase init hosting` in the project's root directory. When prompted, select the existing Firebase project. Configure the `firebase.json` file to serve the Next.js application. For a static build, set the `public` directory to `out` and add a `predeploy` script in `package.json` to run `npm run build`.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Run `npm run build` and then `firebase emulators:start --only hosting`. Access the local hosting URL provided by the emulator to confirm the application is served correctly."
           },
           {
@@ -131,7 +131,7 @@
               "2.4"
             ],
             "details": "Ensure the `package.json` `build` script is configured for a static export (`next build`). Run the command `firebase deploy --only hosting` from the project root. This will build the Next.js app and upload the static assets to Firebase.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Access the live Firebase Hosting URL provided in the CLI output after a successful deployment. Verify that the deployed site is publicly accessible and displays the main page with the three placeholder components."
           }
         ]
@@ -349,7 +349,7 @@
         "dependencies": [
           5
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -357,7 +357,7 @@
             "description": "Set up the basic structure for the HTTP-triggered Gen 2 Cloud Function. Initialize the Firebase Admin SDK for Firestore access and the Vertex AI Node.js SDK for Gemini integration.",
             "dependencies": [],
             "details": "Create a new Node.js Cloud Function. Add `@google-cloud/vertexai` and `firebase-admin` as dependencies. Implement the basic HTTP request handler that parses the `sessionId` and `garmentImageUrl` from the request body. Initialize SDK clients in the global scope for reuse and proper connection handling.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Deploy the function and invoke it with a sample JSON body. Verify in Cloud Logging that the function starts, logs the parsed `sessionId` and `garmentImageUrl`, and that no SDK initialization errors occur."
           },
           {
@@ -368,7 +368,7 @@
               "6.1"
             ],
             "details": "Using the initialized Firebase Admin SDK, query the `sessions` collection for the document matching the `sessionId`. Extract the `userPhotos` array, which contains the URLs to the user's photos in Cloud Storage. Implement robust error handling for cases where the session document is not found or is expired, returning a 404 Not Found error.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Invoke the function with a valid `sessionId` corresponding to a mock session document in Firestore. Verify that the user photo URLs are correctly fetched and logged. Test with an invalid `sessionId` to ensure the function returns the appropriate HTTP error status and message."
           },
           {
@@ -379,7 +379,7 @@
               "6.2"
             ],
             "details": "Define a structured text prompt instructing the model to perform a realistic virtual try-on, placing the garment on the person from the user photo. Specify the desired output pose ('Standing Front') and other quality parameters. Create the `parts` array for the Gemini request by fetching the image data from the user photo URL and the garment image URL and converting them to base64-encoded strings.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Write a unit test for the prompt construction logic. Given mock user and garment image URLs, verify that the function correctly downloads the image data and constructs the expected JSON object for the Gemini API request, including correctly formatted base64 image data and the detailed text prompt."
           },
           {
@@ -390,7 +390,7 @@
               "6.3"
             ],
             "details": "Use the initialized Vertex AI client to call the `generateContent` method with the `gemini-1.5-flash-001` model. Pass the multimodal prompt (text and image parts) constructed in the previous subtask. Configure generation parameters like temperature and safety settings. Implement a `try/catch` block to handle potential API errors from Vertex AI, logging them for debugging.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Invoke the function with valid inputs that trigger the Vertex AI call. Use Cloud Logging to monitor the request sent to the Vertex AI API and the raw response received. Mock the Vertex AI SDK in a unit test to simulate a successful API response and a failed API response, ensuring the function's logic handles both cases gracefully."
           },
           {
@@ -401,7 +401,7 @@
               "6.4"
             ],
             "details": "Parse the response from the `generateContent` call to extract the base64-encoded image data from the first candidate. Create a new file in a designated Cloud Storage bucket (e.g., `generated-images/`). Write the decoded image data to this file with a unique name. Make the file publicly readable and generate its public URL. Return this URL in a JSON object as the HTTP 200 OK response.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "After a successful API call, check the designated Cloud Storage bucket to confirm a new image file has been created. Call the function endpoint and verify it returns a JSON response containing a valid, accessible URL. Test the URL in a browser to ensure the image loads correctly."
           }
         ]
@@ -1225,7 +1225,7 @@
     ],
     "metadata": {
       "created": "2025-09-04T23:54:08.172Z",
-      "updated": "2025-09-05T05:18:55.459Z",
+      "updated": "2025-09-05T05:39:37.941Z",
       "description": "Tasks for master context"
     }
   }
