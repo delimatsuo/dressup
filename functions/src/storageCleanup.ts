@@ -1,6 +1,7 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as admin from 'firebase-admin';
 import { logger } from 'firebase-functions';
+import { createLogger } from './logger';
 
 /**
  * Scheduled function to clean up old files from Firebase Storage
@@ -12,13 +13,12 @@ export const cleanupStorage = onSchedule(
     timeZone: 'UTC',
   },
   async (event) => {
+    const structuredLogger = createLogger('cleanupStorage');
     const bucket = admin.storage().bucket();
     const now = Date.now();
     
     let totalDeleted = 0;
     let totalErrors = 0;
-
-    logger.info('Starting storage cleanup process...');
 
     try {
       // Cleanup rules configuration
@@ -78,10 +78,16 @@ export const cleanupStorage = onSchedule(
         logger.info(`${rule.description}: Deleted ${ruleDeleted} files, ${ruleErrors} errors`);
       }
 
-      logger.info(`Storage cleanup completed. Total deleted: ${totalDeleted}, Total errors: ${totalErrors}`);
+      // Log structured cleanup completion
+      structuredLogger.logStorageCleanup(totalDeleted, totalErrors, 'scheduled_cleanup');
 
     } catch (error) {
-      logger.error('Storage cleanup failed:', error);
+      const errorObj = error instanceof Error ? error : new Error('Unknown storage cleanup error');
+      structuredLogger.logError(errorObj, { 
+        function: 'cleanupStorage',
+        totalDeleted,
+        totalErrors 
+      });
       throw error;
     }
   }

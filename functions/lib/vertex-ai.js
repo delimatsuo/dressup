@@ -4,6 +4,7 @@ exports.analyzeOutfitWithGemini = analyzeOutfitWithGemini;
 exports.generateOutfitSuggestions = generateOutfitSuggestions;
 exports.testGeminiIntegration = testGeminiIntegration;
 const vertexai_1 = require("@google-cloud/vertexai");
+const logger_1 = require("./logger");
 // Initialize Vertex AI with service account
 const PROJECT_ID = 'projectdressup';
 const LOCATION = 'us-central1';
@@ -44,12 +45,13 @@ const generativeModel = vertex_ai.preview.getGenerativeModel({
 /**
  * Process an image with Gemini Vision to analyze outfit compatibility
  */
-async function analyzeOutfitWithGemini(userImageUrl, garmentImageUrl, additionalInstructions) {
+async function analyzeOutfitWithGemini(userImageUrl, garmentImageUrl, additionalInstructions, sessionId) {
+    const structuredLogger = (0, logger_1.createLogger)('analyzeOutfitWithGemini');
     const MAX_RETRIES = 2;
     let lastError = null;
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         try {
-            console.log(`Gemini analysis attempt ${attempt}/${MAX_RETRIES}`);
+            structuredLogger.logVertexAIRequest(sessionId || 'unknown', 2); // 2 images
             // Create the prompt for virtual outfit try-on with enhanced pose-specific instructions
             const basePrompt = `
       You are an advanced fashion AI specializing in virtual outfit try-on technology. Analyze these two images:
@@ -112,12 +114,10 @@ async function analyzeOutfitWithGemini(userImageUrl, garmentImageUrl, additional
                 ],
             };
             // Generate content using Gemini with performance monitoring
-            console.log('Sending request to Gemini 2.5 Flash Image...');
             const geminiStartTime = Date.now();
             const result = await generativeModel.generateContent(request);
             const response = result.response;
             const geminiProcessingTime = (Date.now() - geminiStartTime) / 1000;
-            console.log(`Gemini processing completed in ${geminiProcessingTime}s`);
             // Extract response with detailed logging
             const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
             console.log(`Gemini response length: ${text.length} characters`);
@@ -138,9 +138,13 @@ async function analyzeOutfitWithGemini(userImageUrl, garmentImageUrl, additional
                     analysis.colorHarmony ? `Color harmony: ${analysis.colorHarmony}` : '',
                     analysis.compatibility ? `Style: ${analysis.compatibility}` : ''
                 ].filter(Boolean).join(' | ');
+                const confidence = (analysis.rating || 7.5) / 10;
+                // Log successful Vertex AI response
+                structuredLogger.logVertexAIResponse(sessionId || 'unknown', true, geminiProcessingTime * 1000, // Convert to ms
+                confidence, attempt > 1 ? attempt - 1 : 0);
                 return {
                     description: enhancedDescription,
-                    confidence: (analysis.rating || 7.5) / 10,
+                    confidence,
                     suggestions: analysis.suggestions || ['Consider adding accessories', 'Try complementary colors', 'Experiment with different styles'],
                 };
             }
@@ -150,6 +154,9 @@ async function analyzeOutfitWithGemini(userImageUrl, garmentImageUrl, additional
                 const fallbackDescription = text.length > 0
                     ? `Virtual outfit analysis: ${text.substring(0, 300)}...`
                     : 'Virtual outfit applied successfully with AI-powered style analysis';
+                // Log partially successful Vertex AI response (parsing failed)
+                structuredLogger.logVertexAIResponse(sessionId || 'unknown', false, // Parse failure counts as partial success
+                geminiProcessingTime * 1000, 0.75, attempt > 1 ? attempt - 1 : 0);
                 return {
                     description: fallbackDescription,
                     confidence: 0.75,

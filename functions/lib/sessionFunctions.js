@@ -39,6 +39,7 @@ const scheduler_1 = require("firebase-functions/v2/scheduler");
 const firestore_1 = require("firebase-admin/firestore");
 const session_1 = require("./session");
 const admin = __importStar(require("firebase-admin"));
+const logger_1 = require("./logger");
 // Initialize SessionManager with Firestore
 const getSessionManager = () => {
     if (!admin.apps.length) {
@@ -51,10 +52,15 @@ const getSessionManager = () => {
  * Returns sessionId and expiry time
  */
 exports.createSession = (0, https_1.onCall)({ maxInstances: 10 }, async (request) => {
+    const structuredLogger = (0, logger_1.createLogger)('createSession');
+    const perfMonitor = (0, logger_1.createPerformanceMonitor)('createSession');
     try {
         const sessionManager = getSessionManager();
         const result = await sessionManager.createSession();
-        console.log(`Created new session: ${result.sessionId}`);
+        structuredLogger.logSessionCreated(result.sessionId, result.expiresIn);
+        perfMonitor.complete(structuredLogger, {
+            sessionId: result.sessionId
+        });
         return {
             success: true,
             sessionId: result.sessionId,
@@ -62,7 +68,9 @@ exports.createSession = (0, https_1.onCall)({ maxInstances: 10 }, async (request
         };
     }
     catch (error) {
-        console.error('Error creating session:', error);
+        const errorObj = error instanceof Error ? error : new Error('Unknown error');
+        structuredLogger.logError(errorObj, { function: 'createSession' });
+        perfMonitor.complete(structuredLogger, { error: true });
         throw new https_1.HttpsError('internal', 'Failed to create session');
     }
 });

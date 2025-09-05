@@ -3,6 +3,7 @@ import { setGlobalOptions } from 'firebase-functions/v2/options';
 import * as admin from 'firebase-admin';
 import corsMiddleware from 'cors';
 import { analyzeOutfitWithGemini } from './vertex-ai';
+import { createLogger, createPerformanceMonitor } from './logger';
 
 // Export session management functions
 export {
@@ -74,8 +75,11 @@ export const processImageWithGemini = onCall(
     maxInstances: 3, // Reduced to manage resource usage
   },
   async (request) => {
+    const structuredLogger = createLogger('processImageWithGemini');
+    const perfMonitor = createPerformanceMonitor('processImageWithGemini');
+    const requestData = request.data as MultiPoseRequest;
+    
     try {
-      const requestData = request.data as MultiPoseRequest;
       const { 
         sessionId, 
         garmentImageUrl,
@@ -89,6 +93,7 @@ export const processImageWithGemini = onCall(
 
       // Validate required inputs
       if (!sessionId) {
+        structuredLogger.logError(new Error('Missing sessionId in request'), { requestData });
         throw new HttpsError('invalid-argument', 'sessionId is required');
       }
 
@@ -96,39 +101,102 @@ export const processImageWithGemini = onCall(
 
       // Multi-pose generation path
       if (userPhotos && garmentImageUrl) {
-        console.log('Processing multi-pose generation request');
-        return await processMultiPoseGeneration({
+        structuredLogger.logGenerationStarted(sessionId, 'multi-pose', 3);
+        const result = await processMultiPoseGeneration({
           sessionId,
           garmentImageUrl,
           userPhotos,
-          startTime
+          startTime,
+          logger: structuredLogger
         });
+        
+        const performance = perfMonitor.complete(structuredLogger, { 
+          requestType: 'multi-pose',
+          sessionId 
+        });
+        
+        structuredLogger.logGenerationCompleted(
+          sessionId,
+          'multi-pose',
+          {
+            success: true,
+            duration: performance.executionTimeMs,
+            confidence: result.poses?.[0]?.confidence
+          },
+          performance
+        );
+        
+        return result;
       }
       
       // Legacy single pose path (backward compatibility)
       if (userImageUrl && (garmentId || garmentImageUrl)) {
-        console.log('Processing legacy single pose generation request');
-        return await processLegacySinglePose({
+        structuredLogger.logGenerationStarted(sessionId, 'single-pose', 1);
+        const result = await processLegacySinglePose({
           userImageUrl,
           garmentId,
           sessionId,
           garmentImageUrl,
           poseType,
           instructions,
-          startTime
+          startTime,
+          logger: structuredLogger
         });
+        
+        const performance = perfMonitor.complete(structuredLogger, { 
+          requestType: 'single-pose',
+          sessionId 
+        });
+        
+        structuredLogger.logGenerationCompleted(
+          sessionId,
+          'single-pose',
+          {
+            success: true,
+            duration: performance.executionTimeMs,
+            confidence: result.confidence
+          },
+          performance
+        );
+        
+        return result;
       }
 
+      const invalidArgumentError = new Error('Invalid arguments provided');
+      structuredLogger.logError(invalidArgumentError, { requestData });
       throw new HttpsError(
         'invalid-argument', 
         'Either provide userPhotos + garmentImageUrl for multi-pose, or userImageUrl + garmentId/garmentImageUrl for single pose'
       );
       
     } catch (error) {
-      console.error('Error processing image:', error);
+      const errorObj = error instanceof Error ? error : new Error('Unknown error');
+      
       if (error instanceof HttpsError) {
+        // Log HTTP errors with context
+        structuredLogger.logError(errorObj, { 
+          httpErrorCode: error.code,
+          sessionId: requestData.sessionId,
+          requestData: requestData 
+        });
         throw error;
       }
+      
+      // Log and wrap unexpected errors
+      structuredLogger.logError(errorObj, { sessionId: requestData.sessionId, requestData: requestData });
+      
+      const performance = perfMonitor.complete(structuredLogger, { 
+        error: true,
+        sessionId: requestData.sessionId 
+      });
+      
+      structuredLogger.logGenerationFailed(
+        requestData.sessionId || 'unknown',
+        requestData.userPhotos ? 'multi-pose' : 'single-pose',
+        errorObj,
+        performance
+      );
+      
       throw new HttpsError('internal', 'Failed to process image');
     }
   }
@@ -142,6 +210,7 @@ async function processMultiPoseGeneration(params: {
   garmentImageUrl: string;
   userPhotos: { front: string; side: string; back: string };
   startTime: number;
+  logger: any;
 }) {
   const { sessionId, garmentImageUrl, userPhotos, startTime } = params;
 
@@ -178,7 +247,8 @@ async function processMultiPoseGeneration(params: {
       const analysis = await analyzeOutfitWithGemini(
         pose.userImageUrl,
         garmentImageUrl,
-        pose.instructions
+        pose.instructions,
+        sessionId
       );
       
       const poseProcessingTime = (Date.now() - poseStartTime) / 1000;
@@ -283,6 +353,7 @@ async function processLegacySinglePose(params: {
   poseType?: string;
   instructions?: string;
   startTime: number;
+  logger: any;
 }) {
   const { 
     userImageUrl, 
@@ -338,7 +409,8 @@ async function processLegacySinglePose(params: {
   const analysis = await analyzeOutfitWithGemini(
     userImageUrl,
     effectiveGarmentImageUrl!,
-    enhancedInstructions
+    enhancedInstructions,
+    sessionId
   );
 
   const processingTime = (Date.now() - startTime) / 1000;
@@ -386,7 +458,12 @@ export const getGarments = onCall(
     maxInstances: 10,
   },
   async (request) => {
+    const structuredLogger = createLogger('getGarments');
+    const perfMonitor = createPerformanceMonitor('getGarments');
+    
     try {
+      const startTime = Date.now();
+      
       const garments = await admin
         .firestore()
         .collection('garments')
@@ -394,12 +471,25 @@ export const getGarments = onCall(
         .limit(50)
         .get();
 
-      return garments.docs.map((doc) => ({
+      const duration = Date.now() - startTime;
+      const garmentData = garments.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
+
+      structuredLogger.logGarmentsFetched(garmentData.length, duration);
+      
+      perfMonitor.complete(structuredLogger, {
+        garmentCount: garmentData.length
+      });
+
+      return garmentData;
     } catch (error) {
-      console.error('Error fetching garments:', error);
+      const errorObj = error instanceof Error ? error : new Error('Unknown error');
+      structuredLogger.logError(errorObj, { function: 'getGarments' });
+      
+      perfMonitor.complete(structuredLogger, { error: true });
+      
       throw new HttpsError('internal', 'Failed to fetch garments');
     }
   }
@@ -413,6 +503,9 @@ export const submitFeedback = onCall(
     maxInstances: 10,
   },
   async (request) => {
+    const structuredLogger = createLogger('submitFeedback');
+    const perfMonitor = createPerformanceMonitor('submitFeedback');
+    
     try {
       const { 
         rating, 
@@ -425,6 +518,8 @@ export const submitFeedback = onCall(
 
       // Validate at least one rating is provided
       if (!rating && !realismRating && !helpfulnessRating) {
+        const validationError = new Error('At least one rating must be provided');
+        structuredLogger.logError(validationError, { sessionId, resultId });
         throw new HttpsError(
           'invalid-argument',
           'At least one rating must be provided'
@@ -434,6 +529,8 @@ export const submitFeedback = onCall(
       // Validate individual ratings if provided
       const validateRating = (value: number | undefined, name: string) => {
         if (value !== undefined && (value < 1 || value > 5)) {
+          const validationError = new Error(`${name} must be between 1 and 5`);
+          structuredLogger.logError(validationError, { sessionId, resultId, rating: value });
           throw new HttpsError(
             'invalid-argument',
             `${name} must be between 1 and 5`
@@ -469,12 +566,41 @@ export const submitFeedback = onCall(
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
       });
 
+      // Log successful feedback submission
+      structuredLogger.logFeedbackSubmitted(
+        sessionId,
+        resultId,
+        rating,
+        realismRating,
+        helpfulnessRating
+      );
+
+      perfMonitor.complete(structuredLogger, {
+        sessionId,
+        resultId,
+        averageRating
+      });
+
       return { success: true };
     } catch (error) {
-      console.error('Error submitting feedback:', error);
+      const errorObj = error instanceof Error ? error : new Error('Unknown error');
+      
       if (error instanceof HttpsError) {
+        structuredLogger.logError(errorObj, { 
+          httpErrorCode: error.code,
+          sessionId: request.data?.sessionId,
+          resultId: request.data?.resultId
+        });
         throw error;
       }
+      
+      structuredLogger.logError(errorObj, { 
+        sessionId: request.data?.sessionId,
+        resultId: request.data?.resultId
+      });
+      
+      perfMonitor.complete(structuredLogger, { error: true });
+      
       throw new HttpsError('internal', 'Failed to submit feedback');
     }
   }

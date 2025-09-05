@@ -6,7 +6,7 @@ const storage_1 = require("firebase-admin/storage");
 const uuid_1 = require("uuid");
 class SessionManager {
     constructor(firestore) {
-        this.SESSION_DURATION_MS = 60 * 60 * 1000; // 60 minutes
+        this.SESSION_DURATION_MS = 60 * 60 * 1000; // 60 minutes for privacy-first approach
         this.db = firestore;
     }
     generateSessionId() {

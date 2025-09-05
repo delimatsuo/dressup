@@ -3,6 +3,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { getFirestore } from 'firebase-admin/firestore';
 import { SessionManager, PhotoMetadata } from './session';
 import * as admin from 'firebase-admin';
+import { createLogger, createPerformanceMonitor } from './logger';
 
 // Initialize SessionManager with Firestore
 const getSessionManager = () => {
@@ -19,11 +20,18 @@ const getSessionManager = () => {
 export const createSession = onCall(
   { maxInstances: 10 },
   async (request) => {
+    const structuredLogger = createLogger('createSession');
+    const perfMonitor = createPerformanceMonitor('createSession');
+    
     try {
       const sessionManager = getSessionManager();
       const result = await sessionManager.createSession();
       
-      console.log(`Created new session: ${result.sessionId}`);
+      structuredLogger.logSessionCreated(result.sessionId, result.expiresIn);
+      
+      perfMonitor.complete(structuredLogger, {
+        sessionId: result.sessionId
+      });
       
       return {
         success: true,
@@ -31,7 +39,11 @@ export const createSession = onCall(
         expiresIn: result.expiresIn
       };
     } catch (error) {
-      console.error('Error creating session:', error);
+      const errorObj = error instanceof Error ? error : new Error('Unknown error');
+      structuredLogger.logError(errorObj, { function: 'createSession' });
+      
+      perfMonitor.complete(structuredLogger, { error: true });
+      
       throw new HttpsError(
         'internal',
         'Failed to create session'

@@ -37,25 +37,26 @@ exports.cleanupExpiredSessionsStorage = exports.manualStorageCleanup = exports.c
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const admin = __importStar(require("firebase-admin"));
 const firebase_functions_1 = require("firebase-functions");
+const logger_1 = require("./logger");
 /**
  * Scheduled function to clean up old files from Firebase Storage
- * Runs daily at 2 AM UTC
+ * Runs every hour for privacy-first storage management
  */
 exports.cleanupStorage = (0, scheduler_1.onSchedule)({
-    schedule: '0 2 * * *', // Daily at 2 AM UTC
+    schedule: '0 * * * *', // Every hour at minute 0 for privacy-first cleanup
     timeZone: 'UTC',
 }, async (event) => {
+    const structuredLogger = (0, logger_1.createLogger)('cleanupStorage');
     const bucket = admin.storage().bucket();
     const now = Date.now();
     let totalDeleted = 0;
     let totalErrors = 0;
-    firebase_functions_1.logger.info('Starting storage cleanup process...');
     try {
         // Cleanup rules configuration
         const cleanupRules = [
             {
                 prefix: 'uploads/',
-                maxAgeMs: 30 * 24 * 60 * 60 * 1000, // 30 days
+                maxAgeMs: 60 * 60 * 1000, // 60 minutes for privacy-first approach
                 description: 'User uploaded images'
             },
             {
@@ -101,10 +102,16 @@ exports.cleanupStorage = (0, scheduler_1.onSchedule)({
             totalErrors += ruleErrors;
             firebase_functions_1.logger.info(`${rule.description}: Deleted ${ruleDeleted} files, ${ruleErrors} errors`);
         }
-        firebase_functions_1.logger.info(`Storage cleanup completed. Total deleted: ${totalDeleted}, Total errors: ${totalErrors}`);
+        // Log structured cleanup completion
+        structuredLogger.logStorageCleanup(totalDeleted, totalErrors, 'scheduled_cleanup');
     }
     catch (error) {
-        firebase_functions_1.logger.error('Storage cleanup failed:', error);
+        const errorObj = error instanceof Error ? error : new Error('Unknown storage cleanup error');
+        structuredLogger.logError(errorObj, {
+            function: 'cleanupStorage',
+            totalDeleted,
+            totalErrors
+        });
         throw error;
     }
 });
@@ -122,16 +129,16 @@ exports.manualStorageCleanup = (0, scheduler_1.onSchedule)({
 });
 /**
  * Clean up expired sessions and associated files
- * Runs every 6 hours
+ * Runs every hour for privacy-first session cleanup
  */
 exports.cleanupExpiredSessionsStorage = (0, scheduler_1.onSchedule)({
-    schedule: '0 */6 * * *', // Every 6 hours
+    schedule: '0 * * * *', // Every hour for privacy-first session cleanup  
     timeZone: 'UTC',
 }, async (event) => {
     const db = admin.firestore();
     const bucket = admin.storage().bucket();
     const now = Date.now();
-    const maxSessionAge = 24 * 60 * 60 * 1000; // 24 hours
+    const maxSessionAge = 60 * 60 * 1000; // 60 minutes for privacy-first approach
     firebase_functions_1.logger.info('Starting expired session cleanup...');
     try {
         // Query old sessions
