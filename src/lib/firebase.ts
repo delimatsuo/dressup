@@ -348,3 +348,6 @@ export const submitFeedback = async (feedback: {
     return { success: true };
   }
 };
+
+// Export Firebase instances for direct use
+export { app, storage };

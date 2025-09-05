@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MultiPhotoUpload } from './MultiPhotoUpload';
-import { ChevronRight, CheckCircle, User, Shirt } from 'lucide-react';
+import { ChevronRight, CheckCircle, User, Shirt, Sparkles } from 'lucide-react';
 
 interface PhotoData {
   userPhotos: {
@@ -25,6 +25,7 @@ export function PhotoUploadInterface({ onComplete }: PhotoUploadInterfaceProps) 
   const [step, setStep] = useState<'user' | 'garment' | 'complete'>('user');
   const [userPhotos, setUserPhotos] = useState<Record<string, string> | null>(null);
   const [garmentPhotos, setGarmentPhotos] = useState<Record<string, string> | null>(null);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 
   const handleUserPhotosComplete = (photos: Record<string, string>) => {
     setUserPhotos(photos);
@@ -35,6 +36,7 @@ export function PhotoUploadInterface({ onComplete }: PhotoUploadInterfaceProps) 
   const handleGarmentPhotosComplete = (photos: Record<string, string>) => {
     setGarmentPhotos(photos);
     setStep('complete');
+    setShowSuccessAnimation(true);
     
     // Call the completion callback
     if (onComplete && userPhotos) {
@@ -44,6 +46,16 @@ export function PhotoUploadInterface({ onComplete }: PhotoUploadInterfaceProps) 
       });
     }
   };
+
+  // Reset success animation after a delay
+  useEffect(() => {
+    if (showSuccessAnimation) {
+      const timer = setTimeout(() => {
+        setShowSuccessAnimation(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessAnimation]);
 
   const handleReset = () => {
     setStep('user');
@@ -139,12 +151,23 @@ export function PhotoUploadInterface({ onComplete }: PhotoUploadInterfaceProps) 
         )}
 
         {step === 'complete' && (
-          <div className="text-center py-12">
-            <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">All Photos Uploaded!</h2>
-            <p className="text-gray-600 mb-6">
-              Your photos have been successfully uploaded. You can now generate your outfit visualization.
-            </p>
+          <div className="text-center py-12 relative">
+            {/* Success animation */}
+            {showSuccessAnimation && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="animate-pulse">
+                  <Sparkles className="w-32 h-32 text-yellow-400 animate-spin" />
+                </div>
+              </div>
+            )}
+            
+            <div className={`transition-all duration-500 ${showSuccessAnimation ? 'scale-110' : 'scale-100'}`}>
+              <CheckCircle className={`w-16 h-16 mx-auto mb-4 transition-colors duration-500 ${showSuccessAnimation ? 'text-yellow-500' : 'text-green-600'}`} />
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">All Photos Uploaded!</h2>
+              <p className="text-gray-600 mb-6">
+                Your photos have been successfully uploaded. You can now generate your outfit visualization.
+              </p>
+            </div>
             
             <div className="flex justify-center gap-4">
               <button

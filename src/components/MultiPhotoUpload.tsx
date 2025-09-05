@@ -1,13 +1,12 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Upload, X, Camera, Check, AlertCircle } from 'lucide-react';
+import { Upload, X, Camera, Check, AlertCircle, RefreshCw, Clock, Zap } from 'lucide-react';
 import Image from 'next/image';
 import { useSessionContext } from './SessionProvider';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/lib/firebase';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { app } from '@/lib/firebase';
+import { initializeFirebase } from '@/lib/firebase';
 
 type PhotoType = 'front' | 'side' | 'back';
 type PhotoCategory = 'user' | 'garment';
@@ -19,6 +18,10 @@ interface PhotoUpload {
   uploading: boolean;
   progress: number;
   error: string | null;
+  uploadAttempts: number;
+  lastUploadTime: number | null;
+  uploadSpeed: number | null; // bytes per second
+  timeRemaining: number | null; // seconds
 }
 
 interface MultiPhotoUploadProps {
@@ -45,12 +48,70 @@ const PHOTO_DESCRIPTIONS = {
   }
 };
 
+// Utility functions for formatting upload info
+const formatUploadSpeed = (bytesPerSecond: number | null): string => {
+  if (!bytesPerSecond || bytesPerSecond === 0) return '';
+  
+  const mbps = bytesPerSecond / (1024 * 1024);
+  if (mbps >= 1) {
+    return `${mbps.toFixed(1)} MB/s`;
+  }
+  
+  const kbps = bytesPerSecond / 1024;
+  return `${kbps.toFixed(0)} KB/s`;
+};
+
+const formatTimeRemaining = (seconds: number | null): string => {
+  if (!seconds || seconds === 0) return '';
+  
+  if (seconds < 60) {
+    return `${Math.ceil(seconds)}s remaining`;
+  }
+  
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.ceil(seconds % 60);
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')} remaining`;
+};
+
 export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploadProps) {
   const { sessionId, addPhotoToSession } = useSessionContext();
   const [photos, setPhotos] = useState<Record<PhotoType, PhotoUpload>>({
-    front: { type: 'front', file: null, url: null, uploading: false, progress: 0, error: null },
-    side: { type: 'side', file: null, url: null, uploading: false, progress: 0, error: null },
-    back: { type: 'back', file: null, url: null, uploading: false, progress: 0, error: null }
+    front: { 
+      type: 'front', 
+      file: null, 
+      url: null, 
+      uploading: false, 
+      progress: 0, 
+      error: null,
+      uploadAttempts: 0,
+      lastUploadTime: null,
+      uploadSpeed: null,
+      timeRemaining: null
+    },
+    side: { 
+      type: 'side', 
+      file: null, 
+      url: null, 
+      uploading: false, 
+      progress: 0, 
+      error: null,
+      uploadAttempts: 0,
+      lastUploadTime: null,
+      uploadSpeed: null,
+      timeRemaining: null
+    },
+    back: { 
+      type: 'back', 
+      file: null, 
+      url: null, 
+      uploading: false, 
+      progress: 0, 
+      error: null,
+      uploadAttempts: 0,
+      lastUploadTime: null,
+      uploadSpeed: null,
+      timeRemaining: null
+    }
   });
 
   const fileInputRefs = useRef<Record<PhotoType, HTMLInputElement | null>>({
@@ -98,7 +159,9 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
     await uploadPhoto(type, file);
   };
 
-  const uploadPhoto = async (type: PhotoType, file: File) => {
+  const uploadPhoto = async (type: PhotoType, file: File, retryAttempt = 0) => {
+    const MAX_RETRIES = 2;
+    
     if (!sessionId) {
       setPhotos(prev => ({
         ...prev,
@@ -108,51 +171,129 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
     }
 
     // Update upload state
+    const uploadStartTime = Date.now();
     setPhotos(prev => ({
       ...prev,
-      [type]: { ...prev[type], uploading: true, progress: 0, error: null }
+      [type]: { 
+        ...prev[type], 
+        uploading: true, 
+        progress: 0, 
+        error: null,
+        uploadAttempts: retryAttempt + 1,
+        uploadSpeed: null,
+        timeRemaining: null
+      }
     }));
 
     try {
+      // Initialize Firebase if needed
+      const app = initializeFirebase();
+      const { getStorage } = await import('firebase/storage');
+      const storage = getStorage(app);
+      
       // Create storage reference
       const timestamp = Date.now();
       const fileName = `sessions/${sessionId}/${category}/${type}_${timestamp}_${file.name}`;
       const storageRef = ref(storage, fileName);
 
-      // Upload file with progress tracking
+      // Upload file with enhanced progress tracking
       const uploadTask = uploadBytesResumable(storageRef, file);
+      let lastProgressUpdate = uploadStartTime;
+      let lastBytesTransferred = 0;
 
       uploadTask.on('state_changed',
         (snapshot) => {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          const now = Date.now();
+          const timeElapsed = (now - lastProgressUpdate) / 1000; // seconds
+          
+          // Calculate upload speed
+          let uploadSpeed = null;
+          let timeRemaining = null;
+          
+          if (timeElapsed >= 1) { // Update speed every second
+            const bytesTransferredSinceLastUpdate = snapshot.bytesTransferred - lastBytesTransferred;
+            uploadSpeed = bytesTransferredSinceLastUpdate / timeElapsed; // bytes per second
+            
+            if (uploadSpeed > 0) {
+              const bytesRemaining = snapshot.totalBytes - snapshot.bytesTransferred;
+              timeRemaining = bytesRemaining / uploadSpeed; // seconds
+            }
+            
+            lastProgressUpdate = now;
+            lastBytesTransferred = snapshot.bytesTransferred;
+          }
+          
           setPhotos(prev => ({
             ...prev,
-            [type]: { ...prev[type], progress }
+            [type]: { 
+              ...prev[type], 
+              progress,
+              uploadSpeed: uploadSpeed || prev[type].uploadSpeed,
+              timeRemaining: timeRemaining || prev[type].timeRemaining
+            }
           }));
         },
         (error) => {
           console.error('Upload error:', error);
-          setPhotos(prev => ({
-            ...prev,
-            [type]: { ...prev[type], uploading: false, error: 'Upload failed. Please try again.' }
-          }));
-        },
-        async () => {
-          // Upload completed successfully
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
           
-          // Add photo to session
-          const success = await addPhotoToSession(downloadURL, category, type);
-          
-          if (success) {
+          // Determine if we should retry
+          const shouldRetry = retryAttempt < MAX_RETRIES && 
+            (error.code === 'storage/retry-limit-exceeded' || 
+             error.code === 'storage/canceled' ||
+             error.code === 'storage/unknown');
+
+          if (shouldRetry) {
+            console.log(`Retrying upload for ${type}, attempt ${retryAttempt + 1}`);
+            // Wait a bit before retrying (exponential backoff)
+            setTimeout(() => {
+              uploadPhoto(type, file, retryAttempt + 1);
+            }, Math.pow(2, retryAttempt) * 1000);
+          } else {
+            const errorMessage = error.code === 'storage/quota-exceeded' 
+              ? 'Upload quota exceeded. Please try again later.'
+              : error.code === 'storage/unauthenticated'
+              ? 'Authentication error. Please refresh the page.'
+              : `Upload failed after ${retryAttempt + 1} attempts. Please try again.`;
+              
             setPhotos(prev => ({
               ...prev,
-              [type]: { ...prev[type], url: downloadURL, uploading: false, progress: 100 }
+              [type]: { ...prev[type], uploading: false, error: errorMessage }
             }));
+          }
+        },
+        async () => {
+          try {
+            // Upload completed successfully
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            
+            // Add photo to session
+            const success = await addPhotoToSession(downloadURL, category, type);
+            
+            if (success) {
+              setPhotos(prev => ({
+                ...prev,
+                [type]: { 
+                  ...prev[type], 
+                  url: downloadURL, 
+                  uploading: false, 
+                  progress: 100,
+                  lastUploadTime: Date.now(),
+                  uploadSpeed: null,
+                  timeRemaining: null
+                }
+              }));
 
-            // Check if all required photos are uploaded
-            checkUploadComplete();
-          } else {
+              // Check if all required photos are uploaded
+              checkUploadComplete();
+            } else {
+              setPhotos(prev => ({
+                ...prev,
+                [type]: { ...prev[type], uploading: false, error: 'Failed to save photo to session.' }
+              }));
+            }
+          } catch (sessionError) {
+            console.error('Session save error:', sessionError);
             setPhotos(prev => ({
               ...prev,
               [type]: { ...prev[type], uploading: false, error: 'Failed to save photo to session.' }
@@ -161,10 +302,10 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
         }
       );
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('Upload initialization error:', error);
       setPhotos(prev => ({
         ...prev,
-        [type]: { ...prev[type], uploading: false, error: 'Upload failed. Please try again.' }
+        [type]: { ...prev[type], uploading: false, error: 'Failed to start upload. Please try again.' }
       }));
     }
   };
@@ -186,12 +327,30 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
   const removePhoto = (type: PhotoType) => {
     setPhotos(prev => ({
       ...prev,
-      [type]: { type, file: null, url: null, uploading: false, progress: 0, error: null }
+      [type]: { 
+        type, 
+        file: null, 
+        url: null, 
+        uploading: false, 
+        progress: 0, 
+        error: null,
+        uploadAttempts: 0,
+        lastUploadTime: null,
+        uploadSpeed: null,
+        timeRemaining: null
+      }
     }));
     
     // Reset file input
     if (fileInputRefs.current[type]) {
       fileInputRefs.current[type]!.value = '';
+    }
+  };
+
+  const retryUpload = async (type: PhotoType) => {
+    const photo = photos[type];
+    if (photo.file) {
+      await uploadPhoto(type, photo.file, 0);
     }
   };
 
@@ -256,12 +415,41 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
                 {photo.uploading ? (
                   <>
                     <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3" />
-                    <p className="text-sm text-gray-600">Uploading... {Math.round(photo.progress)}%</p>
-                    <div className="w-full max-w-xs mt-2 bg-gray-200 rounded-full h-2">
+                    
+                    <div className="text-center mb-2">
+                      <p className="text-sm font-medium text-gray-700">
+                        Uploading... {Math.round(photo.progress)}%
+                      </p>
+                      
+                      {photo.uploadAttempts > 1 && (
+                        <p className="text-xs text-orange-600">
+                          Attempt {photo.uploadAttempts}
+                        </p>
+                      )}
+                    </div>
+                    
+                    {/* Progress bar */}
+                    <div className="w-full max-w-xs bg-gray-200 rounded-full h-2 mb-2">
                       <div
                         className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${photo.progress}%` }}
                       />
+                    </div>
+                    
+                    {/* Upload speed and time remaining */}
+                    <div className="text-center text-xs text-gray-500 space-y-1">
+                      {photo.uploadSpeed && (
+                        <div className="flex items-center justify-center">
+                          <Zap className="w-3 h-3 mr-1" />
+                          {formatUploadSpeed(photo.uploadSpeed)}
+                        </div>
+                      )}
+                      {photo.timeRemaining && (
+                        <div className="flex items-center justify-center">
+                          <Clock className="w-3 h-3 mr-1" />
+                          {formatTimeRemaining(photo.timeRemaining)}
+                        </div>
+                      )}
                     </div>
                   </>
                 ) : (
@@ -277,9 +465,20 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
           </label>
           
           {photo.error && (
-            <div className="mt-2 flex items-center text-red-600 text-sm">
-              <AlertCircle className="w-4 h-4 mr-1" />
-              {photo.error}
+            <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center text-red-600 text-sm mb-2">
+                <AlertCircle className="w-4 h-4 mr-1" />
+                {photo.error}
+              </div>
+              {photo.file && !photo.uploading && (
+                <button
+                  onClick={() => retryUpload(type)}
+                  className="flex items-center text-xs text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  <RefreshCw className="w-3 h-3 mr-1" />
+                  Try Again
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -289,6 +488,17 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
 
   const allRequiredPhotosUploaded = photos.front.url && photos.side.url;
   const anyPhotoUploading = Object.values(photos).some(p => p.uploading);
+  const uploadedCount = Object.values(photos).filter(p => p.url).length;
+  const totalPhotos = 3; // front, side, back
+  const requiredPhotos = 2; // front and side are required
+  const anyPhotoHasError = Object.values(photos).some(p => p.error);
+  
+  // Calculate overall upload progress
+  const overallProgress = Object.values(photos).reduce((total, photo) => {
+    if (photo.url) return total + 100;
+    if (photo.uploading) return total + photo.progress;
+    return total;
+  }, 0) / totalPhotos;
 
   return (
     <div className="space-y-4">
@@ -296,13 +506,45 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
         <h3 className="text-lg font-semibold text-gray-900">
           Upload {category === 'user' ? 'Your Photos' : 'Garment Photos'}
         </h3>
-        {allRequiredPhotosUploaded && (
+        
+        {/* Status indicator */}
+        {anyPhotoUploading && (
+          <div className="flex items-center text-blue-600 text-sm">
+            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2" />
+            Uploading {uploadedCount}/{totalPhotos} photos...
+          </div>
+        )}
+        
+        {allRequiredPhotosUploaded && !anyPhotoUploading && (
           <div className="flex items-center text-green-600 text-sm">
             <Check className="w-4 h-4 mr-1" />
-            Required photos uploaded
+            Required photos uploaded ({requiredPhotos}/{requiredPhotos})
+          </div>
+        )}
+        
+        {anyPhotoHasError && !anyPhotoUploading && (
+          <div className="flex items-center text-red-600 text-sm">
+            <AlertCircle className="w-4 h-4 mr-1" />
+            Upload issues detected
           </div>
         )}
       </div>
+      
+      {/* Overall progress bar */}
+      {anyPhotoUploading && (
+        <div className="mb-4">
+          <div className="flex justify-between text-xs text-gray-600 mb-1">
+            <span>Overall Progress</span>
+            <span>{Math.round(overallProgress)}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${overallProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {renderPhotoUpload('front')}
