@@ -821,7 +821,7 @@
         "dependencies": [
           9
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -829,7 +829,7 @@
             "description": "Set up the initial React component file (`FeedbackForm.js`) with a basic JSX structure and import necessary hooks for state management.",
             "dependencies": [],
             "details": "Create a new file at `src/components/FeedbackForm.js`. Initialize a functional component that returns a root `<form>` element. Import the `useState` hook from React to prepare for managing the form's input values.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify that the new `FeedbackForm` component can be rendered within the main application view without errors. Check the browser's React DevTools to confirm the component is present in the component tree."
           },
           {
@@ -840,7 +840,7 @@
               "13.1"
             ],
             "details": "Within the `FeedbackForm` component, create two sets of inputs for the rating scales. A simple implementation can use styled radio buttons (e.g., as stars or circles). Add corresponding `label` elements. Use `useState` to create two state variables, `realismRating` and `helpfulnessRating`, to store the selected values.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Manually interact with the rating inputs in the browser. Confirm that selecting a rating for 'Realism' updates its state correctly and does not affect the 'Helpfulness' rating, and vice-versa. Check React DevTools to see the state values change."
           },
           {
@@ -851,7 +851,7 @@
               "13.1"
             ],
             "details": "Add a `<textarea>` element with a placeholder like 'Optional: Any other comments?'. Create a new state variable using `useState` to manage its value. Add a `<button type=\"submit\">` with the text 'Submit Feedback'.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify the `textarea` is visible and accepts multi-line text input. Confirm the 'Submit Feedback' button is rendered on the page. Typing in the textarea should update its corresponding state variable, verifiable with React DevTools."
           },
           {
@@ -863,7 +863,7 @@
               "13.3"
             ],
             "details": "Create a `handleSubmit` function that will be attached to the form's `onSubmit` event. Inside the component, calculate a boolean `isSubmittable` based on whether `realismRating > 0` or `helpfulnessRating > 0`. Use this variable to set the `disabled` attribute on the 'Submit Feedback' button.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Load the form and verify the 'Submit' button is disabled by default. Select a rating for either 'Realism' or 'Helpfulness' and confirm the button becomes enabled. Deselect all ratings (if possible) and verify the button becomes disabled again."
           },
           {
@@ -874,7 +874,7 @@
               "13.4"
             ],
             "details": "Attach the `handleSubmit` function to the `<form>` element's `onSubmit` prop. Inside `handleSubmit`, call `event.preventDefault()`. Assemble the form's state (`realismRating`, `helpfulnessRating`, `textFeedback`) into a single `feedbackData` object. For now, simply `console.log(feedbackData)`. This serves as the integration point for Task 14. After logging, reset the form fields to their initial state.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Fill out the form with sample data (e.g., Realism: 4, Helpfulness: 5, Text: 'Looks great!'). Click 'Submit Feedback'. Check the browser's developer console to ensure the correct data object is logged. Verify that the form fields are cleared after submission."
           }
         ]
@@ -890,7 +890,7 @@
           3,
           13
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -898,7 +898,7 @@
             "description": "Establish the data structure for feedback documents within the `feedback` collection in Firestore to ensure data consistency and proper linking to user sessions.",
             "dependencies": [],
             "details": "Define a `FeedbackObject` schema in project documentation. The schema must include `sessionId` (string, to link with the `sessions` collection), `realismScore` (number, range 1-5), `helpfulnessScore` (number, range 1-5), `textFeedback` (string, max 500 characters, optional), and a `createdAt` field (timestamp). This formalizes the data contract before implementation.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Manually create a document in the Firestore console following the defined schema to verify field types and constraints. Review the schema with the team to confirm it meets analytical requirements."
           },
           {
@@ -907,7 +907,7 @@
             "description": "Initialize a new HTTP-triggered Cloud Function using the Firebase CLI and configure its basic structure to handle POST requests for feedback submission.",
             "dependencies": [],
             "details": "Create a new function file (e.g., `feedback.js`) and export an `https` `onRequest` function named `submitFeedback`. Configure CORS to allow requests from the frontend application's domain. The initial implementation should parse the JSON body and log it, returning a placeholder success response (e.g., HTTP 200 OK).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Deploy the scaffolded function to a development environment. Use a tool like Postman or curl to send a sample POST request to the function's URL. Verify that the function executes, logs the request body, and returns the expected HTTP 200 status code."
           },
           {
@@ -918,7 +918,7 @@
               "14.2"
             ],
             "details": "Implement checks to ensure `sessionId` is a non-empty string, `realismScore` and `helpfulnessScore` are numbers between 1 and 5, and `textFeedback` is a string (if present) under the character limit. If validation fails, the function must terminate and return an HTTP 400 Bad Request error with a descriptive JSON error message.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Write unit tests for the validation logic using a testing framework like Jest or Mocha. Test various invalid inputs: missing fields, incorrect data types (e.g., score as a string), scores out of range, and overly long text feedback. Assert that each case returns a 400 error."
           },
           {
@@ -930,7 +930,7 @@
               "14.3"
             ],
             "details": "After the input has been successfully validated, use the Admin SDK to add a new document to the `feedback` collection. The document data should be the validated `FeedbackObject`. Add a `createdAt` field populated with `FieldValue.serverTimestamp()`. On successful creation, the function should return an HTTP 201 Created response with the ID of the newly created document.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Using the Firebase Local Emulator Suite, write an integration test that calls the function with a valid `FeedbackObject`. Assert that a new document is created in the emulated Firestore `feedback` collection and that its data matches the input, including a valid timestamp."
           },
           {
@@ -941,7 +941,7 @@
               "14.4"
             ],
             "details": "In `firestore.rules`, add a rule for the `feedback` collection that denies all public `read`, `update`, and `delete` operations (`allow read, update, delete: if false;`). Since the Cloud Function uses admin privileges, it bypasses these rules for writing. This ensures feedback data is write-only via the function and cannot be tampered with. Deploy both the function and the updated security rules using the Firebase CLI.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "After deployment, perform an end-to-end test by submitting feedback from the actual frontend application. Verify the request succeeds and the corresponding document appears correctly in the production Firestore console. Attempt to read the `feedback` collection from the browser's developer console (using the client SDK) and confirm the request is denied by security rules."
           }
         ]
@@ -1096,7 +1096,7 @@
           10,
           14
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1104,7 +1104,7 @@
             "description": "Implement the foundational security posture by setting default-deny rules for both Firestore and Cloud Storage. This ensures no data can be accessed or modified unless explicitly allowed by subsequent rules.",
             "dependencies": [],
             "details": "In the `firestore.rules` and `storage.rules` files, establish a top-level rule that denies all access by default. This is achieved by setting `allow read, write: if false;` at the root of the ruleset for both services. This creates a secure baseline before specific permissions are granted.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Use the Firebase Rules Playground to simulate an unauthenticated read/write request to an arbitrary path in both Firestore and Cloud Storage. Verify that both requests are correctly denied."
           },
           {
@@ -1115,7 +1115,7 @@
               "17.1"
             ],
             "details": "Define a rule for the `sessions/{sessionId}` path. The rule must allow a document to be created by any authenticated user. It must only allow read and update operations if the `userId` field within the document (`resource.data.userId`) matches the UID of the authenticated user (`request.auth.uid`).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "In the Rules Playground, simulate an authenticated user creating a new session document. Simulate the same user reading and updating their own document. Then, simulate a different authenticated user attempting to read or write to the first user's document and verify the request is denied."
           },
           {
@@ -1126,7 +1126,7 @@
               "17.2"
             ],
             "details": "Create a rule for the path `user-photos/{sessionId}/{fileName}`. This rule must perform a cross-service check by reading the corresponding Firestore document at `/databases/(default)/documents/sessions/$(sessionId)`. The write operation should only be allowed if the `userId` in that Firestore document matches the `request.auth.uid`.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Using the Rules Playground, simulate an authenticated user uploading a file to their correct path (e.g., `/user-photos/their-session-id/front.jpg`). Then, simulate the same user attempting to upload to another user's session path and verify denial. Also test an unauthenticated upload attempt."
           },
           {
@@ -1137,7 +1137,7 @@
               "17.1"
             ],
             "details": "For the `feedback/{feedbackId}` path, define a rule that is `allow create: if request.auth != null;` and `allow read, update, delete: if false;`. This write-only rule ensures feedback can be submitted (as per Task 14) but remains confidential and cannot be tampered with or viewed by other users.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "In the Rules Playground, simulate an authenticated user successfully creating a document in the `feedback` collection. Then, simulate the same user (or any other user) attempting to read, update, or delete any document in the `feedback` collection and verify that all these attempts are denied."
           },
           {
@@ -1150,7 +1150,7 @@
               "17.4"
             ],
             "details": "Set up the Emulator Suite for Firestore and Storage. Using a testing framework like Jest or Mocha, write test cases that programmatically cover: unauthenticated access, an authenticated user accessing their own session/storage (success), an authenticated user attempting to access another user's data (failure), and feedback submission (create success, read failure).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Execute the entire test suite via the command line. The test run must pass completely, confirming that all defined security rules for sessions, storage, and feedback are enforced as expected. The test report will serve as final validation for the task."
           }
         ]
@@ -1225,7 +1225,7 @@
     ],
     "metadata": {
       "created": "2025-09-04T23:54:08.172Z",
-      "updated": "2025-09-05T17:38:39.932Z",
+      "updated": "2025-09-05T17:45:45.517Z",
       "description": "Tasks for master context"
     }
   }

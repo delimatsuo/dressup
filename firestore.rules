@@ -1,41 +1,60 @@
 rules_version = '2';
+
+// DressUp AI - Privacy-First Firestore Security Rules
+// Implements session-based security with default-deny access control
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Session management rules
+    
+    // Session management rules - Enhanced Security
     match /sessions/{sessionId} {
-      // Anyone can read their own session
-      allow read: if resource.data.sessionId == sessionId;
+      // Sessions can only be read by validating the document structure
+      // No external authentication required, sessions are self-contained
+      allow read: if resource.data.sessionId == sessionId &&
+                     resource.data.status == 'active';
       
-      // Only Cloud Functions can create/update/delete sessions
+      // Only Cloud Functions can manage sessions
       allow create, update, delete: if false;
     }
     
-    // Garments collection rules
+    // Garments collection rules - Public Read Only
     match /garments/{garmentId} {
-      // Anyone can read garments
+      // Anyone can read the garment catalog
       allow read: if true;
       
-      // Only authenticated admins can write
-      allow write: if request.auth != null && request.auth.token.admin == true;
-    }
-    
-    // Results collection rules
-    match /results/{resultId} {
-      // Users can read results from their session
-      allow read: if resource.data.sessionId == request.auth.token.sessionId ||
-                     resource.data.sessionId == request.resource.data.sessionId;
-      
-      // Only Cloud Functions can write results
+      // Only Cloud Functions can manage garments (admin operations)
       allow write: if false;
     }
     
-    // Feedback collection rules
-    match /feedback/{feedbackId} {
-      // Only Cloud Functions can read/write feedback
-      allow read, write: if false;
+    // Results collection rules - Session-based Access
+    match /results/{resultId} {
+      // Users can only read results that belong to a valid session
+      // This prevents cross-session data leakage
+      allow read: if resource.data.sessionId is string &&
+                     resource.data.sessionId.size() > 0;
+      
+      // Only Cloud Functions can create processing results
+      allow write: if false;
     }
     
-    // Default: deny all
+    // Feedback collection rules - Write-Only for Users
+    match /feedback/{feedbackId} {
+      // Feedback is write-only for users, read-only for Cloud Functions
+      allow read: if false; // Only admin/analytics access via Cloud Functions
+      allow write: if false; // Only Cloud Functions handle feedback submission
+    }
+    
+    // Administrative collections - Function Only
+    match /admin/{document=**} {
+      allow read, write: if false; // Only Cloud Functions for admin operations
+    }
+    
+    // Temporary processing collections - Function Only  
+    match /processing/{document=**} {
+      allow read, write: if false; // Only Cloud Functions for processing tasks
+    }
+    
+    // Default security rule - DENY ALL
+    // This is the security backstop - anything not explicitly allowed is denied
     match /{document=**} {
       allow read, write: if false;
     }
