@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { MultiPhotoUpload } from './MultiPhotoUpload';
-import { ChevronRight, CheckCircle, User, Shirt, Sparkles } from 'lucide-react';
+import { ChevronRight, CheckCircle, User, Shirt, Sparkles, Loader2 } from 'lucide-react';
+import { generateOutfitPose } from '@/services/generationService';
+import { useSessionContext } from './SessionProvider';
 
 interface PhotoData {
   userPhotos: {
@@ -22,10 +24,22 @@ interface PhotoUploadInterfaceProps {
 }
 
 export function PhotoUploadInterface({ onComplete }: PhotoUploadInterfaceProps) {
+  const { sessionId } = useSessionContext();
   const [step, setStep] = useState<'user' | 'garment' | 'complete'>('user');
   const [userPhotos, setUserPhotos] = useState<Record<string, string> | null>(null);
   const [garmentPhotos, setGarmentPhotos] = useState<Record<string, string> | null>(null);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  
+  // Generation state management
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
+  const [generationResult, setGenerationResult] = useState<{
+    imageUrl: string;
+    processingTime: number;
+    confidence: number;
+    description: string;
+  } | null>(null);
 
   const handleUserPhotosComplete = (photos: Record<string, string>) => {
     setUserPhotos(photos);
@@ -61,6 +75,30 @@ export function PhotoUploadInterface({ onComplete }: PhotoUploadInterfaceProps) 
     setStep('user');
     setUserPhotos(null);
     setGarmentPhotos(null);
+    setGeneratedImageUrl(null);
+    setGenerationResult(null);
+    setError(null);
+  };
+
+  const handleGenerate = async () => {
+    if (!sessionId || !garmentPhotos?.front) {
+      setError('Missing required data for generation');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await generateOutfitPose(sessionId, garmentPhotos.front);
+      setGenerationResult(result);
+      setGeneratedImageUrl(result.imageUrl);
+    } catch (err: any) {
+      console.error('Generation error:', err);
+      setError(err.message || 'Failed to generate outfit. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -168,6 +206,32 @@ export function PhotoUploadInterface({ onComplete }: PhotoUploadInterfaceProps) 
                 Your photos have been successfully uploaded. You can now generate your outfit visualization.
               </p>
             </div>
+
+            {/* Error Display */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+            )}
+
+            {/* Generated Result Display */}
+            {generatedImageUrl && generationResult && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h3 className="text-lg font-semibold mb-4 text-green-900">Generated Result</h3>
+                <div className="space-y-4">
+                  <img
+                    src={generatedImageUrl}
+                    alt="Generated outfit result"
+                    className="max-w-md mx-auto rounded-lg shadow-lg"
+                  />
+                  <div className="text-sm text-green-700 space-y-1">
+                    <p>Processing time: {generationResult.processingTime.toFixed(1)} seconds</p>
+                    <p>Confidence: {Math.round(generationResult.confidence * 100)}%</p>
+                    <p className="text-xs">{generationResult.description}</p>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className="flex justify-center gap-4">
               <button
@@ -178,9 +242,16 @@ export function PhotoUploadInterface({ onComplete }: PhotoUploadInterfaceProps) 
               </button>
               
               <button
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                onClick={handleGenerate}
+                disabled={isLoading}
+                className={`px-6 py-2 text-white rounded-lg transition-colors flex items-center gap-2 ${
+                  isLoading 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
               >
-                Generate Outfit →
+                {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isLoading ? 'Generating...' : 'Generate Outfit →'}
               </button>
             </div>
           </div>
