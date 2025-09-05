@@ -215,7 +215,7 @@
           2,
           3
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -282,7 +282,7 @@
         "dependencies": [
           4
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -290,7 +290,7 @@
             "description": "Set up the basic infrastructure for the file handling function, including creating the function, defining its trigger, and configuring necessary permissions.",
             "dependencies": [],
             "details": "Initialize a new Gen 2 Cloud Function in the Firebase project. Configure the function to be triggered by `google.cloud.storage.object.v1.finalized` on a designated temporary upload bucket (e.g., `[PROJECT-ID].appspot.com/temp-uploads`). Grant the function's service account `roles/storage.objectAdmin` on the storage buckets and `roles/datastore.user` on Firestore.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Deploy the initial 'hello world' function. Upload a file to the temporary bucket and verify that the function's execution logs show it was triggered successfully."
           },
           {
@@ -301,7 +301,7 @@
               "5.1"
             ],
             "details": "Within the function, access the CloudEvent object. The file path will be in the `data.name` property (e.g., `temp-uploads/{sessionId}/{pose-type}.jpg`). Parse this string to extract `sessionId` and `pose-type`. Implement checks to ensure both values are non-empty and conform to expected formats (e.g., UUID for session, specific strings for pose). Log an error and terminate the function if validation fails.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit test the parsing logic with valid and invalid file paths. Trigger the deployed function with a malformed file path (e.g., `temp-uploads/invalid-session.jpg`) and verify it logs an error and exits gracefully."
           },
           {
@@ -312,7 +312,7 @@
               "5.2"
             ],
             "details": "Using the Firebase Admin SDK (`@google-cloud/storage`), instantiate a client for the storage bucket. Use the parsed `sessionId` and `pose-type` to construct the destination path: `user-photos/{sessionId}/{pose-type}.jpg`. Use the `file.move()` method to transfer the file to the new location. Ensure the original file in the temporary bucket is automatically deleted upon a successful move.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Trigger the function with a valid file. Verify in the Google Cloud Console that the file is removed from the `/temp-uploads` directory and appears in the correct `/user-photos/{sessionId}/` directory."
           },
           {
@@ -323,7 +323,7 @@
               "5.3"
             ],
             "details": "Using the Firebase Admin SDK for Firestore, reference the `sessions` collection. Use the parsed `sessionId` to get the specific document. Generate a public, signed URL for the newly moved file with a long-lived expiration. Update the document's `userPhotos` map using dot notation (e.g., `userPhotos.{pose-type}`) to set the generated URL. Use a `{ merge: true }` option to avoid overwriting other fields.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "After triggering the function, inspect the corresponding `SessionObject` document in the Firestore console. Confirm that the `userPhotos` map contains a new entry where the key is the `pose-type` and the value is a valid, accessible URL for the image in Cloud Storage."
           },
           {
@@ -334,7 +334,7 @@
               "5.4"
             ],
             "details": "Enclose the file move and Firestore update operations in `try...catch` blocks. In the `catch` block, log the detailed error object. Implement logic to handle specific failures, such as a non-existent `sessionId` in Firestore (log error and delete the uploaded temp file). Add structured logs for successful operations and critical failures. Once tested, deploy the final, robust version of the function.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test edge cases: trigger the function with a `sessionId` that does not exist in Firestore and verify the temporary file is cleaned up and an error is logged. Simulate a permissions error and check for appropriate error logging. Confirm successful end-to-end runs are logged correctly."
           }
         ]
@@ -617,7 +617,7 @@
         "dependencies": [
           5
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -625,7 +625,7 @@
             "description": "Formally investigate and document the minimum 1-day granularity of Firebase Storage lifecycle rules. Based on the findings, design a scheduled Cloud Function that uses Firestore session data to achieve a 60-minute deletion policy.",
             "dependencies": [],
             "details": "Confirm via Google Cloud documentation that Storage Object Lifecycle Management's 'Age' condition cannot be set to less than 1 day. Create a design document for a Cloud Function that queries the 'sessions' Firestore collection (from Task 3) for documents where 'expiresAt' is in the past, and then deletes the associated files from the 'user-photos/' path in Storage.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Review the design document to ensure the logic correctly identifies expired sessions and their corresponding files, and includes steps for error handling and cleanup of the Firestore session document itself."
           },
           {
@@ -636,7 +636,7 @@
               "10.1"
             ],
             "details": "Using the Firebase Admin SDK, implement a Pub/Sub-triggered Cloud Function. The function will query the 'sessions' collection for expired documents. For each expired session, it will retrieve the photo paths and use the Storage SDK to delete each file. Use Promise.all() for efficient batch deletion per session. Implement comprehensive logging for successful and failed operations.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Write unit tests using 'firebase-functions-test' to mock Firestore queries and Storage delete calls. Verify that the function logic correctly identifies expired sessions and attempts to delete the correct file paths."
           },
           {
@@ -647,7 +647,7 @@
               "10.2"
             ],
             "details": "In the Google Cloud Console, ensure the service account associated with the Cloud Function has the 'Storage Object Admin' role to delete files from Cloud Storage and the 'Cloud Datastore User' role to read from Firestore. In the function's code, define the schedule using `.schedule('every 60 minutes')`.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Review the IAM roles for the function's service account in the GCP console to ensure it adheres to the principle of least privilege while still having the necessary permissions to perform its tasks."
           },
           {
@@ -658,7 +658,7 @@
               "10.3"
             ],
             "details": "Use the Firebase CLI command `firebase deploy --only functions:yourCleanupFunctionName` to deploy the function. After deployment, verify in the Google Cloud Console that the function is active and the associated Cloud Scheduler job is created and enabled with the correct 60-minute schedule.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Check the Cloud Function logs immediately after deployment for any initialization errors. Confirm the Cloud Scheduler job's status is 'Enabled' and the target is the deployed function."
           },
           {
@@ -669,7 +669,7 @@
               "10.4"
             ],
             "details": "1. Upload a test photo and create a corresponding session document in Firestore. 2. Manually edit the 'expiresAt' timestamp in the Firestore document to a time in the past. 3. Navigate to the Cloud Scheduler in the GCP console and use the 'Run now' feature to trigger the cleanup function immediately. 4. Verify that the test photo has been deleted from Firebase Storage.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Confirm file deletion by checking the Firebase Storage browser. Review the Cloud Function's execution logs for the manually triggered run to ensure it completed successfully and logged the deletion of the target file."
           }
         ]
@@ -1225,7 +1225,7 @@
     ],
     "metadata": {
       "created": "2025-09-04T23:54:08.172Z",
-      "updated": "2025-09-05T17:26:06.572Z",
+      "updated": "2025-09-05T17:31:31.040Z",
       "description": "Tasks for master context"
     }
   }

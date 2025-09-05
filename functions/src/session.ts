@@ -19,7 +19,7 @@ export interface Session {
 
 export class SessionManager {
   private db: Firestore;
-  private readonly SESSION_DURATION_MS = 60 * 60 * 1000; // 60 minutes
+  private readonly SESSION_DURATION_MS = 60 * 60 * 1000; // 60 minutes for privacy-first approach
 
   constructor(firestore: Firestore) {
     this.db = firestore;

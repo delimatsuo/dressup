@@ -4,11 +4,11 @@ import { logger } from 'firebase-functions';
 
 /**
  * Scheduled function to clean up old files from Firebase Storage
- * Runs daily at 2 AM UTC
+ * Runs every hour for privacy-first storage management
  */
 export const cleanupStorage = onSchedule(
   {
-    schedule: '0 2 * * *', // Daily at 2 AM UTC
+    schedule: '0 * * * *', // Every hour at minute 0 for privacy-first cleanup
     timeZone: 'UTC',
   },
   async (event) => {
@@ -25,7 +25,7 @@ export const cleanupStorage = onSchedule(
       const cleanupRules = [
         {
           prefix: 'uploads/',
-          maxAgeMs: 30 * 24 * 60 * 60 * 1000, // 30 days
+          maxAgeMs: 60 * 60 * 1000, // 60 minutes for privacy-first approach
           description: 'User uploaded images'
         },
         {
@@ -105,18 +105,18 @@ export const manualStorageCleanup = onSchedule(
 
 /**
  * Clean up expired sessions and associated files
- * Runs every 6 hours
+ * Runs every hour for privacy-first session cleanup
  */
 export const cleanupExpiredSessionsStorage = onSchedule(
   {
-    schedule: '0 */6 * * *', // Every 6 hours
+    schedule: '0 * * * *', // Every hour for privacy-first session cleanup  
     timeZone: 'UTC',
   },
   async (event) => {
     const db = admin.firestore();
     const bucket = admin.storage().bucket();
     const now = Date.now();
-    const maxSessionAge = 24 * 60 * 60 * 1000; // 24 hours
+    const maxSessionAge = 60 * 60 * 1000; // 60 minutes for privacy-first approach
 
     logger.info('Starting expired session cleanup...');
 
