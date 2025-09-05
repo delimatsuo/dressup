@@ -1,13 +1,15 @@
 # DressUp - AI-Powered Virtual Outfit Try-On
 
-A Next.js application that uses AI (Gemini) to allow users to virtually try on different outfits through photo manipulation.
+A Next.js application that uses AI (Gemini) to allow users to virtually try on different outfits through AI-powered analysis and recommendations.
+
+🔗 **Repository**: [https://github.com/delimatsuo/dressup](https://github.com/delimatsuo/dressup)
 
 ## Tech Stack
 
-- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
+- **Frontend**: Next.js 15.5.2, React 19, TypeScript, Tailwind CSS
 - **Backend**: Firebase Cloud Functions (2nd Gen)
-- **AI**: Google Vertex AI (Gemini)
-- **Storage**: Firebase Cloud Storage
+- **AI**: Google Vertex AI (Gemini 2.5 Flash Image)
+- **Storage**: Firebase Cloud Storage & Firestore
 - **Hosting**: Firebase Hosting
 - **Testing**: Jest, React Testing Library
 
@@ -108,19 +110,24 @@ npm test -- UploadArea.test.tsx
 
 ### Current Features (Implemented)
 - ✅ Next.js application scaffold with TypeScript
-- ✅ Component structure for main UI elements
-- ✅ Firebase SDK integration (ready for credentials)
-- ✅ Mock data for development without Firebase
-- ✅ Session tracking for analytics
+- ✅ Component structure for main UI elements  
+- ✅ Firebase SDK integration with Cloud Functions
+- ✅ Vertex AI integration with Gemini 2.5 Flash Image
+- ✅ Cloud Firestore for data storage
+- ✅ Session management system
+- ✅ Garment gallery with 10 sample items
+- ✅ Real-time outfit analysis
+- ✅ User feedback collection
 - ✅ Comprehensive test suite (TDD approach)
 - ✅ Responsive design with Tailwind CSS
+- ✅ Deployed to Firebase Hosting
 
-### Pending Features (Requires Firebase Setup)
-- ⏳ Image upload to Firebase Storage
-- ⏳ Gemini AI integration for outfit processing
-- ⏳ Cloud Functions for backend processing
-- ⏳ Real-time feedback collection
-- ⏳ Production deployment
+### Upcoming Features
+- ⏳ Actual image generation/manipulation
+- ⏳ User authentication
+- ⏳ Personal wardrobe management
+- ⏳ Social sharing features
+- ⏳ Advanced AI styling recommendations
 
 ## Task Management
 

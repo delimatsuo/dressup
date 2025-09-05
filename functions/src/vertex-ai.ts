@@ -10,9 +10,9 @@ const vertex_ai = new VertexAI({
   location: LOCATION,
 });
 
-// Get the generative model (Gemini 1.5 Pro)
+// Get the generative model (Gemini 2.5 Flash Image)
 const generativeModel = vertex_ai.preview.getGenerativeModel({
-  model: 'gemini-1.5-pro',
+  model: 'gemini-2.5-flash-image',
   generationConfig: {
     maxOutputTokens: 8192,
     temperature: 0.4,
