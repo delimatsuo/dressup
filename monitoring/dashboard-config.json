@@ -1,0 +1,394 @@
+{
+  "displayName": "DressUp AI - Application Monitoring",
+  "mosaicLayout": {
+    "tiles": [
+      {
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Generation Requests Rate",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "resource.type=\"cloud_function\" AND metric.type=\"logging.googleapis.com/user/generation_requests_total\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_RATE",
+                      "crossSeriesReducer": "REDUCE_SUM",
+                      "groupByFields": ["metric.label.request_type"]
+                    }
+                  }
+                },
+                "plotType": "LINE",
+                "targetAxis": "Y1"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "Requests/sec",
+              "scale": "LINEAR"
+            },
+            "chartOptions": {
+              "mode": "COLOR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Generation Success Rate",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "resource.type=\"cloud_function\" AND metric.type=\"logging.googleapis.com/user/generation_success_rate\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_MEAN",
+                      "crossSeriesReducer": "REDUCE_MEAN",
+                      "groupByFields": ["metric.label.request_type"]
+                    }
+                  }
+                },
+                "plotType": "LINE",
+                "targetAxis": "Y1"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "Success Rate %",
+              "scale": "LINEAR"
+            },
+            "chartOptions": {
+              "mode": "COLOR"
+            }
+          }
+        }
+      },
+      {
+        "yPos": 4,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Generation Latency P95",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "resource.type=\"cloud_function\" AND metric.type=\"logging.googleapis.com/user/generation_latency_ms\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_PERCENTILE_95",
+                      "crossSeriesReducer": "REDUCE_PERCENTILE_95",
+                      "groupByFields": ["metric.label.function_name"]
+                    }
+                  }
+                },
+                "plotType": "LINE",
+                "targetAxis": "Y1"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "Latency (ms)",
+              "scale": "LINEAR"
+            },
+            "chartOptions": {
+              "mode": "COLOR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 4,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "User Feedback Ratings",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "resource.type=\"cloud_function\" AND metric.type=\"logging.googleapis.com/user/feedback_ratings\"",
+                    "aggregation": {
+                      "alignmentPeriod": "900s",
+                      "perSeriesAligner": "ALIGN_MEAN",
+                      "crossSeriesReducer": "REDUCE_MEAN"
+                    }
+                  }
+                },
+                "plotType": "LINE",
+                "targetAxis": "Y1"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "Average Rating",
+              "scale": "LINEAR"
+            },
+            "chartOptions": {
+              "mode": "COLOR"
+            }
+          }
+        }
+      },
+      {
+        "yPos": 8,
+        "width": 4,
+        "height": 4,
+        "widget": {
+          "title": "Vertex AI Latency",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "resource.type=\"cloud_function\" AND metric.type=\"logging.googleapis.com/user/vertex_ai_latency_ms\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_PERCENTILE_95",
+                      "crossSeriesReducer": "REDUCE_PERCENTILE_95",
+                      "groupByFields": ["metric.label.success"]
+                    }
+                  }
+                },
+                "plotType": "LINE",
+                "targetAxis": "Y1"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "Latency (ms)",
+              "scale": "LINEAR"
+            },
+            "chartOptions": {
+              "mode": "COLOR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 4,
+        "yPos": 8,
+        "width": 4,
+        "height": 4,
+        "widget": {
+          "title": "Error Rate",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "resource.type=\"cloud_function\" AND metric.type=\"logging.googleapis.com/user/error_rate\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_RATE",
+                      "crossSeriesReducer": "REDUCE_SUM",
+                      "groupByFields": ["metric.label.error_type"]
+                    }
+                  }
+                },
+                "plotType": "STACKED_BAR",
+                "targetAxis": "Y1"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "Errors/min",
+              "scale": "LINEAR"
+            },
+            "chartOptions": {
+              "mode": "COLOR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 8,
+        "yPos": 8,
+        "width": 4,
+        "height": 4,
+        "widget": {
+          "title": "Storage Cleanup Efficiency",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "resource.type=\"cloud_function\" AND metric.type=\"logging.googleapis.com/user/storage_cleanup_success_rate\"",
+                    "aggregation": {
+                      "alignmentPeriod": "3600s",
+                      "perSeriesAligner": "ALIGN_MEAN",
+                      "crossSeriesReducer": "REDUCE_MEAN",
+                      "groupByFields": ["metric.label.cleanup_type"]
+                    }
+                  }
+                },
+                "plotType": "LINE",
+                "targetAxis": "Y1"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "Success Rate %",
+              "scale": "LINEAR"
+            },
+            "chartOptions": {
+              "mode": "COLOR"
+            }
+          }
+        }
+      },
+      {
+        "yPos": 12,
+        "width": 3,
+        "height": 3,
+        "widget": {
+          "title": "Active Sessions",
+          "scorecard": {
+            "timeSeriesQuery": {
+              "timeSeriesFilter": {
+                "filter": "resource.type=\"cloud_function\" AND metric.type=\"logging.googleapis.com/user/session_creation_rate\"",
+                "aggregation": {
+                  "alignmentPeriod": "300s",
+                  "perSeriesAligner": "ALIGN_RATE",
+                  "crossSeriesReducer": "REDUCE_SUM"
+                }
+              }
+            },
+            "sparkChartView": {
+              "sparkChartType": "SPARK_LINE"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 3,
+        "yPos": 12,
+        "width": 3,
+        "height": 3,
+        "widget": {
+          "title": "Photo Uploads",
+          "scorecard": {
+            "timeSeriesQuery": {
+              "timeSeriesFilter": {
+                "filter": "resource.type=\"cloud_function\" AND metric.type=\"logging.googleapis.com/user/photo_uploads_total\"",
+                "aggregation": {
+                  "alignmentPeriod": "300s",
+                  "perSeriesAligner": "ALIGN_RATE",
+                  "crossSeriesReducer": "REDUCE_SUM"
+                }
+              }
+            },
+            "sparkChartView": {
+              "sparkChartType": "SPARK_BAR"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 12,
+        "width": 3,
+        "height": 3,
+        "widget": {
+          "title": "AI Confidence",
+          "scorecard": {
+            "timeSeriesQuery": {
+              "timeSeriesFilter": {
+                "filter": "resource.type=\"cloud_function\" AND metric.type=\"logging.googleapis.com/user/generation_confidence_score\"",
+                "aggregation": {
+                  "alignmentPeriod": "900s",
+                  "perSeriesAligner": "ALIGN_MEAN",
+                  "crossSeriesReducer": "REDUCE_MEAN"
+                }
+              }
+            },
+            "sparkChartView": {
+              "sparkChartType": "SPARK_LINE"
+            },
+            "gaugeView": {
+              "lowerBound": 0.0,
+              "upperBound": 1.0
+            }
+          }
+        }
+      },
+      {
+        "xPos": 9,
+        "yPos": 12,
+        "width": 3,
+        "height": 3,
+        "widget": {
+          "title": "Files Cleaned",
+          "scorecard": {
+            "timeSeriesQuery": {
+              "timeSeriesFilter": {
+                "filter": "resource.type=\"cloud_function\" AND metric.type=\"logging.googleapis.com/user/storage_cleanup_files_deleted\"",
+                "aggregation": {
+                  "alignmentPeriod": "3600s",
+                  "perSeriesAligner": "ALIGN_SUM",
+                  "crossSeriesReducer": "REDUCE_SUM"
+                }
+              }
+            },
+            "sparkChartView": {
+              "sparkChartType": "SPARK_BAR"
+            }
+          }
+        }
+      },
+      {
+        "yPos": 15,
+        "width": 12,
+        "height": 4,
+        "widget": {
+          "title": "Function Execution Times Distribution",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "resource.type=\"cloud_function\" AND metric.type=\"cloudfunctions.googleapis.com/function/execution_times\"",
+                    "aggregation": {
+                      "alignmentPeriod": "300s",
+                      "perSeriesAligner": "ALIGN_DELTA",
+                      "crossSeriesReducer": "REDUCE_PERCENTILE_95",
+                      "groupByFields": ["resource.label.function_name"]
+                    }
+                  }
+                },
+                "plotType": "LINE",
+                "targetAxis": "Y1"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {
+              "label": "Execution Time (ms)",
+              "scale": "LINEAR"
+            },
+            "chartOptions": {
+              "mode": "COLOR"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "dashboardFilters": [
+    {
+      "filterType": "RESOURCE_LABEL",
+      "labelKey": "function_name",
+      "stringValue": ""
+    }
+  ]
+}

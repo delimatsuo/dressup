@@ -1166,7 +1166,7 @@
           8,
           14
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1174,7 +1174,7 @@
             "description": "Modify the relevant Cloud Functions to emit structured JSON logs for key application events, which will serve as the foundation for creating metrics.",
             "dependencies": [],
             "details": "In the Cloud Function for session creation, add a structured log entry (e.g., `console.log(JSON.stringify({ event: 'session_created', severity: 'INFO' }))`). In the image generation function, add distinct logs for success (`{ event: 'generation_success', severity: 'INFO' }`) and failure (`{ event: 'generation_failure', severity: 'ERROR' }`). In the feedback submission function, add a log (`{ event: 'feedback_submitted', severity: 'INFO' }`). Ensure all logs are written as single-line JSON strings to standard output.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Deploy the updated functions. Manually trigger each event (create a session, run a successful/failed generation, submit feedback) and inspect Cloud Logging to confirm the corresponding structured JSON logs appear with the correct payload and severity."
           },
           {
@@ -1185,7 +1185,7 @@
               "18.1"
             ],
             "details": "In the GCP Console under Logging > Log-based Metrics, create four new counter metrics: 1. 'session_creations' (filter: `jsonPayload.event=\"session_created\"`), 2. 'generation_successes' (filter: `jsonPayload.event=\"generation_success\"`), 3. 'generation_failures' (filter: `jsonPayload.event=\"generation_failure\"`), 4. 'feedback_submissions' (filter: `jsonPayload.event=\"feedback_submitted\"`).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "After creating the metrics, trigger the corresponding application events. Navigate to Monitoring > Metrics Explorer and verify that the custom metrics (e.g., `logging.googleapis.com/user/session_creations`) are listed and their counts increment as expected."
           },
           {
@@ -1196,7 +1196,7 @@
               "18.2"
             ],
             "details": "In Monitoring > Dashboards, create a new dashboard named 'Virtual Stylist PoC'. Add chart widgets to visualize the four log-based metrics created in the previous subtask. Add a fifth chart to display the P95 execution latency for the image generation Cloud Function, using the built-in `cloudfunctions.googleapis.com/function/execution_times` metric and aggregating by 95th percentile.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Generate user traffic by using the application to create sessions, generate images, and submit feedback. Observe the dashboard and confirm that all five charts are populating with data. Hover over the data points to verify the values are plausible."
           },
           {
@@ -1205,7 +1205,7 @@
             "description": "Set up a budget and an associated alert in GCP Billing to proactively monitor and control costs incurred by Vertex AI API usage.",
             "dependencies": [],
             "details": "In the GCP Console under Billing > Budgets & alerts, create a new budget. Scope the budget to the current project and filter the 'Services' to include only 'Vertex AI'. Set a realistic monthly budget amount (e.g., $50). Configure alert threshold rules to send email notifications to project owners when costs reach 50%, 90%, and 100% of the budget.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "To test the notification mechanism, create a temporary budget with a very low amount (e.g., $1) and a 10% threshold ($0.10). Make a single Vertex AI API call that is guaranteed to exceed this threshold. Verify that an email alert is received by the designated recipients. Delete the temporary test budget afterward."
           },
           {
@@ -1217,7 +1217,7 @@
               "18.4"
             ],
             "details": "Systematically perform a sequence of user actions: 1. Start a new session. 2. Trigger a successful image generation. 3. Trigger a failed image generation (e.g., by providing invalid input). 4. Submit feedback. After completing the sequence, review the 'Virtual Stylist PoC' dashboard in Cloud Monitoring. Confirm that the charts for 'session_creations', 'generation_successes', 'generation_failures', and 'feedback_submissions' have all incremented by one.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "The execution of the 'details' section serves as the test. The success criterion is that all charts on the monitoring dashboard accurately reflect the sequence of actions performed, with the correct counts and updated latency figures."
           }
         ]
@@ -1225,7 +1225,7 @@
     ],
     "metadata": {
       "created": "2025-09-04T23:54:08.172Z",
-      "updated": "2025-09-05T17:45:45.517Z",
+      "updated": "2025-09-05T18:19:35.714Z",
       "description": "Tasks for master context"
     }
   }
