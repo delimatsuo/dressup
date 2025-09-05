@@ -4,6 +4,17 @@ import * as admin from 'firebase-admin';
 import corsMiddleware from 'cors';
 import { analyzeOutfitWithGemini } from './vertex-ai';
 
+// Export session management functions
+export {
+  createSession,
+  getSessionStatus,
+  addPhotoToSession,
+  extendSession,
+  getSessionPhotos,
+  deleteSession,
+  cleanupExpiredSessions
+} from './sessionFunctions';
+
 // Initialize Firebase Admin with service account
 const serviceAccount = require('../serviceAccount.json');
 admin.initializeApp({

@@ -146,7 +146,7 @@
         "dependencies": [
           1
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -154,7 +154,7 @@
             "description": "Formalize the data structure for the `SessionObject` and set up the `sessions` collection in Firestore. This foundational step ensures a consistent data schema before any implementation begins.",
             "dependencies": [],
             "details": "In a shared TypeScript file (e.g., `types/session.ts`), define the `SessionObject` interface with fields: `sessionId` (string), `userPhotos` (array of strings), `createdAt` (Firestore Timestamp), and `expiresAt` (Firestore Timestamp). In the Firebase console, create the `sessions` collection. Establish initial, restrictive Firestore security rules that deny all client-side read/write access by default, preparing for function-only access.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Review the defined TypeScript interface for correctness and completeness. Manually create a sample document in the Firestore console to verify the collection setup. Use the Firestore Rules Simulator to confirm that client-side reads and writes to the `sessions` collection are denied."
           },
           {
@@ -165,7 +165,7 @@
               "3.1"
             ],
             "details": "Using the Firebase Functions SDK, create a new callable function named `createSession`. This function will: 1. Generate a v4 UUID for the `sessionId`. 2. Calculate `createdAt` as the current server time and `expiresAt` as 60 minutes from `createdAt`. 3. Create a new document in the `sessions` collection using the defined `SessionObject` model, with `userPhotos` as an empty array. 4. Return an object containing the `sessionId` to the calling client. Implement robust error handling for potential Firestore write failures.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Write a unit test using the Firebase Functions Test SDK. The test should mock the Firestore Admin SDK and verify that the function attempts to write a document with the correct structure and returns an object containing a `sessionId` string. Assert that the `expiresAt` timestamp is approximately 60 minutes after the `createdAt` timestamp."
           },
           {
@@ -176,7 +176,7 @@
               "3.1"
             ],
             "details": "Create a new Pub/Sub scheduled function (e.g., `cleanupExpiredSessions`) configured to run on a schedule (e.g., every hour). The function will query the `sessions` collection for all documents where the `expiresAt` field is less than or equal to the current time. It will then use a batched write to delete all identified expired session documents efficiently. This aligns with the project's privacy-first approach.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Write a unit test that provides a mocked Firestore collection containing both expired and active session documents. Execute the function's logic and assert that only the expired documents are targeted for deletion. For integration testing, manually create an expired session in the development environment and trigger the function via the GCP console to verify deletion."
           },
           {
@@ -1225,7 +1225,7 @@
     ],
     "metadata": {
       "created": "2025-09-04T23:54:08.172Z",
-      "updated": "2025-09-05T05:39:37.941Z",
+      "updated": "2025-09-05T14:17:51.469Z",
       "description": "Tasks for master context"
     }
   }

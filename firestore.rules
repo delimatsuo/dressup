@@ -1,0 +1,43 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Session management rules
+    match /sessions/{sessionId} {
+      // Anyone can read their own session
+      allow read: if resource.data.sessionId == sessionId;
+      
+      // Only Cloud Functions can create/update/delete sessions
+      allow create, update, delete: if false;
+    }
+    
+    // Garments collection rules
+    match /garments/{garmentId} {
+      // Anyone can read garments
+      allow read: if true;
+      
+      // Only authenticated admins can write
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // Results collection rules
+    match /results/{resultId} {
+      // Users can read results from their session
+      allow read: if resource.data.sessionId == request.auth.token.sessionId ||
+                     resource.data.sessionId == request.resource.data.sessionId;
+      
+      // Only Cloud Functions can write results
+      allow write: if false;
+    }
+    
+    // Feedback collection rules
+    match /feedback/{feedbackId} {
+      // Only Cloud Functions can read/write feedback
+      allow read, write: if false;
+    }
+    
+    // Default: deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
