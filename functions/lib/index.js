@@ -178,17 +178,38 @@ exports.submitFeedback = (0, https_1.onCall)({
     maxInstances: 10,
 }, async (request) => {
     try {
-        const { rating, comment, sessionId, resultId } = request.data;
-        // Validate rating
-        if (!rating || rating < 1 || rating > 5) {
-            throw new https_1.HttpsError('invalid-argument', 'Rating must be between 1 and 5');
+        const { rating, comment, sessionId, resultId, realismRating, helpfulnessRating } = request.data;
+        // Validate at least one rating is provided
+        if (!rating && !realismRating && !helpfulnessRating) {
+            throw new https_1.HttpsError('invalid-argument', 'At least one rating must be provided');
         }
-        // Store feedback
+        // Validate individual ratings if provided
+        const validateRating = (value, name) => {
+            if (value !== undefined && (value < 1 || value > 5)) {
+                throw new https_1.HttpsError('invalid-argument', `${name} must be between 1 and 5`);
+            }
+        };
+        validateRating(rating, 'Overall rating');
+        validateRating(realismRating, 'Realism rating');
+        validateRating(helpfulnessRating, 'Helpfulness rating');
+        // Calculate aggregate metrics for analytics
+        const providedRatings = [rating, realismRating, helpfulnessRating].filter(r => r !== undefined);
+        const averageRating = providedRatings.length > 0
+            ? providedRatings.reduce((sum, r) => sum + r, 0) / providedRatings.length
+            : undefined;
+        // Store enhanced feedback
         await admin.firestore().collection('feedback').add({
-            rating,
+            // Original fields
+            rating: rating || null,
             comment: comment || '',
             sessionId,
             resultId,
+            // Enhanced dual feedback scoring
+            realismRating: realismRating || null,
+            helpfulnessRating: helpfulnessRating || null,
+            averageRating,
+            // Metadata
+            feedbackVersion: 'v2_dual_scoring',
             timestamp: admin.firestore.FieldValue.serverTimestamp(),
         });
         return { success: true };
