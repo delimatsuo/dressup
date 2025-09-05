@@ -215,7 +215,7 @@
           2,
           3
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -223,7 +223,7 @@
             "description": "Develop the basic React component structure for the photo upload interface, including placeholders for user and garment photos.",
             "dependencies": [],
             "details": "Create a new React component, `PhotoUploader`. Inside this component, add four distinct sections: 'Front View', 'Side View', 'Back View (Optional)', and 'Garment Photo'. Each section should contain a styled file input element (`<input type=\"file\">`) and a placeholder area for displaying the selected image preview or upload status. Use basic CSS or a UI library for a clean, user-friendly layout. This subtask focuses solely on the static UI structure.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Render the component in the browser. Visually verify that all four upload sections and their corresponding file input elements are present, correctly labeled, and stylistically consistent with the application's design."
           },
           {
@@ -234,7 +234,7 @@
               "4.1"
             ],
             "details": "Create a validation handler function that is triggered by the `onChange` event of the file input elements. This function will inspect the selected `File` object. It must verify that the file's MIME type is one of `image/jpeg`, `image/png`, or `image/heic`, and that its size is less than 10MB. If validation fails, the function should update the component's state to display a user-friendly error message next to the relevant input and prevent the file from being processed further.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Manually test by attempting to select various invalid files: a text file (.txt), a large image (>10MB), and a PDF. Confirm that the appropriate error message is displayed for each case and that the upload process is not triggered. Then, select a valid file and confirm no error is shown."
           },
           {
@@ -245,7 +245,7 @@
               "4.2"
             ],
             "details": "Ensure the Firebase Storage service is initialized within the application's Firebase configuration. Create an asynchronous function, `uploadFileToStorage(file, uploadPath)`. This function will take a validated `File` object and a destination path string (e.g., `sessions/{sessionId}/user_front.jpg`). It will use `ref()` and `put()` from the `@firebase/storage` SDK to upload the file. Upon successful completion, the function must resolve with the public `downloadURL` of the uploaded file by calling `getDownloadURL()`.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Create a temporary test button in the UI that calls the `uploadFileToStorage` function with a hardcoded valid file and path. After clicking, verify in the Firebase Storage console that the file has been uploaded to the specified path. Check the browser console to ensure a valid HTTPS download URL is returned by the function."
           },
           {
@@ -1225,7 +1225,7 @@
     ],
     "metadata": {
       "created": "2025-09-04T23:54:08.172Z",
-      "updated": "2025-09-05T14:19:11.086Z",
+      "updated": "2025-09-05T15:30:58.178Z",
       "description": "Tasks for master context"
     }
   }

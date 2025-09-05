@@ -9,6 +9,7 @@ import {
   initializeFirebase,
   getGarments, 
   processImage, 
+  processMultiPhotoOutfit,
   submitFeedback 
 } from '../lib/firebase';
 
@@ -67,25 +68,25 @@ export default function HomePage() {
     setStep('results');
 
     try {
-      // Use the front view photos for generation
-      const processedResult = await processImage(
-        photoData.userPhotos.front,
-        'garment-1', // We'll need to pass actual garment ID
+      // Use the new multi-photo processing function
+      const processedResult = await processMultiPhotoOutfit(
+        photoData.userPhotos,
+        photoData.garmentPhotos,
         sessionId
       );
 
       const newResult: Result = {
         id: `result-${Date.now()}`,
-        originalImageUrl: photoData.userPhotos.front,
-        processedImageUrl: processedResult.processedImageUrl,
-        garmentName: 'Selected Garment',
+        poses: processedResult.poses,
+        garmentName: 'Your Custom Outfit',
         processingTime: processedResult.processingTime,
         timestamp: new Date().toISOString(),
+        description: processedResult.description,
       };
 
       setResult(newResult);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to process image');
+      setError(err instanceof Error ? err.message : 'Failed to process outfit images');
       setStep('generate');
     } finally {
       setProcessing(false);

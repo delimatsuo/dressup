@@ -36,12 +36,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadGarment = exports.submitFeedback = exports.getGarments = exports.processImageWithGemini = void 0;
+exports.uploadGarment = exports.submitFeedback = exports.getGarments = exports.processImageWithGemini = exports.cleanupExpiredSessions = exports.deleteSession = exports.getSessionPhotos = exports.extendSession = exports.addPhotoToSession = exports.getSessionStatus = exports.createSession = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const options_1 = require("firebase-functions/v2/options");
 const admin = __importStar(require("firebase-admin"));
 const cors_1 = __importDefault(require("cors"));
 const vertex_ai_1 = require("./vertex-ai");
+// Export session management functions
+var sessionFunctions_1 = require("./sessionFunctions");
+Object.defineProperty(exports, "createSession", { enumerable: true, get: function () { return sessionFunctions_1.createSession; } });
+Object.defineProperty(exports, "getSessionStatus", { enumerable: true, get: function () { return sessionFunctions_1.getSessionStatus; } });
+Object.defineProperty(exports, "addPhotoToSession", { enumerable: true, get: function () { return sessionFunctions_1.addPhotoToSession; } });
+Object.defineProperty(exports, "extendSession", { enumerable: true, get: function () { return sessionFunctions_1.extendSession; } });
+Object.defineProperty(exports, "getSessionPhotos", { enumerable: true, get: function () { return sessionFunctions_1.getSessionPhotos; } });
+Object.defineProperty(exports, "deleteSession", { enumerable: true, get: function () { return sessionFunctions_1.deleteSession; } });
+Object.defineProperty(exports, "cleanupExpiredSessions", { enumerable: true, get: function () { return sessionFunctions_1.cleanupExpiredSessions; } });
 // Initialize Firebase Admin with service account
 const serviceAccount = require('../serviceAccount.json');
 admin.initializeApp({
