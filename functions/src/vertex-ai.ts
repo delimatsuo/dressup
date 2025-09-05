@@ -25,15 +25,16 @@ const generativeModel = vertex_ai.preview.getGenerativeModel({
  */
 export async function analyzeOutfitWithGemini(
   userImageUrl: string,
-  garmentImageUrl: string
+  garmentImageUrl: string,
+  additionalInstructions?: string
 ): Promise<{
   description: string;
   confidence: number;
   suggestions: string[];
 }> {
   try {
-    // Create the prompt for outfit analysis
-    const prompt = `
+    // Create the prompt for outfit analysis with optional pose instructions
+    const basePrompt = `
       You are a fashion AI assistant. Analyze these two images:
       1. The first image shows a person
       2. The second image shows a clothing item/outfit
@@ -43,6 +44,13 @@ export async function analyzeOutfitWithGemini(
       2. Style compatibility analysis
       3. Suggestions for accessories or complementary items
       4. Overall fashion rating (1-10)
+    `;
+    
+    const poseInstructions = additionalInstructions 
+      ? `\n\nSpecial Instructions: ${additionalInstructions}` 
+      : '';
+      
+    const prompt = `${basePrompt}${poseInstructions}
       
       Format your response as JSON with the following structure:
       {

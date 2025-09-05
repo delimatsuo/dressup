@@ -73,24 +73,42 @@ exports.processImageWithGemini = (0, https_1.onCall)({
     maxInstances: 5,
 }, async (request) => {
     try {
-        const { userImageUrl, garmentId, sessionId } = request.data;
+        const { userImageUrl, garmentId, sessionId, garmentImageUrl, poseType, instructions } = request.data;
         // Validate inputs
         if (!userImageUrl || !garmentId || !sessionId) {
             throw new https_1.HttpsError('invalid-argument', 'Missing required parameters');
         }
         const startTime = Date.now();
-        // Get garment details from Firestore
-        const garmentDoc = await admin
-            .firestore()
-            .collection('garments')
-            .doc(garmentId)
-            .get();
-        if (!garmentDoc.exists) {
-            throw new https_1.HttpsError('not-found', 'Garment not found');
+        // Enhanced logic for multi-pose processing
+        let garmentData;
+        let effectiveGarmentImageUrl;
+        if (garmentImageUrl) {
+            // Use directly uploaded garment image
+            effectiveGarmentImageUrl = garmentImageUrl;
+            garmentData = {
+                name: 'Uploaded Garment',
+                category: 'custom',
+                imageUrl: garmentImageUrl
+            };
         }
-        const garmentData = garmentDoc.data();
-        // Use Vertex AI to analyze the outfit
-        const analysis = await (0, vertex_ai_1.analyzeOutfitWithGemini)(userImageUrl, garmentData?.imageUrl || '');
+        else {
+            // Fallback to garment collection lookup
+            const garmentDoc = await admin
+                .firestore()
+                .collection('garments')
+                .doc(garmentId)
+                .get();
+            if (!garmentDoc.exists) {
+                throw new https_1.HttpsError('not-found', 'Garment not found');
+            }
+            garmentData = garmentDoc.data();
+            effectiveGarmentImageUrl = garmentData?.imageUrl || '';
+        }
+        // Enhanced Vertex AI analysis with pose and instruction context
+        const enhancedInstructions = instructions
+            ? `${instructions}. Pose type: ${poseType || 'standard'}`
+            : `Generate outfit visualization for ${poseType || 'standard'} pose`;
+        const analysis = await (0, vertex_ai_1.analyzeOutfitWithGemini)(userImageUrl, effectiveGarmentImageUrl, enhancedInstructions);
         const processingTime = (Date.now() - startTime) / 1000;
         // For now, we'll use the original image URL as processed
         // In production, you'd use an image generation service
