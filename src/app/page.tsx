@@ -7,7 +7,6 @@ import ResultsDisplay, { Result } from '../components/ResultsDisplay';
 import FeedbackSection from '../components/FeedbackSection';
 import { 
   initializeFirebase,
-  uploadImage, 
   getGarments, 
   processImage, 
   submitFeedback 
@@ -31,7 +30,7 @@ export default function HomePage() {
       if (process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
         initializeFirebase();
       }
-    } catch (err) {
+    } catch {
       console.log('Firebase not configured yet - using mock data');
     }
 
@@ -53,15 +52,15 @@ export default function HomePage() {
     try {
       const loadedGarments = await getGarments();
       setGarments(loadedGarments);
-    } catch (err) {
+    } catch (error) {
       setError('Failed to load garments');
-      console.error(err);
+      console.error(error);
     } finally {
       setGarmentsLoading(false);
     }
   };
 
-  const handleImageUpload = async (file: File) => {
+  const handleImageUpload = async (file: File): Promise<void> => {
     setError(null);
     try {
       // For now, create a local URL for the image
@@ -72,8 +71,8 @@ export default function HomePage() {
       // Uncomment when Firebase is configured:
       // const imageUrl = await uploadImage(file, sessionId);
       // setUploadedImage(imageUrl);
-    } catch (err: any) {
-      setError(err.message || 'Upload failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Upload failed');
     }
   };
 
@@ -100,8 +99,8 @@ export default function HomePage() {
       };
 
       setResult(newResult);
-    } catch (err: any) {
-      setError(err.message || 'Failed to process image');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to process image');
     } finally {
       setProcessing(false);
     }
