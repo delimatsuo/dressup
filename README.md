@@ -112,22 +112,24 @@ npm test -- UploadArea.test.tsx
 - ✅ Next.js application scaffold with TypeScript
 - ✅ Component structure for main UI elements  
 - ✅ Firebase SDK integration with Cloud Functions
-- ✅ Vertex AI integration with Gemini 2.5 Flash Image
+- ✅ Vertex AI integration configured for Gemini 2.5 Flash Image
 - ✅ Cloud Firestore for data storage
-- ✅ Session management system
+- ✅ Basic session ID generation
 - ✅ Garment gallery with 10 sample items
-- ✅ Real-time outfit analysis
-- ✅ User feedback collection
+- ✅ Single photo upload functionality
+- ✅ Basic feedback collection (single rating)
 - ✅ Comprehensive test suite (TDD approach)
 - ✅ Responsive design with Tailwind CSS
 - ✅ Deployed to Firebase Hosting
 
-### Upcoming Features
-- ⏳ Actual image generation/manipulation
-- ⏳ User authentication
-- ⏳ Personal wardrobe management
-- ⏳ Social sharing features
-- ⏳ Advanced AI styling recommendations
+### Features Per PRD Not Yet Implemented
+- ⏳ Multi-pose generation (Standing Front, Standing Side, Walking Side)
+- ⏳ Session management with 60-minute expiry
+- ⏳ Multi-photo upload (front, side, back views)
+- ⏳ Automatic photo deletion after 60 minutes
+- ⏳ Dual feedback scoring (realism + helpfulness)
+- ⏳ Actual image generation with Gemini 2.5 Flash Image
+- ⏳ Firebase Storage lifecycle rules for privacy
 
 ## Task Management
 
@@ -186,12 +188,23 @@ The application follows a clean architecture pattern:
 3. **Cloud Functions**: Processes images using Gemini AI
 4. **Gemini API**: Performs the AI-powered outfit transformation
 
+## Important Architecture Notes
+
+⚠️ **NO ARCHITECTURE CHANGES WITHOUT APPROVAL**: The tech stack and architecture decisions are final. Do not change:
+- Gemini 2.5 Flash Image model (not 1.5 Pro or any other model)
+- Firebase/GCP infrastructure choices
+- Next.js/React framework
+- Any core technology decisions
+
+All changes to architecture or tech stack require explicit approval from the project owner.
+
 ## Contributing
 
 1. Follow TDD methodology - write tests first
 2. Ensure all tests pass before committing
 3. Update documentation for new features
 4. Use Task Master for tracking progress
+5. **Never change architecture or tech stack without explicit approval**
 
 ## Learn More
 
