@@ -184,86 +184,56 @@ export const processMultiPhotoOutfit = async (
   }
 
   try {
-    // Enhanced multi-pose processing with parallel generation
+    // Use enhanced multi-pose Cloud Function with single API call
     const processImageFunction = httpsCallable(functions, 'processImageWithGemini', {
-      timeout: 180000 // 3 minute timeout for multi-pose processing
+      timeout: 540000 // 9 minute timeout to match Cloud Function setting
     });
     
-    // Create a temporary garment object using the uploaded garment photos
-    const tempGarmentId = `uploaded-garment-${Date.now()}`;
-    const startTime = Date.now();
+    console.log('Calling enhanced multi-pose Cloud Function...');
     
-    // Process multiple poses in parallel for better performance
-    const posePromises = [
-      // Standing Front pose
-      processImageFunction({
-        userImageUrl: userPhotos.front,
-        garmentId: tempGarmentId,
-        sessionId,
-        garmentImageUrl: garmentPhotos.front,
-        poseType: 'standing_front',
-        instructions: 'Generate a standing front view with the garment fitted naturally'
-      }),
-      
-      // Standing Side pose  
-      processImageFunction({
-        userImageUrl: userPhotos.side,
-        garmentId: tempGarmentId,
-        sessionId,
-        garmentImageUrl: garmentPhotos.side,
-        poseType: 'standing_side',
-        instructions: 'Generate a standing side view showing the garment profile'
-      }),
-      
-      // Walking Side pose (dynamic pose)
-      processImageFunction({
-        userImageUrl: userPhotos.side,
-        garmentId: tempGarmentId,
-        sessionId,
-        garmentImageUrl: garmentPhotos.side,
-        poseType: 'walking_side',
-        instructions: 'Generate a walking side view with natural movement and garment flow'
-      })
-    ];
-
-    // Wait for all poses to complete
-    const results = await Promise.allSettled(posePromises);
-    const totalProcessingTime = (Date.now() - startTime) / 1000;
-    
-    const poses = [];
-    const poseNames = ['Standing Front', 'Standing Side', 'Walking Side'];
-    const originalImages = [userPhotos.front, userPhotos.side, userPhotos.side];
-    
-    for (let i = 0; i < results.length; i++) {
-      const result = results[i];
-      if (result.status === 'fulfilled' && result.value?.data) {
-        poses.push({
-          name: poseNames[i],
-          originalImageUrl: originalImages[i],
-          processedImageUrl: result.value.data.processedImageUrl,
-          confidence: result.value.data.confidence || (0.95 - i * 0.05), // Slightly lower confidence for more complex poses
-        });
-      } else {
-        // Fallback for failed pose generation
-        poses.push({
-          name: poseNames[i],
-          originalImageUrl: originalImages[i],
-          processedImageUrl: originalImages[i], // Use original as fallback
-          confidence: 0.75, // Lower confidence for fallback
-        });
+    // Single API call with multi-pose data
+    const result = await processImageFunction({
+      sessionId,
+      garmentImageUrl: garmentPhotos.front, // Use front garment photo as primary
+      userPhotos: {
+        front: userPhotos.front,
+        side: userPhotos.side,
+        back: userPhotos.back
       }
+    });
+    
+    // Extract result from the enhanced Cloud Function
+    const data = result.data as {
+      success: boolean;
+      poses: Array<{
+        name: string;
+        originalImageUrl: string;
+        processedImageUrl: string;
+        confidence: number;
+        description: string;
+      }>;
+      processingTime: number;
+      description: string;
+      resultId: string;
+      successfulPoses: number;
+      totalPoses: number;
+    };
+    
+    if (!data || !data.success) {
+      throw new Error('Invalid response from enhanced multi-pose generation service');
     }
     
-    // Use the first successful result for overall metadata
-    const firstSuccess = results.find(r => r.status === 'fulfilled' && r.value?.data);
-    const metadata = firstSuccess?.status === 'fulfilled' ? firstSuccess.value.data : {};
-    
     return {
-      poses,
-      processingTime: totalProcessingTime,
-      description: metadata.description || `Generated ${poses.length} outfit poses with multi-angle processing`,
-      resultId: metadata.resultId || `multi-result-${Date.now()}`,
-      success: poses.length > 0,
+      poses: data.poses.map(pose => ({
+        name: pose.name,
+        originalImageUrl: pose.originalImageUrl,
+        processedImageUrl: pose.processedImageUrl,
+        confidence: pose.confidence
+      })),
+      processingTime: data.processingTime,
+      description: data.description,
+      resultId: data.resultId,
+      success: data.success && data.poses.length > 0,
     };
     
   } catch (error) {

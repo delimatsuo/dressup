@@ -38,121 +38,345 @@ setGlobalOptions({
 // Enable CORS for all origins
 const cors = corsMiddleware({ origin: true });
 
+// Interface for multi-pose generation request
+interface MultiPoseRequest {
+  sessionId: string;
+  garmentImageUrl: string;
+  userPhotos?: {
+    front: string;
+    side: string;
+    back: string;
+  };
+  // Legacy single image support
+  userImageUrl?: string;
+  garmentId?: string;
+  poseType?: string;
+  instructions?: string;
+}
+
+// Interface for pose generation result
+interface PoseResult {
+  name: string;
+  originalImageUrl: string;
+  processedImageUrl: string;
+  confidence: number;
+  description: string;
+}
+
 /**
- * Process an image with Gemini to apply virtual outfit
+ * Enhanced multi-pose generation function
+ * Supports both legacy single pose and new multi-pose generation
  */
 export const processImageWithGemini = onCall(
   {
-    timeoutSeconds: 300,
-    memory: '2GiB',
-    maxInstances: 5,
+    timeoutSeconds: 540, // 9 minutes for multi-pose processing
+    memory: '4GiB', // Increased memory for parallel processing
+    maxInstances: 3, // Reduced to manage resource usage
   },
   async (request) => {
     try {
+      const requestData = request.data as MultiPoseRequest;
       const { 
+        sessionId, 
+        garmentImageUrl,
+        userPhotos,
+        // Legacy support
         userImageUrl, 
         garmentId, 
-        sessionId, 
-        garmentImageUrl, 
         poseType, 
         instructions
-      } = request.data;
+      } = requestData;
 
-      // Validate inputs
-      if (!userImageUrl || !garmentId || !sessionId) {
-        throw new HttpsError(
-          'invalid-argument',
-          'Missing required parameters'
-        );
+      // Validate required inputs
+      if (!sessionId) {
+        throw new HttpsError('invalid-argument', 'sessionId is required');
       }
 
       const startTime = Date.now();
 
-      // Enhanced logic for multi-pose processing
-      let garmentData;
-      let effectiveGarmentImageUrl;
+      // Multi-pose generation path
+      if (userPhotos && garmentImageUrl) {
+        console.log('Processing multi-pose generation request');
+        return await processMultiPoseGeneration({
+          sessionId,
+          garmentImageUrl,
+          userPhotos,
+          startTime
+        });
+      }
       
-      if (garmentImageUrl) {
-        // Use directly uploaded garment image
-        effectiveGarmentImageUrl = garmentImageUrl;
-        garmentData = {
-          name: 'Uploaded Garment',
-          category: 'custom',
-          imageUrl: garmentImageUrl
-        };
-      } else {
-        // Fallback to garment collection lookup
-        const garmentDoc = await admin
-          .firestore()
-          .collection('garments')
-          .doc(garmentId)
-          .get();
-
-        if (!garmentDoc.exists) {
-          throw new HttpsError('not-found', 'Garment not found');
-        }
-
-        garmentData = garmentDoc.data();
-        effectiveGarmentImageUrl = garmentData?.imageUrl || '';
+      // Legacy single pose path (backward compatibility)
+      if (userImageUrl && (garmentId || garmentImageUrl)) {
+        console.log('Processing legacy single pose generation request');
+        return await processLegacySinglePose({
+          userImageUrl,
+          garmentId,
+          sessionId,
+          garmentImageUrl,
+          poseType,
+          instructions,
+          startTime
+        });
       }
 
-      // Enhanced Vertex AI analysis with pose and instruction context
-      const enhancedInstructions = instructions 
-        ? `${instructions}. Pose type: ${poseType || 'standard'}` 
-        : `Generate outfit visualization for ${poseType || 'standard'} pose`;
-        
-      const analysis = await analyzeOutfitWithGemini(
-        userImageUrl,
-        effectiveGarmentImageUrl,
-        enhancedInstructions
+      throw new HttpsError(
+        'invalid-argument', 
+        'Either provide userPhotos + garmentImageUrl for multi-pose, or userImageUrl + garmentId/garmentImageUrl for single pose'
       );
-
-      const processingTime = (Date.now() - startTime) / 1000;
-
-      // For now, we'll use the original image URL as processed
-      // In production, you'd use an image generation service
-      const processedImageUrl = userImageUrl;
-      const description = analysis.description;
-
-      // Store result in Firestore
-      const resultData = {
-        sessionId,
-        userImageUrl,
-        garmentId,
-        processedImageUrl,
-        processingTime,
-        description,
-        confidence: analysis.confidence,
-        suggestions: analysis.suggestions,
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      };
-
-      const resultDoc = await admin
-        .firestore()
-        .collection('results')
-        .add(resultData);
-
-      return {
-        success: true,
-        resultId: resultDoc.id,
-        processedImageUrl,
-        processingTime,
-        description,
-        confidence: analysis.confidence,
-        suggestions: analysis.suggestions,
-      };
+      
     } catch (error) {
       console.error('Error processing image:', error);
       if (error instanceof HttpsError) {
         throw error;
       }
-      throw new HttpsError(
-        'internal',
-        'Failed to process image'
-      );
+      throw new HttpsError('internal', 'Failed to process image');
     }
   }
 );
+
+/**
+ * Process multi-pose generation with parallel execution
+ */
+async function processMultiPoseGeneration(params: {
+  sessionId: string;
+  garmentImageUrl: string;
+  userPhotos: { front: string; side: string; back: string };
+  startTime: number;
+}) {
+  const { sessionId, garmentImageUrl, userPhotos, startTime } = params;
+
+  // Define the three poses to generate
+  const poseDefinitions = [
+    {
+      name: 'Standing Front',
+      userImageUrl: userPhotos.front,
+      poseType: 'standing_front',
+      instructions: 'Generate a standing front view with the garment fitted naturally, showing the complete outfit from head to toe'
+    },
+    {
+      name: 'Standing Side',
+      userImageUrl: userPhotos.side,
+      poseType: 'standing_side', 
+      instructions: 'Generate a standing side view showing the garment profile and how it drapes on the body from a side angle'
+    },
+    {
+      name: 'Walking Side',
+      userImageUrl: userPhotos.side, // Use side photo as base
+      poseType: 'walking_side',
+      instructions: 'Generate a walking side view with natural movement and garment flow, showing how the outfit moves dynamically'
+    }
+  ];
+
+  console.log(`Starting parallel processing of ${poseDefinitions.length} poses`);
+
+  // Process all poses in parallel using Promise.allSettled
+  const posePromises = poseDefinitions.map(async (pose, index) => {
+    try {
+      console.log(`Starting pose ${index + 1}: ${pose.name}`);
+      const poseStartTime = Date.now();
+      
+      const analysis = await analyzeOutfitWithGemini(
+        pose.userImageUrl,
+        garmentImageUrl,
+        pose.instructions
+      );
+      
+      const poseProcessingTime = (Date.now() - poseStartTime) / 1000;
+      console.log(`Completed pose ${index + 1} in ${poseProcessingTime}s`);
+      
+      return {
+        name: pose.name,
+        originalImageUrl: pose.userImageUrl,
+        processedImageUrl: pose.userImageUrl, // For now, using original as processed
+        confidence: analysis.confidence,
+        description: `${pose.name}: ${analysis.description}`,
+        processingTime: poseProcessingTime,
+        success: true
+      };
+    } catch (error) {
+      console.error(`Failed to process pose ${index + 1} (${pose.name}):`, error);
+      return {
+        name: pose.name,
+        originalImageUrl: pose.userImageUrl,
+        processedImageUrl: pose.userImageUrl, // Fallback to original
+        confidence: 0.5, // Lower confidence for failed generation
+        description: `${pose.name}: Generated with fallback processing`,
+        processingTime: 0,
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  });
+
+  // Wait for all poses to complete
+  const results = await Promise.allSettled(posePromises);
+  const totalProcessingTime = (Date.now() - startTime) / 1000;
+  
+  console.log(`Multi-pose processing completed in ${totalProcessingTime}s`);
+
+  // Extract successful and failed poses
+  const poses: PoseResult[] = [];
+  let successfulPoses = 0;
+  
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      const poseResult = result.value;
+      poses.push({
+        name: poseResult.name,
+        originalImageUrl: poseResult.originalImageUrl,
+        processedImageUrl: poseResult.processedImageUrl,
+        confidence: poseResult.confidence,
+        description: poseResult.description
+      });
+      if (poseResult.success) successfulPoses++;
+    } else {
+      // Handle rejected promise (shouldn't happen with our error handling, but safety)
+      const pose = poseDefinitions[index];
+      poses.push({
+        name: pose.name,
+        originalImageUrl: pose.userImageUrl,
+        processedImageUrl: pose.userImageUrl,
+        confidence: 0.3,
+        description: `${pose.name}: Processing failed - using fallback`
+      });
+    }
+  });
+
+  // Store multi-pose result in Firestore
+  const resultData = {
+    sessionId,
+    garmentImageUrl,
+    userPhotos,
+    poses,
+    totalProcessingTime,
+    successfulPoses,
+    totalPoses: poses.length,
+    description: `Generated ${successfulPoses}/${poses.length} poses successfully`,
+    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    type: 'multi-pose'
+  };
+
+  const resultDoc = await admin
+    .firestore()
+    .collection('results')
+    .add(resultData);
+
+  return {
+    success: true,
+    resultId: resultDoc.id,
+    poses,
+    processingTime: totalProcessingTime,
+    description: `Generated ${successfulPoses} out of ${poses.length} outfit poses with multi-angle processing`,
+    successfulPoses,
+    totalPoses: poses.length
+  };
+}
+
+/**
+ * Legacy single pose processing for backward compatibility
+ */
+async function processLegacySinglePose(params: {
+  userImageUrl: string;
+  garmentId?: string;
+  sessionId: string;
+  garmentImageUrl?: string;
+  poseType?: string;
+  instructions?: string;
+  startTime: number;
+}) {
+  const { 
+    userImageUrl, 
+    garmentId, 
+    sessionId, 
+    garmentImageUrl, 
+    poseType, 
+    instructions, 
+    startTime 
+  } = params;
+
+  // Validate legacy inputs
+  if (!userImageUrl || (!garmentId && !garmentImageUrl)) {
+    throw new HttpsError(
+      'invalid-argument',
+      'Legacy mode requires userImageUrl and either garmentId or garmentImageUrl'
+    );
+  }
+
+  // Enhanced logic for garment processing
+  let garmentData;
+  let effectiveGarmentImageUrl;
+  
+  if (garmentImageUrl) {
+    // Use directly uploaded garment image
+    effectiveGarmentImageUrl = garmentImageUrl;
+    garmentData = {
+      name: 'Uploaded Garment',
+      category: 'custom',
+      imageUrl: garmentImageUrl
+    };
+  } else if (garmentId) {
+    // Fallback to garment collection lookup
+    const garmentDoc = await admin
+      .firestore()
+      .collection('garments')
+      .doc(garmentId)
+      .get();
+
+    if (!garmentDoc.exists) {
+      throw new HttpsError('not-found', 'Garment not found');
+    }
+
+    garmentData = garmentDoc.data();
+    effectiveGarmentImageUrl = garmentData?.imageUrl || '';
+  }
+
+  // Enhanced Vertex AI analysis with pose and instruction context
+  const enhancedInstructions = instructions 
+    ? `${instructions}. Pose type: ${poseType || 'standard'}` 
+    : `Generate outfit visualization for ${poseType || 'standard'} pose`;
+    
+  const analysis = await analyzeOutfitWithGemini(
+    userImageUrl,
+    effectiveGarmentImageUrl!,
+    enhancedInstructions
+  );
+
+  const processingTime = (Date.now() - startTime) / 1000;
+
+  // For now, we'll use the original image URL as processed
+  const processedImageUrl = userImageUrl;
+  const description = analysis.description;
+
+  // Store result in Firestore
+  const resultData = {
+    sessionId,
+    userImageUrl,
+    garmentId,
+    garmentImageUrl: effectiveGarmentImageUrl,
+    processedImageUrl,
+    processingTime,
+    description,
+    confidence: analysis.confidence,
+    suggestions: analysis.suggestions,
+    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    type: 'single-pose'
+  };
+
+  const resultDoc = await admin
+    .firestore()
+    .collection('results')
+    .add(resultData);
+
+  return {
+    success: true,
+    resultId: resultDoc.id,
+    processedImageUrl,
+    processingTime,
+    description,
+    confidence: analysis.confidence,
+    suggestions: analysis.suggestions,
+  };
+}
 
 /**
  * Get available garments
