@@ -1,0 +1,157 @@
+{
+	"meta": {
+		"generatedAt": "2025-09-04T23:56:15.408Z",
+		"tasksAnalyzed": 18,
+		"totalTasks": 18,
+		"analysisCount": 18,
+		"thresholdScore": 5,
+		"projectName": "Taskmaster",
+		"usedResearch": true
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 1,
+			"taskTitle": "Initialize Firebase & GCP Infrastructure",
+			"complexityScore": 4,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Expand the task 'Initialize Firebase & GCP Infrastructure' into 4 subtasks. The subtasks should cover: 1. Creating the Firebase project and upgrading to the Blaze plan. 2. Enabling necessary APIs (Cloud Functions, Storage, Hosting, Vertex AI) in the linked GCP project. 3. Configuring specific IAM roles for the Cloud Function service account to access Vertex AI and Cloud Storage. 4. Performing an initial 'hello world' deployment to Firebase Hosting to verify setup.",
+			"reasoning": "The task involves multiple distinct services (Firebase, GCP, IAM, Billing) and requires careful configuration of permissions. While not technically difficult from a coding perspective, the steps are sequential and errors in IAM can cause hard-to-diagnose issues later."
+		},
+		{
+			"taskId": 2,
+			"taskTitle": "Scaffold Frontend Application",
+			"complexityScore": 3,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Expand the task 'Scaffold Frontend Application' into 3 subtasks. The subtasks should be: 1. Initialize a new Next.js project using `create-next-app` and install the Firebase SDK. 2. Configure the project for Firebase Hosting by setting up `firebase.json` and `.firebaserc`. 3. Create basic placeholder components for the main page layout (e.g., UploadSection, GallerySection, FeedbackSection) and a simple `_app.js` or `layout.js` to structure them.",
+			"reasoning": "This is a standard, well-documented process using a popular framework. The complexity is low as it involves boilerplate generation and basic configuration, not complex logic."
+		},
+		{
+			"taskId": 3,
+			"taskTitle": "Implement Session Management Backend",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Expand the task 'Implement Session Management Backend' into 4 subtasks. These should cover: 1. Defining and documenting the `SessionObject` data model for Firestore. 2. Writing the core logic for the callable Cloud Function to create a new session document with a UUID and expiry. 3. Deploying the Cloud Function and configuring its environment. 4. Writing and running a unit test for the function using the Firebase Emulator Suite to verify document creation and data structure.",
+			"reasoning": "This task involves both database schema design (Firestore) and serverless function development (Cloud Functions). It requires defining a data model, writing business logic for session creation/expiry, and setting up the function trigger, which is more involved than a simple UI task."
+		},
+		{
+			"taskId": 4,
+			"taskTitle": "Build User & Garment Photo Upload UI",
+			"complexityScore": 6,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Expand the task 'Build User & Garment Photo Upload UI' into 5 subtasks. The subtasks should be: 1. Create the React component layout with file input elements for user and garment photos. 2. Implement client-side validation logic for file type (JPG, PNG, HEIC) and size (<10MB). 3. Integrate the Firebase Storage SDK to handle the file upload process. 4. Implement UI state management to show upload progress, loading indicators, and display error messages. 5. Upon successful upload, update the component's state to store the file's storage path for later use.",
+			"reasoning": "This task involves significant frontend logic: handling file inputs, implementing client-side validation, managing asynchronous upload state (progress, completion, errors), and integrating with the Firebase Storage SDK. It's a core interactive piece of the application."
+		},
+		{
+			"taskId": 5,
+			"taskTitle": "Develop Backend File Handling Function",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Expand the task 'Develop Backend File Handling Function' into 4 subtasks. These should be: 1. Create a Cloud Function triggered by file uploads to a specific Cloud Storage bucket. 2. Implement the logic to move the uploaded file to a structured, session-specific path (e.g., `/user-photos/{sessionId}/...`). 3. Add logic to update the corresponding session document in Firestore with the new public URL of the moved file. 4. Implement robust error handling and logging for cases where the file move or Firestore update fails.",
+			"reasoning": "This task requires creating a serverless function that integrates two different cloud services: Cloud Storage (for file manipulation) and Firestore (for metadata updates). It involves handling event-driven triggers and ensuring atomicity and error handling between the two services."
+		},
+		{
+			"taskId": 6,
+			"taskTitle": "Implement Core Gemini Generation Function (Single Pose)",
+			"complexityScore": 8,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Expand the task 'Implement Core Gemini Generation Function (Single Pose)' into 5 subtasks. The subtasks should cover: 1. Creating an HTTP-triggered Cloud Function and initializing the Vertex AI Node.js SDK. 2. Implementing logic to fetch user and garment photo URLs from Firestore based on the provided `sessionId`. 3. Designing and implementing the prompt engineering logic, constructing the multimodal prompt with images and text instructions for the 'Standing Front' pose. 4. Making the asynchronous call to the Gemini model and handling the response. 5. Implementing error handling for API failures and returning the generated image URL or an error message.",
+			"reasoning": "This is a high-complexity task due to the integration with a sophisticated third-party AI service (Vertex AI). It involves significant 'unknowns' in prompt engineering to get the desired output, handling asynchronous, long-running API calls, and managing potentially complex error states from the AI model."
+		},
+		{
+			"taskId": 7,
+			"taskTitle": "Integrate Frontend Generation Flow",
+			"complexityScore": 4,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Expand the task 'Integrate Frontend Generation Flow' into 3 subtasks. These should be: 1. Implement the `onClick` handler for the 'Generate' button to call the generation Cloud Function, passing the `sessionId` and garment URL. 2. Implement client-side state management to handle the loading state (e.g., disable the button, show a spinner). 3. Implement the logic to handle the function's response: on success, pass the image URL to the gallery component; on error, display a user-friendly error message.",
+			"reasoning": "This is a standard frontend task of connecting a UI element (button) to a backend API. The complexity lies in managing the asynchronous states (loading, success, error) and updating the UI accordingly, but the pattern is well-established."
+		},
+		{
+			"taskId": 8,
+			"taskTitle": "Extend Gemini Function for Multi-Pose Generation",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Expand the task 'Extend Gemini Function for Multi-Pose Generation' into 4 subtasks. These should be: 1. Refactor the existing generation function to support making multiple, parallel calls to the Vertex AI API. 2. Engineer and test two new distinct prompts for the 'Standing Side' and 'Walking Side' poses. 3. Implement logic (e.g., using `Promise.allSettled`) to execute the three API calls concurrently and aggregate the resulting image URLs. 4. Enhance error handling to gracefully manage scenarios where one or more of the parallel API calls fail.",
+			"reasoning": "This task increases complexity by introducing parallel asynchronous operations (`Promise.all` or similar). It requires more advanced prompt engineering for distinct poses and robust logic to handle the aggregation of results and potential partial failures (e.g., two poses succeed, one fails)."
+		},
+		{
+			"taskId": 9,
+			"taskTitle": "Build Results Gallery UI",
+			"complexityScore": 3,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Expand the task 'Build Results Gallery UI' into 3 subtasks. The subtasks should be: 1. Develop the basic React component that accepts an array of image URLs as a prop and renders them. 2. Implement a loading state for the gallery, displaying skeleton loaders for each expected image before the URLs are available. 3. Apply responsive CSS using a grid or flexbox layout to ensure the gallery displays well on both mobile and desktop screens.",
+			"reasoning": "This is a relatively simple presentation component. It receives data (image URLs) and displays it. The primary work involves CSS for layout and implementing a standard loading pattern like skeleton screens, which is a well-understood UI task."
+		},
+		{
+			"taskId": 10,
+			"taskTitle": "Implement Privacy-First Storage Rules",
+			"complexityScore": 4,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Expand the task 'Implement Privacy-First Storage Rules' into 4 subtasks, acknowledging the 60-minute requirement. The subtasks should be: 1. Create a new Pub/Sub topic for triggering cleanup. 2. Create a Cloud Scheduler job configured to publish a message to the topic every hour. 3. Develop a Pub/Sub-triggered Cloud Function that queries for and deletes files associated with sessions older than 60 minutes. 4. Implement error handling and logging within the cleanup function.",
+			"reasoning": "The task's requirement of a 60-minute deletion conflicts with the standard GCP Storage Lifecycle minimum of 1 day. This necessitates a more complex solution: a scheduled Cloud Function (Cloud Scheduler + Pub/Sub + Function) to query for and delete old files, which is more involved than just setting a console rule."
+		},
+		{
+			"taskId": 11,
+			"taskTitle": "Implement 'Try Another Outfit' Flow",
+			"complexityScore": 3,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Expand the task 'Implement 'Try Another Outfit' Flow' into 3 subtasks. These should be: 1. Add a 'Try Another Outfit' button to the UI, visible after a generation is complete. 2. Implement the `onClick` handler to reset the state for the garment upload component and the results gallery. 3. Ensure the existing `sessionId` is preserved in the application's state so it can be reused for the next generation request.",
+			"reasoning": "This is a straightforward frontend state management task. It involves adding a button and an `onClick` handler that resets specific parts of the application's state (garment photo, results) while preserving others (the session ID)."
+		},
+		{
+			"taskId": 12,
+			"taskTitle": "Create Welcome & Consent UI",
+			"complexityScore": 3,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Expand the task 'Create Welcome & Consent UI' into 3 subtasks. These should be: 1. Build the React component for the consent modal, including the required text and an 'I agree' checkbox. 2. Implement state management to show this modal on the user's first visit and hide the main application UI. 3. Add logic to persist the consent status (e.g., in `sessionStorage`) so the modal does not reappear on page refresh within the same session.",
+			"reasoning": "This is a standard UI task involving a modal or conditional view with static content. The logic is simple: manage a boolean state based on a checkbox and potentially use local storage to remember the user's choice."
+		},
+		{
+			"taskId": 13,
+			"taskTitle": "Build Feedback Collection UI",
+			"complexityScore": 2,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Expand the task 'Build Feedback Collection UI' into 2 subtasks. The subtasks should be: 1. Create the React component containing the form with two 5-star rating inputs and a `textarea`. 2. Implement state management for these controlled components to capture user input.",
+			"reasoning": "This is a very low-complexity task. It involves creating a standard HTML form with basic inputs (ratings, textarea) and managing their values in the component's state. It's a foundational React concept."
+		},
+		{
+			"taskId": 14,
+			"taskTitle": "Implement Feedback Submission Backend",
+			"complexityScore": 4,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Expand the task 'Implement Feedback Submission Backend' into 3 subtasks. These should be: 1. Define the `FeedbackObject` data model and create the `feedback` collection in Firestore. 2. Write and deploy an HTTP-triggered Cloud Function that accepts the feedback object, validates the data, and saves it to the Firestore collection. 3. Connect the frontend feedback form's 'Submit' button to call this new Cloud Function.",
+			"reasoning": "This task involves creating a standard API endpoint using a Cloud Function. It requires input validation and a simple database write operation to Firestore. While it involves backend code, it's a very common and well-documented pattern."
+		},
+		{
+			"taskId": 15,
+			"taskTitle": "Implement Mobile Responsive Design",
+			"complexityScore": 6,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Expand the task 'Implement Mobile Responsive Design' into 5 subtasks, organized by application area. The subtasks should be: 1. Refactor the Welcome/Consent UI to be mobile-first. 2. Adapt the multi-part photo upload forms for small screens. 3. Ensure the results gallery uses a responsive layout (e.g., single column on mobile, grid on desktop). 4. Style the feedback form for optimal use on mobile. 5. Perform end-to-end testing across key device breakpoints (e.g., 375px, 768px, 1280px).",
+			"reasoning": "Retrofitting or implementing responsive design across an entire application is moderately complex. It requires a systematic review of all components, strategic use of CSS media queries, and thorough testing on various screen sizes to fix layout bugs like overflow and element stacking."
+		},
+		{
+			"taskId": 16,
+			"taskTitle": "Perform Accessibility Audit and Remediation",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Expand the task 'Perform Accessibility Audit and Remediation' into 4 subtasks. These should be: 1. Run an automated audit using Lighthouse/Axe on all application views and document the initial score and issues. 2. Perform a full manual keyboard-only navigation test, ensuring all interactive elements are reachable and have visible focus states. 3. Conduct a screen reader test (e.g., VoiceOver, NVDA) to verify logical content flow. 4. Remediate all identified issues, focusing on semantic HTML, ARIA roles, color contrast, and alt text.",
+			"reasoning": "Achieving WCAG AA compliance requires specialized knowledge. It involves a systematic audit (automated and manual), and remediation can be complex, involving not just semantic HTML but also ARIA attributes and focus management, which can be tricky in dynamic single-page applications."
+		},
+		{
+			"taskId": 17,
+			"taskTitle": "Finalize and Test Security Rules",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Expand the task 'Finalize and Test Security Rules' into 4 subtasks. These should be: 1. Write and deploy Firestore security rules that deny all access by default, but allow creation of session/feedback documents and only allow updates to a session by its creator. 2. Write and deploy Cloud Storage security rules that only allow writes to a user's own session-specific path. 3. Set up the Firebase Emulator Suite and write automated tests that simulate valid and invalid access patterns. 4. Manually verify rules in the Firebase console's Rules Playground for edge cases.",
+			"reasoning": "Writing effective and secure Firebase rules is a high-stakes, complex task. The declarative language has a learning curve, and thoroughly testing all access patterns for every collection/path requires a rigorous and systematic approach, best done with the Emulator Suite."
+		},
+		{
+			"taskId": 18,
+			"taskTitle": "Set Up Monitoring and Logging",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Expand the task 'Set Up Monitoring and Logging' into 4 subtasks. These should be: 1. In Cloud Logging, create log-based metrics to count session creations, successful/failed generation requests, and feedback submissions. 2. In Cloud Monitoring, create a new dashboard to visualize these custom metrics and the P95 latency of the generation function. 3. In GCP Billing, create a budget and configure an alert to monitor Vertex AI costs. 4. Trigger each monitored event in the application to verify that logs are generated and the dashboard and alerts are working as expected.",
+			"reasoning": "This task requires navigating and configuring multiple, distinct GCP services (Cloud Logging, Cloud Monitoring, Billing). While not code-heavy, it requires an understanding of how to create log-based metrics, design a useful dashboard, and configure alerts, which involves specific platform knowledge."
+		}
+	]
+}

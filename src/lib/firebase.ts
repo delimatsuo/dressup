@@ -1,0 +1,171 @@
+import { initializeApp, FirebaseApp } from 'firebase/app';
+import { 
+  getStorage, 
+  ref, 
+  uploadBytes, 
+  getDownloadURL,
+  Storage 
+} from 'firebase/storage';
+import { 
+  getFunctions, 
+  httpsCallable,
+  Functions 
+} from 'firebase/functions';
+
+let app: FirebaseApp | null = null;
+let storage: Storage | null = null;
+let functions: Functions | null = null;
+let garmentsCache: any[] | null = null;
+
+export const initializeFirebase = () => {
+  if (app) return app;
+
+  const firebaseConfig = {
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  };
+
+  // Validate configuration
+  const requiredKeys = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
+  for (const key of requiredKeys) {
+    if (!firebaseConfig[key as keyof typeof firebaseConfig]) {
+      throw new Error(`Firebase configuration missing: ${key}`);
+    }
+  }
+
+  app = initializeApp(firebaseConfig);
+  storage = getStorage(app);
+  functions = getFunctions(app);
+
+  return app;
+};
+
+export const uploadImage = async (file: File, sessionId: string): Promise<string> => {
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Please upload an image file');
+  }
+
+  // Validate file size (max 10MB)
+  const maxSize = 10 * 1024 * 1024;
+  if (file.size > maxSize) {
+    throw new Error('File size must be less than 10MB');
+  }
+
+  if (!storage) {
+    initializeFirebase();
+    storage = getStorage();
+  }
+
+  const timestamp = Date.now();
+  const fileName = `uploads/${sessionId}/${timestamp}_${file.name}`;
+  const storageRef = ref(storage, fileName);
+
+  const snapshot = await uploadBytes(storageRef, file);
+  const downloadURL = await getDownloadURL(snapshot.ref);
+
+  return downloadURL;
+};
+
+export const getGarments = async (): Promise<any[]> => {
+  // Return cached garments if available
+  if (garmentsCache) {
+    return garmentsCache;
+  }
+
+  if (!functions) {
+    initializeFirebase();
+    functions = getFunctions();
+  }
+
+  // For now, return mock data since Firebase is not configured
+  // This will be replaced with actual Firebase function call
+  const mockGarments = [
+    { id: '1', name: 'Casual T-Shirt', imageUrl: '/images/tshirt.jpg', category: 'casual' },
+    { id: '2', name: 'Business Suit', imageUrl: '/images/suit.jpg', category: 'formal' },
+    { id: '3', name: 'Summer Dress', imageUrl: '/images/dress.jpg', category: 'casual' },
+    { id: '4', name: 'Evening Gown', imageUrl: '/images/gown.jpg', category: 'formal' },
+  ];
+
+  garmentsCache = mockGarments;
+  return mockGarments;
+
+  // Actual implementation (commented until Firebase is configured):
+  // const getGarmentsFunction = httpsCallable(functions, 'getGarments');
+  // const result = await getGarmentsFunction();
+  // garmentsCache = result.data as any[];
+  // return garmentsCache;
+};
+
+export const processImage = async (
+  userImageUrl: string,
+  garmentId: string,
+  sessionId: string
+): Promise<any> => {
+  if (!functions) {
+    initializeFirebase();
+    functions = getFunctions();
+  }
+
+  // Mock implementation for now
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        processedImageUrl: userImageUrl, // In production, this would be the AI-generated image
+        processingTime: 3.5,
+        confidence: 0.95,
+      });
+    }, 2000);
+  });
+
+  // Actual implementation (commented until Firebase is configured):
+  // const processImageFunction = httpsCallable(functions, 'processImageWithGemini', {
+  //   timeout: 60000 // 60 second timeout
+  // });
+  // 
+  // const result = await processImageFunction({
+  //   userImageUrl,
+  //   garmentId,
+  //   sessionId,
+  // });
+  // 
+  // return result.data;
+};
+
+export const submitFeedback = async (feedback: {
+  rating: number;
+  comment: string;
+  sessionId: string;
+  resultId: string;
+}): Promise<{ success: boolean }> => {
+  // Validate rating
+  if (feedback.rating < 1 || feedback.rating > 5) {
+    throw new Error('Rating must be between 1 and 5');
+  }
+
+  // Sanitize comment (basic XSS prevention)
+  const sanitizedComment = feedback.comment
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<[^>]+>/g, '');
+
+  if (!functions) {
+    initializeFirebase();
+    functions = getFunctions();
+  }
+
+  // Mock implementation for now
+  return { success: true };
+
+  // Actual implementation (commented until Firebase is configured):
+  // const submitFeedbackFunction = httpsCallable(functions, 'submitFeedback');
+  // const result = await submitFeedbackFunction({
+  //   ...feedback,
+  //   comment: sanitizedComment,
+  // });
+  // 
+  // return result.data as { success: boolean };
+};

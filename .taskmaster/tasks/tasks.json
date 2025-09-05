@@ -1,0 +1,1232 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Initialize Firebase & GCP Infrastructure",
+        "description": "Set up the foundational cloud infrastructure for the PoC. This includes creating a new Firebase project, enabling required services, and configuring billing.",
+        "details": "Create a new Firebase project. Upgrade to the Blaze plan. Enable Cloud Functions (2nd Gen), Cloud Storage, and Firebase Hosting. In the linked Google Cloud project, enable the Vertex AI API. Configure IAM roles for Cloud Functions to invoke Vertex AI and access Cloud Storage.",
+        "testStrategy": "Verify that Firebase Hosting deploys a sample page. Confirm that the Vertex AI API is enabled in the GCP console. Manually upload a file to Cloud Storage to test permissions.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Firebase Project and Configure Billing",
+            "description": "Create a new Firebase project from the console and upgrade it to the Blaze (Pay-as-you-go) plan to enable paid GCP services like Cloud Functions with external networking and Vertex AI.",
+            "dependencies": [],
+            "details": "Navigate to the Firebase console, initiate the 'Add project' workflow, and provide a unique project name. Once the project is provisioned, navigate to 'Project settings' > 'Usage and billing' and select 'Modify plan' to upgrade to the Blaze plan by linking an active Google Cloud billing account.",
+            "status": "pending",
+            "testStrategy": "Verify the new project is accessible in the Firebase console. Confirm the project plan is listed as 'Blaze' in the 'Usage and billing' section."
+          },
+          {
+            "id": 2,
+            "title": "Enable Core Firebase Services (Hosting, Storage, Functions)",
+            "description": "Activate the foundational Firebase services required for the application: Firebase Hosting for the frontend, Cloud Storage for file uploads, and Cloud Functions (2nd Gen) for backend logic.",
+            "dependencies": [
+              "1.1"
+            ],
+            "details": "In the Firebase console's 'Build' menu, navigate to 'Hosting' and complete the 'Get Started' wizard. Repeat this process for 'Cloud Storage', selecting a default bucket location. Finally, go to 'Functions', click 'Get Started', and ensure the environment is prepared for 2nd Gen functions.",
+            "status": "pending",
+            "testStrategy": "Confirm that the Hosting, Storage, and Functions sections in the Firebase console display their respective dashboards instead of the 'Get Started' prompts."
+          },
+          {
+            "id": 3,
+            "title": "Enable Vertex AI API in Google Cloud Project",
+            "description": "Navigate to the linked Google Cloud Platform (GCP) project and enable the Vertex AI API to grant the project access to Google's machine learning models and platform.",
+            "dependencies": [
+              "1.1"
+            ],
+            "details": "Open the Google Cloud console and select the project corresponding to the new Firebase project. Use the navigation menu or search bar to find the 'API Library'. Search for 'Vertex AI API' and click the 'Enable' button.",
+            "status": "pending",
+            "testStrategy": "In the GCP console, navigate to the 'Vertex AI' dashboard. The page should load without any prompts to enable the API. Also, verify 'Vertex AI API' is listed in the 'Enabled APIs & services' dashboard."
+          },
+          {
+            "id": 4,
+            "title": "Create Dedicated Service Account for Cloud Functions",
+            "description": "Create a new, dedicated service account in GCP IAM to act as the identity for Cloud Functions, following the principle of least privilege.",
+            "dependencies": [
+              "1.1"
+            ],
+            "details": "In the GCP console, navigate to 'IAM & Admin' > 'Service Accounts'. Click 'Create Service Account', provide a descriptive name (e.g., 'virtual-stylist-functions-sa'), and add a description. Click 'Create and Continue' to provision the account.",
+            "status": "pending",
+            "testStrategy": "Verify that the newly created service account is listed on the 'Service Accounts' page within the 'IAM & Admin' section of the GCP console."
+          },
+          {
+            "id": 5,
+            "title": "Assign IAM Roles to Function's Service Account",
+            "description": "Grant the dedicated service account the necessary IAM permissions to invoke the Vertex AI API and to read/write objects in Cloud Storage.",
+            "dependencies": [
+              "1.2",
+              "1.3",
+              "1.4"
+            ],
+            "details": "In the GCP 'IAM' page, locate the principal (service account) created in the previous step and add new role bindings. Assign the 'Vertex AI User' (roles/aiplatform.user) role to allow it to make predictions. Assign the 'Storage Object Admin' (roles/storage.objectAdmin) role to allow it to manage files in the project's Cloud Storage buckets.",
+            "status": "pending",
+            "testStrategy": "Use the GCP 'Policy Troubleshooter' to simulate whether the service account has the 'aiplatform.endpoints.predict' permission for a model endpoint and the 'storage.objects.create' permission for the storage bucket."
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Scaffold Frontend Application",
+        "description": "Create the initial single-page application structure using React/Next.js and configure it for deployment on Firebase Hosting.",
+        "details": "Use `create-next-app` to initialize a new Next.js project. Install the Firebase SDK (`firebase`). Configure `firebase.json` for hosting. Create a basic component structure for the main page layout, including placeholders for the upload, gallery, and feedback sections.",
+        "testStrategy": "Deploy the scaffolded 'Hello World' app to the live Firebase Hosting URL. Ensure the Firebase SDK is correctly initialized in the application without errors.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Initialize Next.js Project with `create-next-app`",
+            "description": "Generate the boilerplate for the Next.js application using the standard command-line tool, including configurations for TypeScript and Tailwind CSS.",
+            "dependencies": [],
+            "details": "Execute `npx create-next-app@latest --typescript --tailwind --eslint` in the project directory. After initialization, remove the default Next.js promotional content from `app/page.tsx` and replace it with a simple `<h1>Virtual Stylist PoC</h1>` heading.",
+            "status": "in-progress",
+            "testStrategy": "Run `npm run dev` and navigate to `http://localhost:3000`. The page should load successfully and display the 'Virtual Stylist PoC' heading."
+          },
+          {
+            "id": 2,
+            "title": "Install and Configure Firebase Client SDK",
+            "description": "Integrate the Firebase platform into the Next.js application by installing the necessary SDK and setting up the initialization configuration.",
+            "dependencies": [
+              "2.1"
+            ],
+            "details": "Run `npm install firebase`. Create a new file at `lib/firebase/config.ts`. In this file, import `initializeApp` from `firebase/app` and initialize the application using the Firebase project configuration credentials obtained from the Firebase Console (as part of Task 1).",
+            "status": "pending",
+            "testStrategy": "Start the development server (`npm run dev`). Open the browser's developer console and verify that no Firebase-related initialization errors are present."
+          },
+          {
+            "id": 3,
+            "title": "Configure Project for Firebase Hosting",
+            "description": "Set up the necessary Firebase configuration files to enable deployment of the Next.js application to Firebase Hosting.",
+            "dependencies": [
+              "2.2"
+            ],
+            "details": "Run `firebase init hosting` in the project's root directory. When prompted, select the existing Firebase project. Configure the `firebase.json` file to serve the Next.js application. For a static build, set the `public` directory to `out` and add a `predeploy` script in `package.json` to run `npm run build`.",
+            "status": "pending",
+            "testStrategy": "Run `npm run build` and then `firebase emulators:start --only hosting`. Access the local hosting URL provided by the emulator to confirm the application is served correctly."
+          },
+          {
+            "id": 4,
+            "title": "Create Main Page Layout and Placeholder Components",
+            "description": "Build the basic UI structure of the main page, creating distinct, non-functional placeholder components for the primary user interaction areas.",
+            "dependencies": [
+              "2.1"
+            ],
+            "details": "Create a `components` directory. Inside, create three new files: `UploadSection.tsx`, `GallerySection.tsx`, and `FeedbackSection.tsx`. Each component should return a simple styled `div` with a title (e.g., 'Photo Upload Area'). Import and render these three components within `app/page.tsx` to form the basic page layout.",
+            "status": "pending",
+            "testStrategy": "Run the development server (`npm run dev`). Visually inspect the main page to ensure the three placeholder sections (Upload, Gallery, Feedback) are rendered in the correct layout on the screen."
+          },
+          {
+            "id": 5,
+            "title": "Deploy Initial Scaffold to Firebase Hosting",
+            "description": "Execute the first deployment of the scaffolded application to the live Firebase Hosting environment to verify the end-to-end deployment pipeline.",
+            "dependencies": [
+              "2.3",
+              "2.4"
+            ],
+            "details": "Ensure the `package.json` `build` script is configured for a static export (`next build`). Run the command `firebase deploy --only hosting` from the project root. This will build the Next.js app and upload the static assets to Firebase.",
+            "status": "pending",
+            "testStrategy": "Access the live Firebase Hosting URL provided in the CLI output after a successful deployment. Verify that the deployed site is publicly accessible and displays the main page with the three placeholder components."
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Implement Session Management Backend",
+        "description": "Create the backend logic to manage user sessions. This involves creating a session object when a user first interacts with the app to track their uploaded photos.",
+        "details": "Create a Firestore collection for `sessions`. Define the `SessionObject` data model (sessionId, userPhotos, createdAt, expiresAt). Create an initial callable Cloud Function that generates a new session document with a UUID and a 60-minute expiry time, returning the `sessionId` to the client.",
+        "testStrategy": "Write a unit test for the Cloud Function to ensure it creates a valid session document in Firestore. Test the function endpoint from the frontend to verify a `sessionId` is received.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Session Data Model and Configure Firestore Collection",
+            "description": "Formalize the data structure for the `SessionObject` and set up the `sessions` collection in Firestore. This foundational step ensures a consistent data schema before any implementation begins.",
+            "dependencies": [],
+            "details": "In a shared TypeScript file (e.g., `types/session.ts`), define the `SessionObject` interface with fields: `sessionId` (string), `userPhotos` (array of strings), `createdAt` (Firestore Timestamp), and `expiresAt` (Firestore Timestamp). In the Firebase console, create the `sessions` collection. Establish initial, restrictive Firestore security rules that deny all client-side read/write access by default, preparing for function-only access.",
+            "status": "pending",
+            "testStrategy": "Review the defined TypeScript interface for correctness and completeness. Manually create a sample document in the Firestore console to verify the collection setup. Use the Firestore Rules Simulator to confirm that client-side reads and writes to the `sessions` collection are denied."
+          },
+          {
+            "id": 2,
+            "title": "Develop `createSession` Callable Cloud Function",
+            "description": "Implement the core server-side logic as a callable Cloud Function that generates a new session document in Firestore and returns its unique ID to the client.",
+            "dependencies": [
+              "3.1"
+            ],
+            "details": "Using the Firebase Functions SDK, create a new callable function named `createSession`. This function will: 1. Generate a v4 UUID for the `sessionId`. 2. Calculate `createdAt` as the current server time and `expiresAt` as 60 minutes from `createdAt`. 3. Create a new document in the `sessions` collection using the defined `SessionObject` model, with `userPhotos` as an empty array. 4. Return an object containing the `sessionId` to the calling client. Implement robust error handling for potential Firestore write failures.",
+            "status": "pending",
+            "testStrategy": "Write a unit test using the Firebase Functions Test SDK. The test should mock the Firestore Admin SDK and verify that the function attempts to write a document with the correct structure and returns an object containing a `sessionId` string. Assert that the `expiresAt` timestamp is approximately 60 minutes after the `createdAt` timestamp."
+          },
+          {
+            "id": 3,
+            "title": "Implement Scheduled Function for Expired Session Cleanup",
+            "description": "Create a scheduled Cloud Function to periodically scan the `sessions` collection and delete documents that have passed their `expiresAt` timestamp, ensuring data privacy and resource management.",
+            "dependencies": [
+              "3.1"
+            ],
+            "details": "Create a new Pub/Sub scheduled function (e.g., `cleanupExpiredSessions`) configured to run on a schedule (e.g., every hour). The function will query the `sessions` collection for all documents where the `expiresAt` field is less than or equal to the current time. It will then use a batched write to delete all identified expired session documents efficiently. This aligns with the project's privacy-first approach.",
+            "status": "pending",
+            "testStrategy": "Write a unit test that provides a mocked Firestore collection containing both expired and active session documents. Execute the function's logic and assert that only the expired documents are targeted for deletion. For integration testing, manually create an expired session in the development environment and trigger the function via the GCP console to verify deletion."
+          },
+          {
+            "id": 4,
+            "title": "Integrate Session Creation on Frontend App Initialization",
+            "description": "On the client-side, implement the logic to call the `createSession` Cloud Function when a user first interacts with the app and persist the returned `sessionId` in the application's state.",
+            "dependencies": [
+              "3.2"
+            ],
+            "details": "In the main application component or a dedicated API service module, use the Firebase SDK to invoke the `createSession` callable function. This call should be triggered once when the application loads for a new user. Upon receiving a successful response, store the `sessionId` in a state management solution (e.g., React Context, Zustand) or `sessionStorage` to make it accessible for subsequent API calls throughout the user's session.",
+            "status": "pending",
+            "testStrategy": "Load the web application. Use browser developer tools to inspect the Network tab and confirm a successful POST request is made to the `createSession` function endpoint. Verify in the Application tab that the returned `sessionId` is correctly stored in `sessionStorage` or reflected in the state management devtools."
+          },
+          {
+            "id": 5,
+            "title": "Refine Firestore Security Rules for Session Access",
+            "description": "Update and deploy Firestore security rules to strictly enforce that session documents can only be created and modified by trusted backend Cloud Functions, preventing any direct client-side manipulation.",
+            "dependencies": [
+              "3.1",
+              "3.2"
+            ],
+            "details": "In the `firestore.rules` file, define rules for the `sessions/{sessionId}` path. Explicitly `allow read, write: if false;`. This ensures no client, authenticated or not, can directly access or modify session data. Access is implicitly granted to backend services using the Firebase Admin SDK, such as the `createSession` and `cleanupExpiredSessions` functions, which operate with elevated privileges.",
+            "status": "pending",
+            "testStrategy": "Using the Firestore Rules Simulator, attempt to perform `get`, `list`, `create`, `update`, and `delete` operations on a document within the `sessions` collection as both an unauthenticated and an authenticated client. All attempts should be denied. Confirm that backend operations from unit/integration tests still function correctly."
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Build User & Garment Photo Upload UI",
+        "description": "Develop the frontend components that allow users to upload their personal photos (front, side, optional back) and a single garment photo.",
+        "details": "Create a React component with three file input elements for user photos and one for the garment. Implement client-side validation for file types (JPG, PNG, HEIC) and size (<10MB). Use the Firebase SDK for JavaScript (`@firebase/storage`) to handle the upload process. On successful upload, store the file URL in the component's state.",
+        "testStrategy": "Manually test file uploads with valid and invalid file types/sizes. Verify that upload progress is shown. Check the browser's network tab to confirm files are sent to Firebase Storage. Ensure UI state updates correctly.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Photo Upload Component Shell and UI Layout",
+            "description": "Develop the basic React component structure for the photo upload interface, including placeholders for user and garment photos.",
+            "dependencies": [],
+            "details": "Create a new React component, `PhotoUploader`. Inside this component, add four distinct sections: 'Front View', 'Side View', 'Back View (Optional)', and 'Garment Photo'. Each section should contain a styled file input element (`<input type=\"file\">`) and a placeholder area for displaying the selected image preview or upload status. Use basic CSS or a UI library for a clean, user-friendly layout. This subtask focuses solely on the static UI structure.",
+            "status": "pending",
+            "testStrategy": "Render the component in the browser. Visually verify that all four upload sections and their corresponding file input elements are present, correctly labeled, and stylistically consistent with the application's design."
+          },
+          {
+            "id": 2,
+            "title": "Implement Client-Side File Validation Logic",
+            "description": "Add client-side validation to check the type and size of selected files before any upload is initiated, providing immediate feedback to the user.",
+            "dependencies": [
+              "4.1"
+            ],
+            "details": "Create a validation handler function that is triggered by the `onChange` event of the file input elements. This function will inspect the selected `File` object. It must verify that the file's MIME type is one of `image/jpeg`, `image/png`, or `image/heic`, and that its size is less than 10MB. If validation fails, the function should update the component's state to display a user-friendly error message next to the relevant input and prevent the file from being processed further.",
+            "status": "pending",
+            "testStrategy": "Manually test by attempting to select various invalid files: a text file (.txt), a large image (>10MB), and a PDF. Confirm that the appropriate error message is displayed for each case and that the upload process is not triggered. Then, select a valid file and confirm no error is shown."
+          },
+          {
+            "id": 3,
+            "title": "Integrate Firebase Storage and Implement Core Upload Function",
+            "description": "Configure the Firebase Storage SDK and create a reusable asynchronous function to handle the file upload process.",
+            "dependencies": [
+              "4.2"
+            ],
+            "details": "Ensure the Firebase Storage service is initialized within the application's Firebase configuration. Create an asynchronous function, `uploadFileToStorage(file, uploadPath)`. This function will take a validated `File` object and a destination path string (e.g., `sessions/{sessionId}/user_front.jpg`). It will use `ref()` and `put()` from the `@firebase/storage` SDK to upload the file. Upon successful completion, the function must resolve with the public `downloadURL` of the uploaded file by calling `getDownloadURL()`.",
+            "status": "pending",
+            "testStrategy": "Create a temporary test button in the UI that calls the `uploadFileToStorage` function with a hardcoded valid file and path. After clicking, verify in the Firebase Storage console that the file has been uploaded to the specified path. Check the browser console to ensure a valid HTTPS download URL is returned by the function."
+          },
+          {
+            "id": 4,
+            "title": "Manage UI State and Visual Feedback During Upload",
+            "description": "Implement state management to provide clear visual feedback to the user during and after the upload process, including progress, success, and error states.",
+            "dependencies": [
+              "4.3"
+            ],
+            "details": "For each of the four upload slots, expand the React state to track the upload status (e.g., 'idle', 'uploading', 'success', 'error'). When an upload is initiated, set the status to 'uploading', disable the corresponding file input to prevent concurrent uploads, and display a loading indicator (e.g., a spinner or progress bar). On successful upload, use the returned URL to display a thumbnail preview of the image. If an error occurs, display a clear error message.",
+            "status": "pending",
+            "testStrategy": "Manually upload a valid file. Observe the UI to confirm that a loading indicator appears and the input is disabled. After the upload completes, verify that the loading indicator is replaced by a thumbnail of the uploaded image. Use browser developer tools to simulate a network error or throttle the connection to test the progress and error-handling states."
+          },
+          {
+            "id": 5,
+            "title": "Store Uploaded Photo URLs in Component State",
+            "description": "On successful upload, update the component's state to store the returned file URLs, making them available for subsequent operations.",
+            "dependencies": [
+              "4.4"
+            ],
+            "details": "Create a state object within the `PhotoUploader` component to hold the URLs for the uploaded photos, e.g., `{ front: null, side: null, back: null, garment: null }`. After a file is successfully uploaded and its `downloadURL` is received (from subtask 4.3), update this state object with the new URL in the corresponding property. This ensures the URLs are managed within the component and can be passed to other components or functions as needed.",
+            "status": "pending",
+            "testStrategy": "After successfully uploading a photo for each slot (e.g., 'front' and 'garment'), use React Developer Tools to inspect the `PhotoUploader` component's state. Verify that the state object correctly holds the `downloadURL` strings for the photos that were uploaded."
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Develop Backend File Handling Function",
+        "description": "Create a Cloud Function to handle file uploads, associate them with the user's session, and store them in a session-specific folder in Cloud Storage.",
+        "details": "Create a Cloud Function triggered by file uploads to a temporary bucket or an HTTP endpoint that receives the file. The function will move the file to a structured path like `/user-photos/{sessionId}/{pose-type}.jpg`. Update the corresponding `SessionObject` in Firestore with the public URLs of the stored images.",
+        "testStrategy": "Trigger the function by uploading a file from the client. Verify the file is moved to the correct folder in Cloud Storage. Check the Firestore `SessionObject` to confirm the `userPhotos` map is updated with the correct URL.",
+        "priority": "high",
+        "dependencies": [
+          4
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Configure Cloud Function and Storage Trigger",
+            "description": "Set up the basic infrastructure for the file handling function, including creating the function, defining its trigger, and configuring necessary permissions.",
+            "dependencies": [],
+            "details": "Initialize a new Gen 2 Cloud Function in the Firebase project. Configure the function to be triggered by `google.cloud.storage.object.v1.finalized` on a designated temporary upload bucket (e.g., `[PROJECT-ID].appspot.com/temp-uploads`). Grant the function's service account `roles/storage.objectAdmin` on the storage buckets and `roles/datastore.user` on Firestore.",
+            "status": "pending",
+            "testStrategy": "Deploy the initial 'hello world' function. Upload a file to the temporary bucket and verify that the function's execution logs show it was triggered successfully."
+          },
+          {
+            "id": 2,
+            "title": "Implement File Metadata Parsing and Validation",
+            "description": "Write the initial function logic to extract session and pose information from the uploaded file's path and validate the data.",
+            "dependencies": [
+              "5.1"
+            ],
+            "details": "Within the function, access the CloudEvent object. The file path will be in the `data.name` property (e.g., `temp-uploads/{sessionId}/{pose-type}.jpg`). Parse this string to extract `sessionId` and `pose-type`. Implement checks to ensure both values are non-empty and conform to expected formats (e.g., UUID for session, specific strings for pose). Log an error and terminate the function if validation fails.",
+            "status": "pending",
+            "testStrategy": "Unit test the parsing logic with valid and invalid file paths. Trigger the deployed function with a malformed file path (e.g., `temp-uploads/invalid-session.jpg`) and verify it logs an error and exits gracefully."
+          },
+          {
+            "id": 3,
+            "title": "Implement File Relocation in Cloud Storage",
+            "description": "Add the core logic to move the validated file from the temporary bucket to its permanent, session-specific folder in Cloud Storage.",
+            "dependencies": [
+              "5.2"
+            ],
+            "details": "Using the Firebase Admin SDK (`@google-cloud/storage`), instantiate a client for the storage bucket. Use the parsed `sessionId` and `pose-type` to construct the destination path: `user-photos/{sessionId}/{pose-type}.jpg`. Use the `file.move()` method to transfer the file to the new location. Ensure the original file in the temporary bucket is automatically deleted upon a successful move.",
+            "status": "pending",
+            "testStrategy": "Trigger the function with a valid file. Verify in the Google Cloud Console that the file is removed from the `/temp-uploads` directory and appears in the correct `/user-photos/{sessionId}/` directory."
+          },
+          {
+            "id": 4,
+            "title": "Implement Firestore SessionObject Update Logic",
+            "description": "After the file is successfully stored, update the corresponding session document in Firestore with the file's public URL.",
+            "dependencies": [
+              "5.3"
+            ],
+            "details": "Using the Firebase Admin SDK for Firestore, reference the `sessions` collection. Use the parsed `sessionId` to get the specific document. Generate a public, signed URL for the newly moved file with a long-lived expiration. Update the document's `userPhotos` map using dot notation (e.g., `userPhotos.{pose-type}`) to set the generated URL. Use a `{ merge: true }` option to avoid overwriting other fields.",
+            "status": "pending",
+            "testStrategy": "After triggering the function, inspect the corresponding `SessionObject` document in the Firestore console. Confirm that the `userPhotos` map contains a new entry where the key is the `pose-type` and the value is a valid, accessible URL for the image in Cloud Storage."
+          },
+          {
+            "id": 5,
+            "title": "Implement Robust Error Handling and Final Deployment",
+            "description": "Wrap the function's logic in comprehensive error handling, add detailed logging, and perform a final deployment.",
+            "dependencies": [
+              "5.4"
+            ],
+            "details": "Enclose the file move and Firestore update operations in `try...catch` blocks. In the `catch` block, log the detailed error object. Implement logic to handle specific failures, such as a non-existent `sessionId` in Firestore (log error and delete the uploaded temp file). Add structured logs for successful operations and critical failures. Once tested, deploy the final, robust version of the function.",
+            "status": "pending",
+            "testStrategy": "Test edge cases: trigger the function with a `sessionId` that does not exist in Firestore and verify the temporary file is cleaned up and an error is logged. Simulate a permissions error and check for appropriate error logging. Confirm successful end-to-end runs are logged correctly."
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Implement Core Gemini Generation Function (Single Pose)",
+        "description": "Create the main Cloud Function that integrates with the Gemini 2.5 Flash Image model to generate a single 'Standing Front' pose.",
+        "details": "Create an HTTP-triggered Cloud Function that accepts a `sessionId` and `garmentImageUrl`. The function will fetch the user's photo URLs from the session document in Firestore. Use the Vertex AI Node.js SDK to call the Gemini model. Construct a detailed prompt including the user photo, garment photo, and instructions to generate a realistic try-on image. Return the generated image URL.",
+        "testStrategy": "Invoke the function with mock data (valid session and image URLs). Verify a successful API call is made to Vertex AI in Cloud Logging. Ensure the function returns a URL to a generated image. Test error handling for failed API calls.",
+        "priority": "high",
+        "dependencies": [
+          5
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Initialize Cloud Function and SDKs",
+            "description": "Set up the basic structure for the HTTP-triggered Gen 2 Cloud Function. Initialize the Firebase Admin SDK for Firestore access and the Vertex AI Node.js SDK for Gemini integration.",
+            "dependencies": [],
+            "details": "Create a new Node.js Cloud Function. Add `@google-cloud/vertexai` and `firebase-admin` as dependencies. Implement the basic HTTP request handler that parses the `sessionId` and `garmentImageUrl` from the request body. Initialize SDK clients in the global scope for reuse and proper connection handling.",
+            "status": "pending",
+            "testStrategy": "Deploy the function and invoke it with a sample JSON body. Verify in Cloud Logging that the function starts, logs the parsed `sessionId` and `garmentImageUrl`, and that no SDK initialization errors occur."
+          },
+          {
+            "id": 2,
+            "title": "Implement Firestore Session Data Retrieval",
+            "description": "Add logic to the function to connect to Firestore and retrieve the user's photo URLs based on the provided `sessionId`.",
+            "dependencies": [
+              "6.1"
+            ],
+            "details": "Using the initialized Firebase Admin SDK, query the `sessions` collection for the document matching the `sessionId`. Extract the `userPhotos` array, which contains the URLs to the user's photos in Cloud Storage. Implement robust error handling for cases where the session document is not found or is expired, returning a 404 Not Found error.",
+            "status": "pending",
+            "testStrategy": "Invoke the function with a valid `sessionId` corresponding to a mock session document in Firestore. Verify that the user photo URLs are correctly fetched and logged. Test with an invalid `sessionId` to ensure the function returns the appropriate HTTP error status and message."
+          },
+          {
+            "id": 3,
+            "title": "Construct Multimodal Prompt for Gemini",
+            "description": "Develop the logic to assemble the complete prompt for the Gemini model, including the instructional text, the user's photo, and the garment photo.",
+            "dependencies": [
+              "6.2"
+            ],
+            "details": "Define a structured text prompt instructing the model to perform a realistic virtual try-on, placing the garment on the person from the user photo. Specify the desired output pose ('Standing Front') and other quality parameters. Create the `parts` array for the Gemini request by fetching the image data from the user photo URL and the garment image URL and converting them to base64-encoded strings.",
+            "status": "pending",
+            "testStrategy": "Write a unit test for the prompt construction logic. Given mock user and garment image URLs, verify that the function correctly downloads the image data and constructs the expected JSON object for the Gemini API request, including correctly formatted base64 image data and the detailed text prompt."
+          },
+          {
+            "id": 4,
+            "title": "Integrate Vertex AI SDK for Image Generation",
+            "description": "Implement the call to the Vertex AI Gemini 1.5 Flash model using the constructed multimodal prompt.",
+            "dependencies": [
+              "6.3"
+            ],
+            "details": "Use the initialized Vertex AI client to call the `generateContent` method with the `gemini-1.5-flash-001` model. Pass the multimodal prompt (text and image parts) constructed in the previous subtask. Configure generation parameters like temperature and safety settings. Implement a `try/catch` block to handle potential API errors from Vertex AI, logging them for debugging.",
+            "status": "pending",
+            "testStrategy": "Invoke the function with valid inputs that trigger the Vertex AI call. Use Cloud Logging to monitor the request sent to the Vertex AI API and the raw response received. Mock the Vertex AI SDK in a unit test to simulate a successful API response and a failed API response, ensuring the function's logic handles both cases gracefully."
+          },
+          {
+            "id": 5,
+            "title": "Process Gemini Response and Return Image URL",
+            "description": "Handle the response from the Gemini API, save the generated image to Cloud Storage, and return a public URL to the client.",
+            "dependencies": [
+              "6.4"
+            ],
+            "details": "Parse the response from the `generateContent` call to extract the base64-encoded image data from the first candidate. Create a new file in a designated Cloud Storage bucket (e.g., `generated-images/`). Write the decoded image data to this file with a unique name. Make the file publicly readable and generate its public URL. Return this URL in a JSON object as the HTTP 200 OK response.",
+            "status": "pending",
+            "testStrategy": "After a successful API call, check the designated Cloud Storage bucket to confirm a new image file has been created. Call the function endpoint and verify it returns a JSON response containing a valid, accessible URL. Test the URL in a browser to ensure the image loads correctly."
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Integrate Frontend Generation Flow",
+        "description": "Connect the frontend 'Generate My Poses' button to the core generation Cloud Function and display the single resulting image.",
+        "details": "Add an `onClick` handler to the 'Generate' button. The handler should call the generation Cloud Function from Task 6, passing the current `sessionId` and garment URL. Implement a loading state to disable the button during processing. On success, display the returned image. On error, show a user-friendly message.",
+        "testStrategy": "Perform an end-to-end test: upload photos, click generate, wait for the loading state to finish, and verify the generated image is displayed on the page. Test the error path by simulating a function failure.",
+        "priority": "high",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create API Client Function for Generation",
+            "description": "Implement a reusable function or custom hook to encapsulate the logic for calling the generation Cloud Function.",
+            "dependencies": [],
+            "details": "In the frontend codebase, create a dedicated service file (e.g., `services/generationService.js`). Using the Firebase SDK for JavaScript, implement an exported function that calls the callable Cloud Function from Task 6. This function must accept `sessionId` and `garmentUrl` as parameters and return a promise that resolves with the generated image URL or rejects with an error object.",
+            "status": "pending",
+            "testStrategy": "Write a unit test that mocks the Firebase SDK's `https.onCall` function to verify that the client function is called with the correct parameters and correctly handles both promise resolution and rejection."
+          },
+          {
+            "id": 2,
+            "title": "Implement 'Generate' Button and Core onClick Handler",
+            "description": "Add the 'Generate My Poses' button to the UI and create the main `onClick` handler to orchestrate the generation flow, including state management for loading, success, and error.",
+            "dependencies": [
+              "7.1"
+            ],
+            "details": "In the relevant React component, add a `<button>` for 'Generate My Poses'. Create state variables for `isLoading`, `error`, and `generatedImageUrl`. Implement an `async` `onClick` handler that sets loading state, calls the API client function from subtask 7.1, and handles the try/catch/finally logic to update the respective state variables.",
+            "status": "pending",
+            "testStrategy": "Manually test that clicking the button triggers the handler. Use `console.log` to verify that the correct `sessionId` and `garmentUrl` are passed to the API client function."
+          },
+          {
+            "id": 3,
+            "title": "Integrate Loading State UI",
+            "description": "Connect the loading state to the UI to provide visual feedback and prevent multiple concurrent requests.",
+            "dependencies": [
+              "7.2"
+            ],
+            "details": "Bind the 'Generate' button's `disabled` attribute to the `isLoading` state variable created in the previous subtask. Add a conditional UI element, such as a spinner or a 'Generating...' text overlay, that is displayed only when `isLoading` is true. Ensure this visual feedback is prominent but not disruptive.",
+            "status": "pending",
+            "testStrategy": "Click the 'Generate' button. Verify the button becomes disabled immediately. Use browser developer tools to throttle the network and confirm the loading indicator remains visible until the API call completes."
+          },
+          {
+            "id": 4,
+            "title": "Implement Success State and Image Display",
+            "description": "On a successful API response, update the component's state and render the returned image in a designated area on the page.",
+            "dependencies": [
+              "7.2"
+            ],
+            "details": "Within the `try` block of the `onClick` handler, upon receiving a successful response, update the `generatedImageUrl` state with the URL from the API. Create a designated image display area in the component's JSX. Use conditional rendering to display an `<img>` element with its `src` set to the `generatedImageUrl` only when the URL is present.",
+            "status": "pending",
+            "testStrategy": "Mock a successful API call that returns a sample image URL. Verify that after the call, the `generatedImageUrl` state is updated and the image is correctly rendered on the page. Check the `src` attribute of the `<img>` tag."
+          },
+          {
+            "id": 5,
+            "title": "Implement Error State and User Feedback Message",
+            "description": "Catch any errors from the API call and display a clear, user-friendly message to inform the user of the failure.",
+            "dependencies": [
+              "7.2"
+            ],
+            "details": "In the `catch` block of the `onClick` handler, update the `error` state with a user-friendly string (e.g., 'Sorry, we couldn't generate your poses. Please try again.'). Use conditional rendering in the JSX to display this error message in an alert or notification component. Ensure that initiating a new generation clears any previous error messages.",
+            "status": "pending",
+            "testStrategy": "Mock a failed API call by having the client function throw an error. Verify that the `finally` block correctly resets the loading state and that the user-friendly error message is displayed in the UI."
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Extend Gemini Function for Multi-Pose Generation",
+        "description": "Update the Gemini integration to generate all three required poses: Standing Front, Standing Side, and Walking Side.",
+        "details": "Modify the Cloud Function from Task 6. Instead of one API call, make three parallel calls to the Vertex AI SDK. Engineer distinct prompts for each pose, specifying the desired angle and action (e.g., '...in a side profile view', '...as if the person is walking, side view'). Aggregate the results and return an array of three image URLs.",
+        "testStrategy": "Unit test the prompt generation logic. Invoke the function and verify it returns three distinct image URLs. Manually inspect the generated images to confirm they match the requested poses.",
+        "priority": "high",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Refactor Cloud Function for Parallel Execution",
+            "description": "Modify the existing Cloud Function structure from Task 6 to support multiple, concurrent API calls. This involves changing the main execution flow to accommodate an array of inputs and handle an array of outputs.",
+            "dependencies": [],
+            "details": "Abstract the single API call logic into a reusable, promise-based function that takes a prompt and returns a generated image URL. Update the main function handler to prepare for using `Promise.all` to manage the execution of multiple asynchronous generation requests. This initial refactoring focuses on the structure, not the multi-pose logic itself.",
+            "status": "pending",
+            "testStrategy": "Verify that the refactored function can successfully execute a single API call using the new structure. Adapt the existing unit tests from Task 6 to match the refactored code."
+          },
+          {
+            "id": 2,
+            "title": "Design and Implement Multi-Pose Prompt Generation Logic",
+            "description": "Create the logic to generate three distinct, detailed prompts for the 'Standing Front', 'Standing Side', and 'Walking Side' poses based on the input user and garment data.",
+            "dependencies": [],
+            "details": "Create a dedicated helper function that accepts base information (e.g., user photo URL, garment photo URL) and returns an array of three complete prompt objects. Each prompt must be engineered with specific text instructions to guide the Gemini model, such as 'full body photo... in a standing front view', '...in a side profile view, standing still', and '...as if the person is walking, captured from the side'.",
+            "status": "pending",
+            "testStrategy": "Unit test the prompt generation function. Given a set of mock inputs, assert that it returns an array of three unique and correctly formatted prompt strings as expected."
+          },
+          {
+            "id": 3,
+            "title": "Implement Parallel Vertex AI SDK Calls",
+            "description": "Integrate the multi-pose prompts with the parallel execution structure to make three concurrent calls to the Vertex AI SDK using `Promise.all`.",
+            "dependencies": [
+              "8.1",
+              "8.2"
+            ],
+            "details": "Within the main Cloud Function, call the prompt generation logic from subtask 8.2 to get the array of prompts. Map over this array, calling the refactored, promise-based generation function for each prompt. Use `Promise.all` to await the completion of all three API requests concurrently.",
+            "status": "pending",
+            "testStrategy": "Invoke the Cloud Function with mock data. Use Cloud Logging to verify that three distinct API requests are sent to the Vertex AI endpoint in parallel. Check the timestamps to confirm concurrent execution rather than sequential."
+          },
+          {
+            "id": 4,
+            "title": "Aggregate Results and Handle Partial Failures",
+            "description": "Process the array of responses from the parallel Vertex AI calls, extract the generated image URLs, and format them into the final JSON response array. Implement robust error handling for partial failures.",
+            "dependencies": [
+              "8.3"
+            ],
+            "details": "Instead of `Promise.all`, use `Promise.allSettled` to handle the results from the parallel calls. This ensures that the function does not fail completely if one of the three image generations fails. Iterate through the results: for fulfilled promises, extract the image URL; for rejected promises, log the error and place a `null` value in the corresponding position in the final response array. The function must always return a JSON object with an array of three elements (URLs or nulls).",
+            "status": "pending",
+            "testStrategy": "Test the success case where the function returns an array of three image URLs. Simulate a failure for one of the API calls (e.g., by providing a malformed prompt for one pose) and verify the function returns an array containing two URLs and one `null` value, and that an error is logged."
+          },
+          {
+            "id": 5,
+            "title": "Update Integration Tests and Perform Manual Validation",
+            "description": "Expand the end-to-end test suite to validate the multi-pose functionality and manually verify the quality and accuracy of the generated images.",
+            "dependencies": [
+              "8.4"
+            ],
+            "details": "Modify the main integration test for the Cloud Function to assert that the HTTP response body contains a JSON array with exactly three elements. The test should check that the elements are either valid URL strings or nulls. After deploying, perform a manual invocation and visually inspect the three generated images to confirm they correctly correspond to the 'Standing Front', 'Standing Side', and 'Walking Side' poses.",
+            "status": "pending",
+            "testStrategy": "Run the updated automated integration test and ensure it passes. Manually trigger the function with a sample user and garment, then review the output images to confirm they match the requested poses and meet quality standards."
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Build Results Gallery UI",
+        "description": "Create a frontend component to display the three generated images in a user-friendly gallery format.",
+        "details": "Develop a React component that accepts an array of image URLs. Render the images in a responsive grid or carousel. Implement a clear loading state for the gallery (e.g., skeleton loaders for each image) that is displayed while the backend is processing.",
+        "testStrategy": "Test the component with mock image URLs. Verify it displays correctly on desktop and mobile viewports. Test the loading state by simulating a delay before passing the image URLs.",
+        "priority": "medium",
+        "dependencies": [
+          7,
+          8
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Scaffold Gallery Component and Define Props",
+            "description": "Create the initial `ResultsGallery.tsx` React component file. Define its props interface to accept an array of image URLs and a boolean loading state, establishing the component's contract.",
+            "dependencies": [],
+            "details": "Create the file `components/ResultsGallery.tsx`. Define a TypeScript interface `ResultsGalleryProps` with `imageUrls: string[]` and `isLoading: boolean`. The component should conditionally render content based on the `isLoading` prop.",
+            "status": "pending",
+            "testStrategy": "Verify the component can be imported and rendered in a storybook or a parent component. Test that passing different props (e.g., empty array, populated array, true/false for isLoading) does not cause runtime errors."
+          },
+          {
+            "id": 2,
+            "title": "Implement Skeleton Loader UI",
+            "description": "Develop the visual loading state for the gallery. This involves creating and displaying three skeleton loader placeholders when the `isLoading` prop is true, providing immediate feedback to the user.",
+            "dependencies": [
+              "9.1"
+            ],
+            "details": "Within the `ResultsGallery` component, implement the conditional rendering logic. When `isLoading` is true, render three skeleton components arranged in a grid. Use a library like `react-loading-skeleton` or create custom CSS-animated placeholders.",
+            "status": "pending",
+            "testStrategy": "Set the `isLoading` prop to `true` and verify that three distinct skeleton loaders are displayed. Check that they are arranged correctly in the intended grid layout and have a subtle loading animation."
+          },
+          {
+            "id": 3,
+            "title": "Develop Static Image Grid Display",
+            "description": "Implement the core functionality to render the generated images in a grid format when the loading is complete and image URLs are available.",
+            "dependencies": [
+              "9.1"
+            ],
+            "details": "When `isLoading` is `false` and `imageUrls` has content, map over the `imageUrls` array. For each URL, render an `<img>` element with appropriate `src` and `alt` attributes. Use CSS Grid or Flexbox to create a basic three-column layout.",
+            "status": "pending",
+            "testStrategy": "Pass `isLoading={false}` and an array of three mock image URLs to the component. Verify that all three images are rendered correctly and appear in a grid structure."
+          },
+          {
+            "id": 4,
+            "title": "Apply Responsive Styling to the Gallery Grid",
+            "description": "Add CSS media queries or utility classes to ensure the image gallery's layout adapts gracefully to different screen sizes, from mobile to desktop, providing a consistent user experience.",
+            "dependencies": [
+              "9.3"
+            ],
+            "details": "Using CSS media queries or a framework like Tailwind CSS, adjust the grid layout. For example, the grid should collapse to a single column on small mobile screens (< 640px) and expand to three columns on larger screens. Ensure images scale properly within their containers.",
+            "status": "pending",
+            "testStrategy": "Use browser developer tools to test the component's layout on various standard viewport widths (e.g., 375px, 768px, 1024px, 1440px). Confirm the layout changes as expected and there are no overflow or alignment issues."
+          },
+          {
+            "id": 5,
+            "title": "Implement 'Enlarge Image' Modal Functionality",
+            "description": "Enhance user interaction by allowing users to click on a gallery image to view a larger, detailed version in a modal overlay, complete with a close mechanism.",
+            "dependencies": [
+              "9.3"
+            ],
+            "details": "Introduce local state to manage the modal's visibility and the URL of the selected image. Attach an `onClick` handler to each image in the grid. When clicked, update the state to show the modal with the selected image. The modal should include a close button or allow closing by clicking the background overlay.",
+            "status": "pending",
+            "testStrategy": "Click on each image in the gallery and verify that a modal opens displaying the correct, larger image. Test that the modal can be closed successfully using its close button and by clicking the overlay."
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Implement Privacy-First Storage Rules",
+        "description": "Configure and deploy Firebase Storage lifecycle rules to ensure all user-uploaded photos are automatically deleted after 60 minutes.",
+        "details": "In the `storage.rules` file or GCP console, create a lifecycle rule for the `user-photos/` path. Set the condition to 'Age' and the number of days to 1 (or use the most granular option available, typically 1 day, and rely on a scheduled function for hourly cleanup if needed). The rule action should be 'Delete'.",
+        "testStrategy": "Upload a file. Wait for the specified duration (this may require setting a short duration like 1 day and checking the next day). Verify the file is automatically deleted from Cloud Storage. Review GCP audit logs for deletion events.",
+        "priority": "high",
+        "dependencies": [
+          5
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Research Lifecycle Rule Limitations & Design Function-Based Alternative",
+            "description": "Formally investigate and document the minimum 1-day granularity of Firebase Storage lifecycle rules. Based on the findings, design a scheduled Cloud Function that uses Firestore session data to achieve a 60-minute deletion policy.",
+            "dependencies": [],
+            "details": "Confirm via Google Cloud documentation that Storage Object Lifecycle Management's 'Age' condition cannot be set to less than 1 day. Create a design document for a Cloud Function that queries the 'sessions' Firestore collection (from Task 3) for documents where 'expiresAt' is in the past, and then deletes the associated files from the 'user-photos/' path in Storage.",
+            "status": "pending",
+            "testStrategy": "Review the design document to ensure the logic correctly identifies expired sessions and their corresponding files, and includes steps for error handling and cleanup of the Firestore session document itself."
+          },
+          {
+            "id": 2,
+            "title": "Implement Core Logic for the Cleanup Cloud Function",
+            "description": "Write the Node.js code for the scheduled Cloud Function that identifies and deletes expired photos based on Firestore session data.",
+            "dependencies": [
+              "10.1"
+            ],
+            "details": "Using the Firebase Admin SDK, implement a Pub/Sub-triggered Cloud Function. The function will query the 'sessions' collection for expired documents. For each expired session, it will retrieve the photo paths and use the Storage SDK to delete each file. Use Promise.all() for efficient batch deletion per session. Implement comprehensive logging for successful and failed operations.",
+            "status": "pending",
+            "testStrategy": "Write unit tests using 'firebase-functions-test' to mock Firestore queries and Storage delete calls. Verify that the function logic correctly identifies expired sessions and attempts to delete the correct file paths."
+          },
+          {
+            "id": 3,
+            "title": "Configure IAM Permissions and Function Schedule",
+            "description": "Set up the necessary Identity and Access Management (IAM) permissions and define the execution schedule for the cleanup function.",
+            "dependencies": [
+              "10.2"
+            ],
+            "details": "In the Google Cloud Console, ensure the service account associated with the Cloud Function has the 'Storage Object Admin' role to delete files from Cloud Storage and the 'Cloud Datastore User' role to read from Firestore. In the function's code, define the schedule using `.schedule('every 60 minutes')`.",
+            "status": "pending",
+            "testStrategy": "Review the IAM roles for the function's service account in the GCP console to ensure it adheres to the principle of least privilege while still having the necessary permissions to perform its tasks."
+          },
+          {
+            "id": 4,
+            "title": "Deploy the Scheduled Cleanup Function",
+            "description": "Deploy the cleanup Cloud Function to the Firebase project environment.",
+            "dependencies": [
+              "10.3"
+            ],
+            "details": "Use the Firebase CLI command `firebase deploy --only functions:yourCleanupFunctionName` to deploy the function. After deployment, verify in the Google Cloud Console that the function is active and the associated Cloud Scheduler job is created and enabled with the correct 60-minute schedule.",
+            "status": "pending",
+            "testStrategy": "Check the Cloud Function logs immediately after deployment for any initialization errors. Confirm the Cloud Scheduler job's status is 'Enabled' and the target is the deployed function."
+          },
+          {
+            "id": 5,
+            "title": "Perform End-to-End Verification of Auto-Deletion",
+            "description": "Conduct a manual end-to-end test to confirm that photos from an expired session are successfully deleted by the scheduled function.",
+            "dependencies": [
+              "10.4"
+            ],
+            "details": "1. Upload a test photo and create a corresponding session document in Firestore. 2. Manually edit the 'expiresAt' timestamp in the Firestore document to a time in the past. 3. Navigate to the Cloud Scheduler in the GCP console and use the 'Run now' feature to trigger the cleanup function immediately. 4. Verify that the test photo has been deleted from Firebase Storage.",
+            "status": "pending",
+            "testStrategy": "Confirm file deletion by checking the Firebase Storage browser. Review the Cloud Function's execution logs for the manually triggered run to ensure it completed successfully and logged the deletion of the target file."
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Implement 'Try Another Outfit' Flow",
+        "description": "Enable users to try a new garment without re-uploading their personal photos by reusing the current session.",
+        "details": "After a set of images is generated, display a 'Try Another Outfit' button. This button should reset the garment upload component and allow the user to select a new clothing item. The existing `sessionId` and personal photos are retained for the next generation request.",
+        "testStrategy": "Complete one full generation cycle. Click 'Try Another Outfit', upload a new garment photo, and click 'Generate' again. Verify the new request uses the same `sessionId` and that new images are generated without asking for personal photos again.",
+        "priority": "medium",
+        "dependencies": [
+          9
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add 'Try Another Outfit' Button to Results UI",
+            "description": "Create and style a 'Try Another Outfit' button within the image results gallery component. The button should only be visible after a successful image generation.",
+            "dependencies": [],
+            "details": "In the React/Vue/Svelte component that displays the generated images (related to Task 9), add a button element with the label 'Try Another Outfit'. Use conditional rendering to ensure it only appears after the generation status is 'complete'. Style the button to match the application's design system.",
+            "status": "pending",
+            "testStrategy": "After a successful image generation, verify the 'Try Another Outfit' button is visible and correctly styled. Verify it is not visible before the first generation or while generation is in progress."
+          },
+          {
+            "id": 2,
+            "title": "Implement State Reset Logic on Button Click",
+            "description": "Wire up the 'Try Another Outfit' button to trigger a state management action that resets the application for a new garment upload while preserving the session and personal photos.",
+            "dependencies": [
+              "11.1"
+            ],
+            "details": "Create a new function, e.g., `handleTryAnother()`, that is called when the 'Try Another Outfit' button is clicked. This function should dispatch an action to the state management store (e.g., Pinia, Redux, Zustand). The action must reset state related to the garment (e.g., `garmentFile = null`, `garmentPreviewUrl = ''`) and the generation results, but must not reset the `sessionId` or the state for the user's personal photos. The UI should scroll the user back to the garment upload section.",
+            "status": "pending",
+            "testStrategy": "Click the 'Try Another Outfit' button. Verify that the garment upload component is cleared, the generated image gallery is hidden, and the personal photo upload component remains untouched. Check the application state using browser dev tools to confirm `sessionId` is preserved."
+          },
+          {
+            "id": 3,
+            "title": "Refactor Garment Upload Component for Reset",
+            "description": "Modify the garment upload component to be programmatically resettable based on the state change triggered by the 'Try Another Outfit' button.",
+            "dependencies": [
+              "11.2"
+            ],
+            "details": "Ensure the garment upload component's internal state (e.g., the file input's value, the image preview) is derived from props or the central state store. When the state is reset by the `handleTryAnother()` function, the component must automatically re-render to its initial, empty state. This may involve programmatically clearing the `<input type=\"file\">` value.",
+            "status": "pending",
+            "testStrategy": "After clicking 'Try Another Outfit', confirm the garment upload component UI is visually reset. The file name and image preview for the previous garment should be gone, and the 'Select Garment' button should be active again."
+          },
+          {
+            "id": 4,
+            "title": "Update Generation Request Logic for Subsequent Runs",
+            "description": "Adjust the API call for image generation to handle the 'Try Another Outfit' flow, sending the new garment with the existing session ID.",
+            "dependencies": [
+              "11.2"
+            ],
+            "details": "The `handleGenerate()` function needs to be aware of the current flow. When invoked after a 'Try Another Outfit' action, it will find an existing `sessionId` in the state. The function should package the new garment file and the existing `sessionId` into the multipart/form-data request to the generation endpoint. The personal photos will not be re-uploaded from the client; the backend will retrieve them using the `sessionId`.",
+            "status": "pending",
+            "testStrategy": "Use browser developer tools to inspect the network request made when clicking 'Generate' in the 'Try Another Outfit' flow. Verify the request payload contains the new garment file and the original `sessionId`. Confirm that the personal photo files are not part of this second request."
+          },
+          {
+            "id": 5,
+            "title": "End-to-End Flow Validation and Testing",
+            "description": "Perform a complete end-to-end test of the 'Try Another Outfit' feature to ensure a seamless user experience and correct backend interaction.",
+            "dependencies": [
+              "11.1",
+              "11.2",
+              "11.3",
+              "11.4"
+            ],
+            "details": "Execute the full test case: 1. Start a new session. 2. Upload personal photos. 3. Upload a first garment photo. 4. Click 'Generate' and wait for results. 5. Verify results are shown. 6. Click 'Try Another Outfit'. 7. Verify UI resets correctly. 8. Upload a second, different garment photo. 9. Click 'Generate' again. 10. Verify the new results show the user wearing the second garment.",
+            "status": "pending",
+            "testStrategy": "Follow the steps outlined in the details. Check the backend logs or Firestore session data to confirm the same `sessionId` was used for both generation requests. Verify that the final images correctly combine the original personal photos with the second garment."
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Create Welcome & Consent UI",
+        "description": "Build the initial screen that explains the PoC, outlines the privacy policy (session-based storage), and requires user consent to proceed.",
+        "details": "Create a modal or a dedicated view that is shown on first visit. It should contain text from the PRD's 'Welcome & Consent' flow. Add a checkbox for 'I understand and agree' that must be checked before the photo upload interface is revealed.",
+        "testStrategy": "Verify the consent screen appears on first load. Confirm the main application UI is hidden until the consent checkbox is ticked. Ensure the consent state is managed correctly (e.g., using local storage to not show it again within the same session).",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Scaffold the Consent Modal React Component",
+            "description": "Create the basic file structure and static JSX for the welcome/consent modal. This includes a container, a title area, a content area, and a footer for controls, without any dynamic content or logic yet.",
+            "dependencies": [],
+            "details": "Create a new React component file (e.g., `ConsentModal.js`). Use basic HTML/JSX and CSS to lay out the modal's visual structure, ensuring it overlays the main application view. Add placeholder text for the title, body, and footer sections.",
+            "status": "pending",
+            "testStrategy": "Render the component on a test page and verify it appears visually as a basic, styled modal overlay, blocking interaction with any underlying content."
+          },
+          {
+            "id": 2,
+            "title": "Integrate Welcome and Privacy Policy Text",
+            "description": "Populate the scaffolded modal component with the specific text content for the PoC explanation and privacy policy, as defined in the PRD.",
+            "dependencies": [
+              "12.1"
+            ],
+            "details": "Retrieve the required text from the PRD's 'Welcome & Consent' flow. Replace the placeholder text in the modal's title and body sections with this static content. Ensure proper formatting (paragraphs, lists, bolding) for readability.",
+            "status": "pending",
+            "testStrategy": "Visually inspect the rendered modal to confirm all text from the PRD is present, correctly formatted, and readable on various screen sizes."
+          },
+          {
+            "id": 3,
+            "title": "Implement Interactive Consent Checkbox and 'Proceed' Button",
+            "description": "Add the 'I understand and agree' checkbox and a 'Proceed' button to the modal. The button's state must be dynamically controlled by the checkbox.",
+            "dependencies": [
+              "12.1"
+            ],
+            "details": "In the modal's footer, add an `<input type=\"checkbox\">` and a `<button>` element. Use React state (`useState`) to track the checked status of the checkbox. Bind the button's `disabled` attribute to the inverse of the checkbox's state, so the button is only clickable when the box is checked.",
+            "status": "pending",
+            "testStrategy": "Manually test the UI. Verify the 'Proceed' button is disabled by default. Check the box and confirm the button becomes enabled. Uncheck it and confirm the button becomes disabled again."
+          },
+          {
+            "id": 4,
+            "title": "Implement Client-Side Session State for Consent",
+            "description": "Create the logic to check for and set a consent flag in the browser's session storage. This will prevent the modal from reappearing on subsequent page loads within the same session.",
+            "dependencies": [
+              "12.3"
+            ],
+            "details": "On the 'Proceed' button's `onClick` handler, set a flag in `sessionStorage` (e.g., `sessionStorage.setItem('consentGiven', 'true')`). Create a function or hook that checks for this flag when the application first loads to determine if the modal should be displayed.",
+            "status": "pending",
+            "testStrategy": "Load the page for the first time; verify the modal appears. Give consent and click proceed. Reload the page; verify the modal does NOT appear. Clear session storage via developer tools and reload; verify the modal appears again."
+          },
+          {
+            "id": 5,
+            "title": "Conditionally Render Main App UI Based on Consent State",
+            "description": "Integrate the consent logic with the main application layout to hide the primary UI (photo upload interface) until consent is granted.",
+            "dependencies": [
+              "12.4"
+            ],
+            "details": "In the main application component (e.g., `App.js` or `pages/index.js`), use a state variable (e.g., `hasConsented`) that is initialized based on the value from session storage. Conditionally render either the `ConsentModal` or the main application content (e.g., the `PhotoUpload` component placeholder) based on this state variable. The modal should have a callback prop to update this state upon successful consent.",
+            "status": "pending",
+            "testStrategy": "Verify that on a fresh session, only the consent modal is visible. After giving consent, confirm the modal disappears and the main application content placeholder becomes visible without a page reload."
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "title": "Build Feedback Collection UI",
+        "description": "Develop the frontend form for users to provide feedback on the generated images.",
+        "details": "Create a React component with two 5-point rating scale inputs (for 'Realism' and 'Helpfulness') and an optional `textarea` for open-ended feedback. Add a 'Submit Feedback' button.",
+        "testStrategy": "Manually test the form components to ensure ratings can be selected and text can be entered. Verify the form's state is managed correctly within React.",
+        "priority": "medium",
+        "dependencies": [
+          9
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Feedback Form Component Structure",
+            "description": "Set up the initial React component file (`FeedbackForm.js`) with a basic JSX structure and import necessary hooks for state management.",
+            "dependencies": [],
+            "details": "Create a new file at `src/components/FeedbackForm.js`. Initialize a functional component that returns a root `<form>` element. Import the `useState` hook from React to prepare for managing the form's input values.",
+            "status": "pending",
+            "testStrategy": "Verify that the new `FeedbackForm` component can be rendered within the main application view without errors. Check the browser's React DevTools to confirm the component is present in the component tree."
+          },
+          {
+            "id": 2,
+            "title": "Implement 5-Point Rating Inputs",
+            "description": "Develop and integrate two 5-point rating scale inputs for 'Realism' and 'Helpfulness' into the feedback form.",
+            "dependencies": [
+              "13.1"
+            ],
+            "details": "Within the `FeedbackForm` component, create two sets of inputs for the rating scales. A simple implementation can use styled radio buttons (e.g., as stars or circles). Add corresponding `label` elements. Use `useState` to create two state variables, `realismRating` and `helpfulnessRating`, to store the selected values.",
+            "status": "pending",
+            "testStrategy": "Manually interact with the rating inputs in the browser. Confirm that selecting a rating for 'Realism' updates its state correctly and does not affect the 'Helpfulness' rating, and vice-versa. Check React DevTools to see the state values change."
+          },
+          {
+            "id": 3,
+            "title": "Add Textarea and Submit Button",
+            "description": "Incorporate an optional `textarea` for open-ended comments and a 'Submit Feedback' button into the form.",
+            "dependencies": [
+              "13.1"
+            ],
+            "details": "Add a `<textarea>` element with a placeholder like 'Optional: Any other comments?'. Create a new state variable using `useState` to manage its value. Add a `<button type=\"submit\">` with the text 'Submit Feedback'.",
+            "status": "pending",
+            "testStrategy": "Verify the `textarea` is visible and accepts multi-line text input. Confirm the 'Submit Feedback' button is rendered on the page. Typing in the textarea should update its corresponding state variable, verifiable with React DevTools."
+          },
+          {
+            "id": 4,
+            "title": "Implement Form State Management and Validation",
+            "description": "Consolidate form state and implement client-side logic to enable the 'Submit' button only when at least one rating has been provided.",
+            "dependencies": [
+              "13.2",
+              "13.3"
+            ],
+            "details": "Create a `handleSubmit` function that will be attached to the form's `onSubmit` event. Inside the component, calculate a boolean `isSubmittable` based on whether `realismRating > 0` or `helpfulnessRating > 0`. Use this variable to set the `disabled` attribute on the 'Submit Feedback' button.",
+            "status": "pending",
+            "testStrategy": "Load the form and verify the 'Submit' button is disabled by default. Select a rating for either 'Realism' or 'Helpfulness' and confirm the button becomes enabled. Deselect all ratings (if possible) and verify the button becomes disabled again."
+          },
+          {
+            "id": 5,
+            "title": "Wire Up Submit Handler with Mock API Call",
+            "description": "Connect the `handleSubmit` function to the form's submission event and create a placeholder for the future API call to the backend.",
+            "dependencies": [
+              "13.4"
+            ],
+            "details": "Attach the `handleSubmit` function to the `<form>` element's `onSubmit` prop. Inside `handleSubmit`, call `event.preventDefault()`. Assemble the form's state (`realismRating`, `helpfulnessRating`, `textFeedback`) into a single `feedbackData` object. For now, simply `console.log(feedbackData)`. This serves as the integration point for Task 14. After logging, reset the form fields to their initial state.",
+            "status": "pending",
+            "testStrategy": "Fill out the form with sample data (e.g., Realism: 4, Helpfulness: 5, Text: 'Looks great!'). Click 'Submit Feedback'. Check the browser's developer console to ensure the correct data object is logged. Verify that the form fields are cleared after submission."
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "title": "Implement Feedback Submission Backend",
+        "description": "Create a Cloud Function to receive and store user feedback in Firestore.",
+        "details": "Create an HTTP-triggered Cloud Function that accepts a `FeedbackObject` (sessionId, realismScore, helpfulnessScore, textFeedback). The function will validate the input and save it to a `feedback` collection in Firestore. Link the feedback to the session via `sessionId` for anonymous analysis.",
+        "testStrategy": "Write a unit test for the function to validate input and check for successful Firestore write. Call the function from the frontend and verify the feedback document is created correctly in the Firestore console.",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          13
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Firestore Data Model and Schema for Feedback",
+            "description": "Establish the data structure for feedback documents within the `feedback` collection in Firestore to ensure data consistency and proper linking to user sessions.",
+            "dependencies": [],
+            "details": "Define a `FeedbackObject` schema in project documentation. The schema must include `sessionId` (string, to link with the `sessions` collection), `realismScore` (number, range 1-5), `helpfulnessScore` (number, range 1-5), `textFeedback` (string, max 500 characters, optional), and a `createdAt` field (timestamp). This formalizes the data contract before implementation.",
+            "status": "pending",
+            "testStrategy": "Manually create a document in the Firestore console following the defined schema to verify field types and constraints. Review the schema with the team to confirm it meets analytical requirements."
+          },
+          {
+            "id": 2,
+            "title": "Scaffold HTTP-Triggered Cloud Function Endpoint",
+            "description": "Initialize a new HTTP-triggered Cloud Function using the Firebase CLI and configure its basic structure to handle POST requests for feedback submission.",
+            "dependencies": [],
+            "details": "Create a new function file (e.g., `feedback.js`) and export an `https` `onRequest` function named `submitFeedback`. Configure CORS to allow requests from the frontend application's domain. The initial implementation should parse the JSON body and log it, returning a placeholder success response (e.g., HTTP 200 OK).",
+            "status": "pending",
+            "testStrategy": "Deploy the scaffolded function to a development environment. Use a tool like Postman or curl to send a sample POST request to the function's URL. Verify that the function executes, logs the request body, and returns the expected HTTP 200 status code."
+          },
+          {
+            "id": 3,
+            "title": "Implement Server-Side Input Validation Logic",
+            "description": "Add robust validation logic to the Cloud Function to sanitize and verify the structure and content of the incoming `FeedbackObject` before processing.",
+            "dependencies": [
+              "14.2"
+            ],
+            "details": "Implement checks to ensure `sessionId` is a non-empty string, `realismScore` and `helpfulnessScore` are numbers between 1 and 5, and `textFeedback` is a string (if present) under the character limit. If validation fails, the function must terminate and return an HTTP 400 Bad Request error with a descriptive JSON error message.",
+            "status": "pending",
+            "testStrategy": "Write unit tests for the validation logic using a testing framework like Jest or Mocha. Test various invalid inputs: missing fields, incorrect data types (e.g., score as a string), scores out of range, and overly long text feedback. Assert that each case returns a 400 error."
+          },
+          {
+            "id": 4,
+            "title": "Implement Firestore Write Operation",
+            "description": "Integrate the Firebase Admin SDK into the Cloud Function to persist the validated feedback object into the `feedback` collection in Firestore.",
+            "dependencies": [
+              "14.1",
+              "14.3"
+            ],
+            "details": "After the input has been successfully validated, use the Admin SDK to add a new document to the `feedback` collection. The document data should be the validated `FeedbackObject`. Add a `createdAt` field populated with `FieldValue.serverTimestamp()`. On successful creation, the function should return an HTTP 201 Created response with the ID of the newly created document.",
+            "status": "pending",
+            "testStrategy": "Using the Firebase Local Emulator Suite, write an integration test that calls the function with a valid `FeedbackObject`. Assert that a new document is created in the emulated Firestore `feedback` collection and that its data matches the input, including a valid timestamp."
+          },
+          {
+            "id": 5,
+            "title": "Configure Firestore Security Rules and Deploy Function",
+            "description": "Define and deploy Firestore security rules to protect the `feedback` collection and deploy the completed Cloud Function to the production environment.",
+            "dependencies": [
+              "14.4"
+            ],
+            "details": "In `firestore.rules`, add a rule for the `feedback` collection that denies all public `read`, `update`, and `delete` operations (`allow read, update, delete: if false;`). Since the Cloud Function uses admin privileges, it bypasses these rules for writing. This ensures feedback data is write-only via the function and cannot be tampered with. Deploy both the function and the updated security rules using the Firebase CLI.",
+            "status": "pending",
+            "testStrategy": "After deployment, perform an end-to-end test by submitting feedback from the actual frontend application. Verify the request succeeds and the corresponding document appears correctly in the production Firestore console. Attempt to read the `feedback` collection from the browser's developer console (using the client SDK) and confirm the request is denied by security rules."
+          }
+        ]
+      },
+      {
+        "id": 15,
+        "title": "Implement Mobile Responsive Design",
+        "description": "Refactor all UI components to be fully responsive and provide an optimal experience on mobile devices, adhering to a mobile-first approach.",
+        "details": "Use CSS media queries, flexbox, and grid layouts to ensure the upload forms, gallery, and feedback sections adapt to different screen sizes. Test on various device emulators in browser developer tools and on physical devices.",
+        "testStrategy": "Perform UI testing on popular viewport sizes (e.g., 375px, 768px, 1024px). Verify there are no content overflows, unreadable text, or inaccessible buttons on any screen size.",
+        "priority": "medium",
+        "dependencies": [
+          9,
+          12,
+          13
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Establish Mobile-First CSS Foundation and Breakpoints",
+            "description": "Set up the foundational CSS for the mobile-first approach. This includes configuring the viewport meta tag, defining global styles for typography and layout for the smallest screen size, and establishing the primary breakpoints for mobile, tablet, and desktop.",
+            "dependencies": [],
+            "details": "In the main HTML file, add the `<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">`. In the global stylesheet, define base styles for `body`, `h1-h6`, `p`, `button`, and `input` targeting a ~375px screen. Establish standard media query breakpoints (e.g., 768px for tablet, 1024px for desktop) using CSS variables or a preprocessor for consistent use across components.",
+            "status": "pending",
+            "testStrategy": "Verify the viewport meta tag is present in the HTML head. Using browser developer tools on a mobile viewport (e.g., 375px), confirm that base font sizes and element styles are applied correctly without any horizontal scrolling on the main app container."
+          },
+          {
+            "id": 2,
+            "title": "Refactor Upload Forms for Mobile Responsiveness",
+            "description": "Apply responsive styles to the user photo and garment upload forms. Ensure all form elements, labels, and buttons are legible, correctly aligned, and easily interactive on mobile screens, transitioning to wider layouts on larger screens.",
+            "dependencies": [
+              "15.1"
+            ],
+            "details": "Use Flexbox to stack form controls and labels vertically on mobile viewports. Ensure input fields and buttons have a `min-height` of 44px and appropriate padding to serve as effective touch targets. Implement media queries to transition the form layout to a multi-column or wider format on screens larger than 768px.",
+            "status": "pending",
+            "testStrategy": "Test the upload forms on a 375px viewport. Verify that all text is readable, buttons are easily tappable, and there is no horizontal overflow. Check the layout on 768px and 1024px viewports to ensure it adapts correctly without breaking."
+          },
+          {
+            "id": 3,
+            "title": "Implement Responsive Image Gallery Layout",
+            "description": "Refactor the generated image gallery to be responsive. The gallery should display images in a single-column view on mobile and transition to a multi-column grid on tablet and desktop screens.",
+            "dependencies": [
+              "15.1"
+            ],
+            "details": "Use CSS Grid Layout for the gallery container. Set the default layout to a single column (`grid-template-columns: 1fr`). Use the media queries defined in subtask 15.1 to change `grid-template-columns` to `repeat(2, 1fr)` for tablets and `repeat(auto-fit, minmax(300px, 1fr))` for desktops. Ensure images scale correctly within their grid cells using `width: 100%` and `object-fit: cover`.",
+            "status": "pending",
+            "testStrategy": "On a 375px viewport, verify images are displayed in a single column and fill the available width. On 768px and 1024px viewports, confirm the grid adjusts to show multiple columns without distorting images or causing layout breaks."
+          },
+          {
+            "id": 4,
+            "title": "Adapt Feedback Section and Action Controls for Mobile",
+            "description": "Make the feedback submission section, including sliders, text areas, and key action buttons ('Submit', 'Try Another Outfit'), fully responsive and user-friendly on mobile devices.",
+            "dependencies": [
+              "15.1"
+            ],
+            "details": "Style the feedback form components to stack vertically on mobile. Ensure sliders are easy to manipulate by increasing the size of the thumb and track for touch. The 'Try Another Outfit' and 'Submit' buttons should be prominent, potentially full-width, on mobile. Use media queries to adjust the layout for larger screens, such as placing elements side-by-side.",
+            "status": "pending",
+            "testStrategy": "On a mobile viewport, confirm that sliders are easy to drag and that all text and buttons are legible and tappable. Verify the layout reflows logically on tablet and desktop viewports. Test the 'Try Another Outfit' button's placement and visibility across all defined screen sizes."
+          },
+          {
+            "id": 5,
+            "title": "Comprehensive Cross-Device Testing and Responsive Polish",
+            "description": "Conduct end-to-end testing of the entire user flow across all target viewports and devices. Identify and fix any remaining responsive bugs, such as content overflow, awkward text wrapping, or inconsistent spacing.",
+            "dependencies": [
+              "15.2",
+              "15.3",
+              "15.4"
+            ],
+            "details": "Using browser developer tools, perform a full user flow test (upload -> view gallery -> give feedback) on each target viewport (375px, 768px, 1024px, 1440px). Test on at least one physical iOS and one physical Android device to check for real-world rendering and interaction issues. Document and fix all identified UI inconsistencies and bugs.",
+            "status": "pending",
+            "testStrategy": "Create a test checklist covering all UI components and user flows. Systematically execute the checklist on each target device/viewport, documenting any visual regressions or usability issues. The task is complete when no major layout bugs are present on the target viewports."
+          }
+        ]
+      },
+      {
+        "id": 16,
+        "title": "Perform Accessibility Audit and Remediation",
+        "description": "Ensure the application meets WCAG 2.1 AA standards for accessibility.",
+        "details": "Use tools like Lighthouse or Axe to audit the application. Add `alt` text to all images. Ensure all interactive elements are keyboard-navigable and have clear focus states. Check color contrast ratios. Use semantic HTML and add ARIA attributes where necessary.",
+        "testStrategy": "Run an automated accessibility audit and ensure the score is above 90. Manually test the entire user flow using only a keyboard. Use a screen reader (e.g., VoiceOver, NVDA) to navigate the application and verify a logical flow.",
+        "priority": "low",
+        "dependencies": [
+          15
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Run Automated Accessibility Audit and Establish Baseline",
+            "description": "Perform an initial accessibility scan of the entire application using automated tools to identify common WCAG 2.1 AA violations and establish a baseline for remediation efforts.",
+            "dependencies": [],
+            "details": "Use browser-based tools like Lighthouse and Axe DevTools to run audits on all key pages of the Virtual Stylist PoC (e.g., the main upload page, the results/gallery page). Document the initial scores and categorize the identified issues (e.g., color contrast, missing alt text, form labels). This report will guide the subsequent remediation tasks.",
+            "status": "pending",
+            "testStrategy": "Verify that the audit reports are generated and saved. Confirm that the report contains a list of specific, actionable issues to be addressed in subsequent subtasks."
+          },
+          {
+            "id": 2,
+            "title": "Remediate Semantic Structure and Image Accessibility",
+            "description": "Refactor the application's HTML to use proper semantic elements and ensure all non-decorative images have descriptive alternative text.",
+            "dependencies": [
+              "16.1"
+            ],
+            "details": "Review the component structure, replacing non-semantic `div` elements with appropriate tags like `<main>`, `<nav>`, `<section>`, and `<button>`. For the user photo upload and gallery components, ensure all `<img>` tags have meaningful `alt` attributes. For user-uploaded photos, the `alt` text could be 'User-provided photo of front pose'. For generated outfits, it could be 'AI-generated outfit suggestion 1'.",
+            "status": "pending",
+            "testStrategy": "Manually inspect the DOM to confirm the use of semantic HTML elements. Verify that all `<img>` tags have non-empty `alt` attributes. Run an automated scan and confirm that issues related to semantic structure and missing alt text are resolved."
+          },
+          {
+            "id": 3,
+            "title": "Implement Keyboard Navigation and Visible Focus States",
+            "description": "Ensure all interactive elements throughout the application are focusable and operable using only a keyboard, and that a clear, visible focus indicator is present on the active element.",
+            "dependencies": [
+              "16.2"
+            ],
+            "details": "Go through the entire user flow, from uploading a photo to viewing the gallery. Ensure all buttons, links, and form inputs can be reached and activated using the `Tab` and `Enter`/`Space` keys in a logical order. Implement a custom, high-contrast `:focus-visible` style that meets WCAG AA contrast requirements to replace or enhance the default browser outline.",
+            "status": "pending",
+            "testStrategy": "Navigate the entire application using only the `Tab`, `Shift+Tab`, `Enter`, and `Space` keys. Confirm that every interactive element can be reached and used. Verify that a visible focus ring is present on the currently focused element at all times."
+          },
+          {
+            "id": 4,
+            "title": "Audit and Remediate Color Contrast Issues",
+            "description": "Verify that all text and UI components meet the WCAG 2.1 AA minimum contrast ratio of 4.5:1 for normal text and 3:1 for large text.",
+            "dependencies": [
+              "16.1"
+            ],
+            "details": "Use a color contrast checker tool to inspect all text, icons, and UI elements (like button backgrounds and form field borders) against their backgrounds. Adjust the application's color palette and CSS variables as needed to meet the required ratios. Pay special attention to placeholder text, disabled states, and feedback messages.",
+            "status": "pending",
+            "testStrategy": "Use the Lighthouse audit or Axe DevTools to re-run a scan specifically for color contrast issues. Manually check any elements flagged by the tools, as well as any dynamically generated content, to confirm they meet the 4.5:1 or 3:1 contrast ratio."
+          },
+          {
+            "id": 5,
+            "title": "Enhance with ARIA and Validate with Screen Reader",
+            "description": "Test the application using a screen reader to ensure a logical and understandable user experience, and add ARIA attributes where semantic HTML is insufficient.",
+            "dependencies": [
+              "16.2",
+              "16.3"
+            ],
+            "details": "Use a screen reader (e.g., VoiceOver on macOS, NVDA on Windows) to navigate the entire application flow. Add ARIA attributes like `aria-live` for dynamic content announcements (e.g., 'Your photos have been uploaded'), `aria-label` for icon-only buttons, and appropriate roles (e.g., `role=\"dialog\"`) for modal windows to resolve any confusing interactions.",
+            "status": "pending",
+            "testStrategy": "Perform a full end-to-end test using a screen reader. Verify that all interactive elements are correctly announced, dynamic content changes are communicated, and the overall navigation flow is coherent and logical without relying on visual cues."
+          }
+        ]
+      },
+      {
+        "id": 17,
+        "title": "Finalize and Test Security Rules",
+        "description": "Conduct a comprehensive review and testing of all Firebase Security Rules for Cloud Storage and Firestore to prevent unauthorized access.",
+        "details": "Write security rules that ensure users can only write to their own session document and storage path. Deny all read/write access by default. Use the Firebase Rules Playground to simulate various valid and invalid requests.",
+        "testStrategy": "Write unit tests for security rules using the Firebase Local Emulator Suite. Attempt to cross-access data from different authenticated user sessions and as an unauthenticated user to ensure rules are enforced.",
+        "priority": "high",
+        "dependencies": [
+          10,
+          14
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Establish Default-Deny Security Rules",
+            "description": "Implement the foundational security posture by setting default-deny rules for both Firestore and Cloud Storage. This ensures no data can be accessed or modified unless explicitly allowed by subsequent rules.",
+            "dependencies": [],
+            "details": "In the `firestore.rules` and `storage.rules` files, establish a top-level rule that denies all access by default. This is achieved by setting `allow read, write: if false;` at the root of the ruleset for both services. This creates a secure baseline before specific permissions are granted.",
+            "status": "pending",
+            "testStrategy": "Use the Firebase Rules Playground to simulate an unauthenticated read/write request to an arbitrary path in both Firestore and Cloud Storage. Verify that both requests are correctly denied."
+          },
+          {
+            "id": 2,
+            "title": "Implement Firestore Rules for User Session Documents",
+            "description": "Write and deploy Firestore security rules that grant authenticated users create, read, and update permissions exclusively for their own session documents within the `sessions` collection.",
+            "dependencies": [
+              "17.1"
+            ],
+            "details": "Define a rule for the `sessions/{sessionId}` path. The rule must allow a document to be created by any authenticated user. It must only allow read and update operations if the `userId` field within the document (`resource.data.userId`) matches the UID of the authenticated user (`request.auth.uid`).",
+            "status": "pending",
+            "testStrategy": "In the Rules Playground, simulate an authenticated user creating a new session document. Simulate the same user reading and updating their own document. Then, simulate a different authenticated user attempting to read or write to the first user's document and verify the request is denied."
+          },
+          {
+            "id": 3,
+            "title": "Implement Cloud Storage Rules for User Photo Uploads",
+            "description": "Define Cloud Storage security rules to permit authenticated users to upload files only to their designated session-specific path, preventing cross-user data contamination.",
+            "dependencies": [
+              "17.2"
+            ],
+            "details": "Create a rule for the path `user-photos/{sessionId}/{fileName}`. This rule must perform a cross-service check by reading the corresponding Firestore document at `/databases/(default)/documents/sessions/$(sessionId)`. The write operation should only be allowed if the `userId` in that Firestore document matches the `request.auth.uid`.",
+            "status": "pending",
+            "testStrategy": "Using the Rules Playground, simulate an authenticated user uploading a file to their correct path (e.g., `/user-photos/their-session-id/front.jpg`). Then, simulate the same user attempting to upload to another user's session path and verify denial. Also test an unauthenticated upload attempt."
+          },
+          {
+            "id": 4,
+            "title": "Define Firestore Rules for Feedback Submission",
+            "description": "Create security rules for the `feedback` collection that allow any authenticated user to create a new feedback document but prevent anyone from reading, updating, or deleting any feedback data via the client.",
+            "dependencies": [
+              "17.1"
+            ],
+            "details": "For the `feedback/{feedbackId}` path, define a rule that is `allow create: if request.auth != null;` and `allow read, update, delete: if false;`. This write-only rule ensures feedback can be submitted (as per Task 14) but remains confidential and cannot be tampered with or viewed by other users.",
+            "status": "pending",
+            "testStrategy": "In the Rules Playground, simulate an authenticated user successfully creating a document in the `feedback` collection. Then, simulate the same user (or any other user) attempting to read, update, or delete any document in the `feedback` collection and verify that all these attempts are denied."
+          },
+          {
+            "id": 5,
+            "title": "Write and Execute Automated Tests with Emulator Suite",
+            "description": "Develop a suite of automated unit tests for all Firestore and Cloud Storage security rules using the Firebase Local Emulator Suite to validate the complete ruleset against various access scenarios.",
+            "dependencies": [
+              "17.2",
+              "17.3",
+              "17.4"
+            ],
+            "details": "Set up the Emulator Suite for Firestore and Storage. Using a testing framework like Jest or Mocha, write test cases that programmatically cover: unauthenticated access, an authenticated user accessing their own session/storage (success), an authenticated user attempting to access another user's data (failure), and feedback submission (create success, read failure).",
+            "status": "pending",
+            "testStrategy": "Execute the entire test suite via the command line. The test run must pass completely, confirming that all defined security rules for sessions, storage, and feedback are enforced as expected. The test report will serve as final validation for the task."
+          }
+        ]
+      },
+      {
+        "id": 18,
+        "title": "Set Up Monitoring and Logging",
+        "description": "Configure monitoring and logging to track application health, performance, and costs.",
+        "details": "In Cloud Logging, create log-based metrics for key events: session creation, generation request success/failure, and feedback submission. Create a dashboard in Cloud Monitoring to visualize these metrics and the P95 latency of the generation function. Set up a budget alert in GCP Billing for Vertex AI API usage.",
+        "testStrategy": "Trigger each key event and verify that logs are generated correctly. Check the Cloud Monitoring dashboard to see if data is populating. Temporarily lower the budget alert threshold to confirm that notifications are sent.",
+        "priority": "medium",
+        "dependencies": [
+          8,
+          14
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Instrument Application Code with Structured Logging",
+            "description": "Modify the relevant Cloud Functions to emit structured JSON logs for key application events, which will serve as the foundation for creating metrics.",
+            "dependencies": [],
+            "details": "In the Cloud Function for session creation, add a structured log entry (e.g., `console.log(JSON.stringify({ event: 'session_created', severity: 'INFO' }))`). In the image generation function, add distinct logs for success (`{ event: 'generation_success', severity: 'INFO' }`) and failure (`{ event: 'generation_failure', severity: 'ERROR' }`). In the feedback submission function, add a log (`{ event: 'feedback_submitted', severity: 'INFO' }`). Ensure all logs are written as single-line JSON strings to standard output.",
+            "status": "pending",
+            "testStrategy": "Deploy the updated functions. Manually trigger each event (create a session, run a successful/failed generation, submit feedback) and inspect Cloud Logging to confirm the corresponding structured JSON logs appear with the correct payload and severity."
+          },
+          {
+            "id": 2,
+            "title": "Define Log-Based Metrics in Cloud Logging",
+            "description": "Create custom counter metrics in Google Cloud Logging based on the structured logs generated by the application for session creation, generation requests, and feedback.",
+            "dependencies": [
+              "18.1"
+            ],
+            "details": "In the GCP Console under Logging > Log-based Metrics, create four new counter metrics: 1. 'session_creations' (filter: `jsonPayload.event=\"session_created\"`), 2. 'generation_successes' (filter: `jsonPayload.event=\"generation_success\"`), 3. 'generation_failures' (filter: `jsonPayload.event=\"generation_failure\"`), 4. 'feedback_submissions' (filter: `jsonPayload.event=\"feedback_submitted\"`).",
+            "status": "pending",
+            "testStrategy": "After creating the metrics, trigger the corresponding application events. Navigate to Monitoring > Metrics Explorer and verify that the custom metrics (e.g., `logging.googleapis.com/user/session_creations`) are listed and their counts increment as expected."
+          },
+          {
+            "id": 3,
+            "title": "Create Cloud Monitoring Dashboard for Application Metrics",
+            "description": "Build a dashboard in Cloud Monitoring to provide a centralized, visual overview of application health, performance, and key business events.",
+            "dependencies": [
+              "18.2"
+            ],
+            "details": "In Monitoring > Dashboards, create a new dashboard named 'Virtual Stylist PoC'. Add chart widgets to visualize the four log-based metrics created in the previous subtask. Add a fifth chart to display the P95 execution latency for the image generation Cloud Function, using the built-in `cloudfunctions.googleapis.com/function/execution_times` metric and aggregating by 95th percentile.",
+            "status": "pending",
+            "testStrategy": "Generate user traffic by using the application to create sessions, generate images, and submit feedback. Observe the dashboard and confirm that all five charts are populating with data. Hover over the data points to verify the values are plausible."
+          },
+          {
+            "id": 4,
+            "title": "Configure GCP Budget Alert for Vertex AI",
+            "description": "Set up a budget and an associated alert in GCP Billing to proactively monitor and control costs incurred by Vertex AI API usage.",
+            "dependencies": [],
+            "details": "In the GCP Console under Billing > Budgets & alerts, create a new budget. Scope the budget to the current project and filter the 'Services' to include only 'Vertex AI'. Set a realistic monthly budget amount (e.g., $50). Configure alert threshold rules to send email notifications to project owners when costs reach 50%, 90%, and 100% of the budget.",
+            "status": "pending",
+            "testStrategy": "To test the notification mechanism, create a temporary budget with a very low amount (e.g., $1) and a 10% threshold ($0.10). Make a single Vertex AI API call that is guaranteed to exceed this threshold. Verify that an email alert is received by the designated recipients. Delete the temporary test budget afterward."
+          },
+          {
+            "id": 5,
+            "title": "End-to-End Validation of Monitoring and Alerting Pipeline",
+            "description": "Perform a comprehensive test of the entire monitoring and logging pipeline to ensure all components—from logging to metrics to dashboards—are working together correctly.",
+            "dependencies": [
+              "18.3",
+              "18.4"
+            ],
+            "details": "Systematically perform a sequence of user actions: 1. Start a new session. 2. Trigger a successful image generation. 3. Trigger a failed image generation (e.g., by providing invalid input). 4. Submit feedback. After completing the sequence, review the 'Virtual Stylist PoC' dashboard in Cloud Monitoring. Confirm that the charts for 'session_creations', 'generation_successes', 'generation_failures', and 'feedback_submissions' have all incremented by one.",
+            "status": "pending",
+            "testStrategy": "The execution of the 'details' section serves as the test. The success criterion is that all charts on the monitoring dashboard accurately reflect the sequence of actions performed, with the correct counts and updated latency figures."
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2025-09-04T23:54:08.172Z",
+      "updated": "2025-09-05T00:17:37.342Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
