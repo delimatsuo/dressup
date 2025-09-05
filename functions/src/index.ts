@@ -15,6 +15,13 @@ export {
   cleanupExpiredSessions
 } from './sessionFunctions';
 
+// Export storage management functions
+export {
+  cleanupStorage,
+  manualStorageCleanup,
+  cleanupExpiredSessionsStorage
+} from './storageCleanup';
+
 // Initialize Firebase Admin with service account
 const serviceAccount = require('../serviceAccount.json');
 admin.initializeApp({

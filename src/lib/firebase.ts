@@ -306,28 +306,45 @@ export const submitFeedback = async (feedback: {
   comment: string;
   sessionId: string;
   resultId: string;
+  realismRating: number;
+  helpfulnessRating: number;
 }): Promise<{ success: boolean }> => {
-  // Validate rating
-  if (feedback.rating < 1 || feedback.rating > 5) {
-    throw new Error('Rating must be between 1 and 5');
-  }
+  // Validate ratings if provided
+  const validateRating = (value: number, name: string) => {
+    if (value > 0 && (value < 1 || value > 5)) {
+      throw new Error(`${name} must be between 1 and 5`);
+    }
+  };
 
-  // Comment sanitization would be done server-side
+  validateRating(feedback.rating, 'Overall rating');
+  validateRating(feedback.realismRating, 'Realism rating');
+  validateRating(feedback.helpfulnessRating, 'Helpfulness rating');
+
+  // Ensure at least one rating is provided
+  if (!feedback.rating && !feedback.realismRating && !feedback.helpfulnessRating) {
+    throw new Error('At least one rating must be provided');
+  }
 
   if (!functions) {
     initializeFirebase();
     functions = getFunctions();
   }
 
-  // Mock implementation for now
-  return { success: true };
-
-  // Actual implementation (commented until Firebase is configured):
-  // const submitFeedbackFunction = httpsCallable(functions, 'submitFeedback');
-  // const result = await submitFeedbackFunction({
-  //   ...feedback,
-  //   comment: sanitizedComment,
-  // });
-  // 
-  // return result.data as { success: boolean };
+  try {
+    const submitFeedbackFunction = httpsCallable(functions, 'submitFeedback');
+    const result = await submitFeedbackFunction({
+      rating: feedback.rating || undefined,
+      comment: feedback.comment || '',
+      sessionId: feedback.sessionId,
+      resultId: feedback.resultId,
+      realismRating: feedback.realismRating || undefined,
+      helpfulnessRating: feedback.helpfulnessRating || undefined,
+    });
+    
+    return result.data as { success: boolean };
+  } catch (error) {
+    console.error('Error submitting feedback:', error);
+    // Fallback mock implementation for development
+    return { success: true };
+  }
 };

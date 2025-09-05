@@ -5,20 +5,34 @@ service firebase.storage {
     // Allow read access to all users for garment images
     match /garments/{allPaths=**} {
       allow read: if true;
-      allow write: if false;
+      allow write: if false; // Only admin/functions can add garments
     }
     
-    // Allow authenticated users to upload their photos
-    match /uploads/{userId}/{allPaths=**} {
+    // Session-based user uploads with automatic cleanup
+    match /uploads/{sessionId}/{timestamp}/{allPaths=**} {
       allow read: if true;
-      allow write: if request.resource.size < 10 * 1024 * 1024 && // Max 10MB
+      allow write: if request.resource.size < 15 * 1024 * 1024 && // Max 15MB (aligned with Gemini limit)
+                     request.resource.contentType.matches('image/.*') &&
+                     request.resource.contentType.matches('image/(jpeg|png|webp|gif)'); // Supported formats
+    }
+    
+    // Temporary files for processing (very short-lived)
+    match /temp/{sessionId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.resource.size < 15 * 1024 * 1024 &&
                      request.resource.contentType.matches('image/.*');
     }
     
-    // Allow read access to processed results
-    match /results/{sessionId}/{allPaths=**} {
+    // Processed results with restricted write access
+    match /results/{sessionId}/{timestamp}/{allPaths=**} {
       allow read: if true;
-      allow write: if false; // Only Cloud Functions can write
+      allow write: if false; // Only Cloud Functions can write processed results
+    }
+    
+    // Cache folder for optimized images
+    match /cache/{sessionId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if false; // Only Cloud Functions can create cached versions
     }
   }
 }

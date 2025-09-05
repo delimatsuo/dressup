@@ -5,6 +5,9 @@ import React, { useState } from 'react';
 interface FeedbackData {
   rating: number;
   comment: string;
+  // Enhanced dual feedback scoring
+  realismRating: number;
+  helpfulnessRating: number;
 }
 
 interface FeedbackSectionProps {
@@ -20,6 +23,8 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({
 }) => {
   const [rating, setRating] = useState<number>(0);
   const [comment, setComment] = useState<string>('');
+  const [realismRating, setRealismRating] = useState<number>(0);
+  const [helpfulnessRating, setHelpfulnessRating] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,11 +35,21 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({
     onRate?.(value);
   };
 
+  const handleRealismRating = (value: number) => {
+    setRealismRating(value);
+    setError(null);
+  };
+
+  const handleHelpfulnessRating = (value: number) => {
+    setHelpfulnessRating(value);
+    setError(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (rating === 0) {
-      setError('Please provide a rating');
+    if (rating === 0 && realismRating === 0 && helpfulnessRating === 0) {
+      setError('Please provide at least one rating');
       return;
     }
 
@@ -42,7 +57,12 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({
     setError(null);
 
     try {
-      const success = await onSubmit?.({ rating, comment });
+      const success = await onSubmit?.({ 
+        rating, 
+        comment, 
+        realismRating, 
+        helpfulnessRating 
+      });
       if (success) {
         setSubmitted(true);
       }
@@ -69,16 +89,17 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({
     <div className="feedback-section p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-4">Share Your Feedback</h2>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Overall Experience Rating */}
         <div>
-          <label className="block text-sm font-medium mb-2">Rate your experience</label>
+          <label className="block text-sm font-medium mb-2">Overall Experience</label>
           <div className="flex gap-2">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
                 type="button"
                 onClick={() => handleRating(star)}
-                aria-label={`Star ${star}`}
+                aria-label={`Overall rating ${star} stars`}
                 className={`text-2xl transition-colors ${
                   star <= rating
                     ? 'filled text-yellow-500'
@@ -88,6 +109,68 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({
                 ★
               </button>
             ))}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">Rate your overall experience with the outfit generation</p>
+        </div>
+
+        {/* Dual Feedback Scoring */}
+        <div className="border-t pt-4">
+          <h3 className="text-lg font-medium mb-4">Detailed Feedback</h3>
+          
+          {/* Realism Rating */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">
+              How realistic do the generated poses look?
+            </label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => handleRealismRating(star)}
+                  aria-label={`Realism rating ${star} stars`}
+                  className={`text-2xl transition-colors ${
+                    star <= realismRating
+                      ? 'filled text-blue-500'
+                      : 'text-gray-300 hover:text-blue-400'
+                  }`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <span>Not realistic</span>
+              <span>Very realistic</span>
+            </div>
+          </div>
+
+          {/* Helpfulness Rating */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">
+              How helpful was this for your outfit decision?
+            </label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => handleHelpfulnessRating(star)}
+                  aria-label={`Helpfulness rating ${star} stars`}
+                  className={`text-2xl transition-colors ${
+                    star <= helpfulnessRating
+                      ? 'filled text-green-500'
+                      : 'text-gray-300 hover:text-green-400'
+                  }`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <span>Not helpful</span>
+              <span>Very helpful</span>
+            </div>
           </div>
         </div>
 

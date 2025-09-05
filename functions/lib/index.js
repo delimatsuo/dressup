@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadGarment = exports.submitFeedback = exports.getGarments = exports.processImageWithGemini = exports.cleanupExpiredSessions = exports.deleteSession = exports.getSessionPhotos = exports.extendSession = exports.addPhotoToSession = exports.getSessionStatus = exports.createSession = void 0;
+exports.uploadGarment = exports.submitFeedback = exports.getGarments = exports.processImageWithGemini = exports.cleanupExpiredSessionsStorage = exports.manualStorageCleanup = exports.cleanupStorage = exports.cleanupExpiredSessions = exports.deleteSession = exports.getSessionPhotos = exports.extendSession = exports.addPhotoToSession = exports.getSessionStatus = exports.createSession = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const options_1 = require("firebase-functions/v2/options");
 const admin = __importStar(require("firebase-admin"));
@@ -51,6 +51,11 @@ Object.defineProperty(exports, "extendSession", { enumerable: true, get: functio
 Object.defineProperty(exports, "getSessionPhotos", { enumerable: true, get: function () { return sessionFunctions_1.getSessionPhotos; } });
 Object.defineProperty(exports, "deleteSession", { enumerable: true, get: function () { return sessionFunctions_1.deleteSession; } });
 Object.defineProperty(exports, "cleanupExpiredSessions", { enumerable: true, get: function () { return sessionFunctions_1.cleanupExpiredSessions; } });
+// Export storage management functions
+var storageCleanup_1 = require("./storageCleanup");
+Object.defineProperty(exports, "cleanupStorage", { enumerable: true, get: function () { return storageCleanup_1.cleanupStorage; } });
+Object.defineProperty(exports, "manualStorageCleanup", { enumerable: true, get: function () { return storageCleanup_1.manualStorageCleanup; } });
+Object.defineProperty(exports, "cleanupExpiredSessionsStorage", { enumerable: true, get: function () { return storageCleanup_1.cleanupExpiredSessionsStorage; } });
 // Initialize Firebase Admin with service account
 const serviceAccount = require('../serviceAccount.json');
 admin.initializeApp({

@@ -93,10 +93,18 @@ export default function HomePage() {
     }
   };
 
-  const handleFeedbackSubmit = async (feedback: { rating: number; comment: string }) => {
+  const handleFeedbackSubmit = async (feedback: { 
+    rating: number; 
+    comment: string; 
+    realismRating: number; 
+    helpfulnessRating: number; 
+  }) => {
     try {
       await submitFeedback({
-        ...feedback,
+        rating: feedback.rating,
+        comment: feedback.comment,
+        realismRating: feedback.realismRating,
+        helpfulnessRating: feedback.helpfulnessRating,
         sessionId,
         resultId: result?.id || '',
       });
