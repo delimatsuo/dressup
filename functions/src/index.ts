@@ -2,9 +2,14 @@ import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import { setGlobalOptions } from 'firebase-functions/v2/options';
 import * as admin from 'firebase-admin';
 import corsMiddleware from 'cors';
+import { analyzeOutfitWithGemini } from './vertex-ai';
 
-// Initialize Firebase Admin
-admin.initializeApp();
+// Initialize Firebase Admin with service account
+const serviceAccount = require('../serviceAccount.json');
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  storageBucket: 'project-friday-471118.appspot.com'
+});
 
 // Set global options for all functions
 setGlobalOptions({
@@ -51,13 +56,18 @@ export const processImageWithGemini = onCall(
 
       const garmentData = garmentDoc.data();
 
-      // For now, we'll use a placeholder for Gemini integration
-      // In production, you would integrate with Vertex AI here
+      // Use Vertex AI to analyze the outfit
+      const analysis = await analyzeOutfitWithGemini(
+        userImageUrl,
+        garmentData?.imageUrl || ''
+      );
+
       const processingTime = (Date.now() - startTime) / 1000;
 
-      // Placeholder for processed image
+      // For now, we'll use the original image URL as processed
+      // In production, you'd use an image generation service
       const processedImageUrl = userImageUrl;
-      const description = `Virtual outfit applied: ${garmentData?.name}`;
+      const description = analysis.description;
 
       // Store result in Firestore
       const resultData = {
@@ -67,6 +77,8 @@ export const processImageWithGemini = onCall(
         processedImageUrl,
         processingTime,
         description,
+        confidence: analysis.confidence,
+        suggestions: analysis.suggestions,
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
       };
 
@@ -81,6 +93,8 @@ export const processImageWithGemini = onCall(
         processedImageUrl,
         processingTime,
         description,
+        confidence: analysis.confidence,
+        suggestions: analysis.suggestions,
       };
     } catch (error) {
       console.error('Error processing image:', error);
