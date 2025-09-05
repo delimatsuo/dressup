@@ -958,7 +958,7 @@
           12,
           13
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1012,7 +1012,7 @@
               "15.4"
             ],
             "details": "Using browser developer tools, perform a full user flow test (upload -> view gallery -> give feedback) on each target viewport (375px, 768px, 1024px, 1440px). Test on at least one physical iOS and one physical Android device to check for real-world rendering and interaction issues. Document and fix all identified UI inconsistencies and bugs.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Create a test checklist covering all UI components and user flows. Systematically execute the checklist on each target device/viewport, documenting any visual regressions or usability issues. The task is complete when no major layout bugs are present on the target viewports."
           }
         ]
@@ -1225,7 +1225,7 @@
     ],
     "metadata": {
       "created": "2025-09-04T23:54:08.172Z",
-      "updated": "2025-09-05T19:39:58.436Z",
+      "updated": "2025-09-05T19:45:48.255Z",
       "description": "Tasks for master context"
     }
   }
