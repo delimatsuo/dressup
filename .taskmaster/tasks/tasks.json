@@ -754,7 +754,7 @@
         "dependencies": [
           2
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -762,7 +762,7 @@
             "description": "Create the basic file structure and static JSX for the welcome/consent modal. This includes a container, a title area, a content area, and a footer for controls, without any dynamic content or logic yet.",
             "dependencies": [],
             "details": "Create a new React component file (e.g., `ConsentModal.js`). Use basic HTML/JSX and CSS to lay out the modal's visual structure, ensuring it overlays the main application view. Add placeholder text for the title, body, and footer sections.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Render the component on a test page and verify it appears visually as a basic, styled modal overlay, blocking interaction with any underlying content."
           },
           {
@@ -773,7 +773,7 @@
               "12.1"
             ],
             "details": "Retrieve the required text from the PRD's 'Welcome & Consent' flow. Replace the placeholder text in the modal's title and body sections with this static content. Ensure proper formatting (paragraphs, lists, bolding) for readability.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Visually inspect the rendered modal to confirm all text from the PRD is present, correctly formatted, and readable on various screen sizes."
           },
           {
@@ -784,7 +784,7 @@
               "12.1"
             ],
             "details": "In the modal's footer, add an `<input type=\"checkbox\">` and a `<button>` element. Use React state (`useState`) to track the checked status of the checkbox. Bind the button's `disabled` attribute to the inverse of the checkbox's state, so the button is only clickable when the box is checked.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Manually test the UI. Verify the 'Proceed' button is disabled by default. Check the box and confirm the button becomes enabled. Uncheck it and confirm the button becomes disabled again."
           },
           {
@@ -795,7 +795,7 @@
               "12.3"
             ],
             "details": "On the 'Proceed' button's `onClick` handler, set a flag in `sessionStorage` (e.g., `sessionStorage.setItem('consentGiven', 'true')`). Create a function or hook that checks for this flag when the application first loads to determine if the modal should be displayed.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Load the page for the first time; verify the modal appears. Give consent and click proceed. Reload the page; verify the modal does NOT appear. Clear session storage via developer tools and reload; verify the modal appears again."
           },
           {
@@ -806,7 +806,7 @@
               "12.4"
             ],
             "details": "In the main application component (e.g., `App.js` or `pages/index.js`), use a state variable (e.g., `hasConsented`) that is initialized based on the value from session storage. Conditionally render either the `ConsentModal` or the main application content (e.g., the `PhotoUpload` component placeholder) based on this state variable. The modal should have a callback prop to update this state upon successful consent.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify that on a fresh session, only the consent modal is visible. After giving consent, confirm the modal disappears and the main application content placeholder becomes visible without a page reload."
           }
         ]
@@ -1225,7 +1225,7 @@
     ],
     "metadata": {
       "created": "2025-09-04T23:54:08.172Z",
-      "updated": "2025-09-05T17:16:01.135Z",
+      "updated": "2025-09-05T17:26:06.572Z",
       "description": "Tasks for master context"
     }
   }

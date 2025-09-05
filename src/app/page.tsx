@@ -5,6 +5,8 @@ import { PhotoUploadInterface } from '../components/PhotoUploadInterface';
 import GarmentGallery, { Garment } from '../components/GarmentGallery';
 import ResultsDisplay, { Result } from '../components/ResultsDisplay';
 import FeedbackSection from '../components/FeedbackSection';
+import { WelcomeConsentModal } from '../components/WelcomeConsentModal';
+import { useConsent } from '../hooks/useConsent';
 import { 
   initializeFirebase,
   getGarments, 
@@ -27,6 +29,7 @@ interface PhotoData {
 }
 
 export default function HomePage() {
+  const { hasConsented, isLoading: consentLoading, shouldShowConsentModal, grantConsent } = useConsent();
   const [sessionId, setSessionId] = useState<string>('');
   const [photoData, setPhotoData] = useState<PhotoData | null>(null);
   const [processing, setProcessing] = useState(false);
@@ -121,6 +124,44 @@ export default function HomePage() {
     setError(null);
     setStep('upload');
   };
+
+  const handleConsent = () => {
+    grantConsent();
+  };
+
+  // Show loading spinner while checking consent
+  if (consentLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show consent modal if user hasn't consented
+  if (!hasConsented && typeof window !== 'undefined') {
+    return (
+      <>
+        <WelcomeConsentModal
+          isOpen={shouldShowConsentModal}
+          onConsent={handleConsent}
+          onClose={() => {
+            // For now, just keep the modal open since consent is required
+            // In a production app, you might redirect or show a different message
+          }}
+        />
+        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">DressUp AI</h1>
+            <p className="text-gray-600">Please review and accept our terms to continue.</p>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
