@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, X, Camera, Check, AlertCircle, RefreshCw, Clock, Zap } from 'lucide-react';
 import Image from 'next/image';
 import { useSessionContext } from './SessionProvider';
@@ -119,6 +119,21 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
     side: null,
     back: null
   });
+
+  // Check for upload completion whenever photos state changes
+  useEffect(() => {
+    const frontUrl = photos.front.url;
+    const sideUrl = photos.side.url;
+    
+    // Front and side are required, back is optional
+    if (frontUrl && sideUrl && onUploadComplete) {
+      onUploadComplete({
+        front: frontUrl,
+        side: sideUrl,
+        back: photos.back.url || ''
+      });
+    }
+  }, [photos.front.url, photos.side.url, photos.back.url, onUploadComplete]);
 
   const validateFile = (file: File): string | null => {
     // Check file type
@@ -284,8 +299,6 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
                 }
               }));
 
-              // Check if all required photos are uploaded
-              checkUploadComplete();
             } else {
               setPhotos(prev => ({
                 ...prev,
@@ -310,19 +323,6 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
     }
   };
 
-  const checkUploadComplete = () => {
-    const frontUrl = photos.front.url;
-    const sideUrl = photos.side.url;
-    
-    // Front and side are required, back is optional
-    if (frontUrl && sideUrl && onUploadComplete) {
-      onUploadComplete({
-        front: frontUrl,
-        side: sideUrl,
-        back: photos.back.url || ''
-      });
-    }
-  };
 
   const removePhoto = (type: PhotoType) => {
     setPhotos(prev => ({
@@ -405,6 +405,7 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
                       removePhoto(type);
                     }}
                     className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+                    aria-label={`Remove ${category} ${type} photo`}
                   >
                     <X className="w-4 h-4" />
                   </button>
