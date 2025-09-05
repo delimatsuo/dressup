@@ -110,6 +110,12 @@
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
+  /* Touch target minimum size for accessibility */
+  .touch-target-min {
+    @apply min-w-[44px] min-h-[44px];
+    @apply inline-flex items-center justify-center;
+  }
+
   @media (min-width: 640px) {
     .touch-button {
       @apply px-6 py-3;
