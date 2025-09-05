@@ -41,8 +41,13 @@ const https_1 = require("firebase-functions/v2/https");
 const options_1 = require("firebase-functions/v2/options");
 const admin = __importStar(require("firebase-admin"));
 const cors_1 = __importDefault(require("cors"));
-// Initialize Firebase Admin
-admin.initializeApp();
+const vertex_ai_1 = require("./vertex-ai");
+// Initialize Firebase Admin with service account
+const serviceAccount = require('../serviceAccount.json');
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    storageBucket: 'project-friday-471118.appspot.com'
+});
 // Set global options for all functions
 (0, options_1.setGlobalOptions)({
     maxInstances: 10,
@@ -75,12 +80,13 @@ exports.processImageWithGemini = (0, https_1.onCall)({
             throw new https_1.HttpsError('not-found', 'Garment not found');
         }
         const garmentData = garmentDoc.data();
-        // For now, we'll use a placeholder for Gemini integration
-        // In production, you would integrate with Vertex AI here
+        // Use Vertex AI to analyze the outfit
+        const analysis = await (0, vertex_ai_1.analyzeOutfitWithGemini)(userImageUrl, garmentData?.imageUrl || '');
         const processingTime = (Date.now() - startTime) / 1000;
-        // Placeholder for processed image
+        // For now, we'll use the original image URL as processed
+        // In production, you'd use an image generation service
         const processedImageUrl = userImageUrl;
-        const description = `Virtual outfit applied: ${garmentData?.name}`;
+        const description = analysis.description;
         // Store result in Firestore
         const resultData = {
             sessionId,
@@ -89,6 +95,8 @@ exports.processImageWithGemini = (0, https_1.onCall)({
             processedImageUrl,
             processingTime,
             description,
+            confidence: analysis.confidence,
+            suggestions: analysis.suggestions,
             timestamp: admin.firestore.FieldValue.serverTimestamp(),
         };
         const resultDoc = await admin
@@ -101,6 +109,8 @@ exports.processImageWithGemini = (0, https_1.onCall)({
             processedImageUrl,
             processingTime,
             description,
+            confidence: analysis.confidence,
+            suggestions: analysis.suggestions,
         };
     }
     catch (error) {

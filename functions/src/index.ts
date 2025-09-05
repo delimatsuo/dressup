@@ -8,7 +8,6 @@ import { analyzeOutfitWithGemini } from './vertex-ai';
 const serviceAccount = require('../serviceAccount.json');
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  projectId: 'project-friday-471118', // Use Firebase project for Firestore
   storageBucket: 'project-friday-471118.appspot.com'
 });
 
