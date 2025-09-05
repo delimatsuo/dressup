@@ -7,6 +7,7 @@ import { useSessionContext } from './SessionProvider';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { initializeFirebase } from '@/lib/firebase';
+import { LoadingAnnouncement, StatusAnnouncement, Instructions } from './ScreenReaderOnly';
 
 type PhotoType = 'front' | 'side' | 'back';
 type PhotoCategory = 'user' | 'garment';
@@ -360,8 +361,8 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
     const description = PHOTO_DESCRIPTIONS[category][type];
 
     return (
-      <div key={type} className="relative">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+      <div key={type} className="relative" role="group" aria-labelledby={`photo-${type}-label`}>
+        <label id={`photo-${type}-label`} className="block text-sm font-medium text-gray-700 mb-2">
           {PHOTO_LABELS[type]}
           {isOptional && <span className="text-gray-400 ml-1">(Optional)</span>}
         </label>
@@ -375,7 +376,16 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
             className="hidden"
             id={`photo-${type}`}
             disabled={photo.uploading}
+            aria-describedby={`photo-${type}-description`}
+            aria-label={`Upload ${type} view photo for ${category}`}
           />
+          
+          <div id={`photo-${type}-description`} className="sr-only">
+            {description}. Supported formats: JPG, PNG, HEIC, WebP. Maximum size: 10MB.
+            {photo.uploading && ` Currently uploading: ${Math.round(photo.progress)}% complete.`}
+            {photo.error && ` Error: ${photo.error}`}
+            {photo.url && ' Upload completed successfully.'}
+          </div>
           
           <label
             htmlFor={`photo-${type}`}
@@ -386,6 +396,15 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
               ${photo.uploading ? 'cursor-not-allowed opacity-50' : ''}
               ${photo.error ? 'border-red-500 bg-red-50' : ''}
             `}
+            role="button"
+            aria-label={
+              photo.url 
+                ? `${type} photo uploaded successfully. Click to change photo.`
+                : photo.uploading 
+                  ? `Uploading ${type} photo, ${Math.round(photo.progress)}% complete`
+                  : `Click to upload ${type} view photo`
+            }
+            tabIndex={photo.uploading ? -1 : 0}
           >
             {photo.url ? (
               <div className="relative w-full h-full">
@@ -396,18 +415,18 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
                   className="object-cover"
                 />
                 <div className="absolute top-2 right-2 flex gap-2">
-                  <div className="bg-green-500 text-white p-2 rounded-full">
-                    <Check className="w-4 h-4" />
+                  <div className="bg-green-500 text-white p-2 rounded-full" role="img" aria-label="Photo uploaded successfully">
+                    <Check className="w-4 h-4" aria-hidden="true" />
                   </div>
                   <button
                     onClick={(e) => {
                       e.preventDefault();
                       removePhoto(type);
                     }}
-                    className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
-                    aria-label={`Remove ${category} ${type} photo`}
+                    className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors focus:ring-2 focus:ring-red-300 focus:outline-none"
+                    aria-label={`Remove ${type} view photo for ${category}`}
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-4 h-4" aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -415,22 +434,29 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
               <div className="flex flex-col items-center justify-center h-full p-4">
                 {photo.uploading ? (
                   <>
-                    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3" />
+                    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3" aria-hidden="true" />
                     
                     <div className="text-center mb-2">
-                      <p className="text-sm font-medium text-gray-700">
-                        Uploading... {Math.round(photo.progress)}%
+                      <p className="text-sm font-medium text-gray-700" aria-live="polite">
+                        Uploading... <span aria-label={`${Math.round(photo.progress)} percent complete`}>{Math.round(photo.progress)}%</span>
                       </p>
                       
                       {photo.uploadAttempts > 1 && (
-                        <p className="text-xs text-orange-600">
+                        <p className="text-xs text-orange-600" aria-live="polite">
                           Attempt {photo.uploadAttempts}
                         </p>
                       )}
                     </div>
                     
                     {/* Progress bar */}
-                    <div className="w-full max-w-xs bg-gray-200 rounded-full h-2 mb-2">
+                    <div 
+                      className="w-full max-w-xs bg-gray-200 rounded-full h-2 mb-2"
+                      role="progressbar"
+                      aria-valuenow={Math.round(photo.progress)}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={`${type} photo upload progress`}
+                    >
                       <div
                         className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${photo.progress}%` }}
@@ -438,24 +464,28 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
                     </div>
                     
                     {/* Upload speed and time remaining */}
-                    <div className="text-center text-xs text-gray-500 space-y-1">
+                    <div className="text-center text-xs text-gray-500 space-y-1" aria-live="polite" aria-atomic="false">
                       {photo.uploadSpeed && (
                         <div className="flex items-center justify-center">
-                          <Zap className="w-3 h-3 mr-1" />
-                          {formatUploadSpeed(photo.uploadSpeed)}
+                          <Zap className="w-3 h-3 mr-1" aria-hidden="true" />
+                          <span aria-label={`Upload speed: ${formatUploadSpeed(photo.uploadSpeed)}`}>
+                            {formatUploadSpeed(photo.uploadSpeed)}
+                          </span>
                         </div>
                       )}
                       {photo.timeRemaining && (
                         <div className="flex items-center justify-center">
-                          <Clock className="w-3 h-3 mr-1" />
-                          {formatTimeRemaining(photo.timeRemaining)}
+                          <Clock className="w-3 h-3 mr-1" aria-hidden="true" />
+                          <span aria-label={formatTimeRemaining(photo.timeRemaining)}>
+                            {formatTimeRemaining(photo.timeRemaining)}
+                          </span>
                         </div>
                       )}
                     </div>
                   </>
                 ) : (
                   <>
-                    <Camera className="w-12 h-12 text-gray-400 mb-3" />
+                    <Camera className="w-12 h-12 text-gray-400 mb-3" aria-hidden="true" />
                     <p className="text-sm font-medium text-gray-700">{PHOTO_LABELS[type]}</p>
                     <p className="text-xs text-gray-500 mt-1">{description}</p>
                     <p className="text-xs text-gray-400 mt-2">Click to upload</p>
@@ -466,17 +496,18 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
           </label>
           
           {photo.error && (
-            <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg" role="alert" aria-live="assertive">
               <div className="flex items-center text-red-600 text-sm mb-2">
-                <AlertCircle className="w-4 h-4 mr-1" />
+                <AlertCircle className="w-4 h-4 mr-1" aria-hidden="true" />
                 {photo.error}
               </div>
               {photo.file && !photo.uploading && (
                 <button
                   onClick={() => retryUpload(type)}
-                  className="flex items-center text-xs text-blue-600 hover:text-blue-700 transition-colors"
+                  className="flex items-center text-xs text-blue-600 hover:text-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300 rounded"
+                  aria-label={`Retry uploading ${type} view photo`}
                 >
-                  <RefreshCw className="w-3 h-3 mr-1" />
+                  <RefreshCw className="w-3 h-3 mr-1" aria-hidden="true" />
                   Try Again
                 </button>
               )}
@@ -502,30 +533,59 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
   }, 0) / totalPhotos;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" role="region" aria-labelledby="multi-photo-upload-heading">
+      {/* Screen Reader Announcements */}
+      {anyPhotoUploading && (
+        <LoadingAnnouncement
+          isLoading={anyPhotoUploading}
+          loadingText={`Uploading ${category} photos`}
+          progress={overallProgress}
+        />
+      )}
+      
+      {anyPhotoHasError && (
+        <StatusAnnouncement
+          status="Upload errors detected"
+          details="Please check individual photo upload areas for specific errors"
+          type="error"
+        />
+      )}
+
+      {allRequiredPhotosUploaded && !anyPhotoUploading && (
+        <StatusAnnouncement
+          status="Required photos uploaded successfully"
+          details={`All ${requiredPhotos} required photos are ready`}
+          type="success"
+        />
+      )}
+
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 id="multi-photo-upload-heading" className="text-lg font-semibold text-gray-900">
           Upload {category === 'user' ? 'Your Photos' : 'Garment Photos'}
         </h3>
         
         {/* Status indicator */}
         {anyPhotoUploading && (
-          <div className="flex items-center text-blue-600 text-sm">
-            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2" />
-            Uploading {uploadedCount}/{totalPhotos} photos...
+          <div className="flex items-center text-blue-600 text-sm" aria-live="polite">
+            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2" aria-hidden="true" />
+            <span aria-label={`Uploading photos, ${uploadedCount} of ${totalPhotos} completed`}>
+              Uploading {uploadedCount}/{totalPhotos} photos...
+            </span>
           </div>
         )}
         
         {allRequiredPhotosUploaded && !anyPhotoUploading && (
-          <div className="flex items-center text-green-600 text-sm">
-            <Check className="w-4 h-4 mr-1" />
-            Required photos uploaded ({requiredPhotos}/{requiredPhotos})
+          <div className="flex items-center text-green-600 text-sm" aria-live="polite">
+            <Check className="w-4 h-4 mr-1" aria-hidden="true" />
+            <span aria-label={`All required photos uploaded successfully, ${requiredPhotos} out of ${requiredPhotos} completed`}>
+              Required photos uploaded ({requiredPhotos}/{requiredPhotos})
+            </span>
           </div>
         )}
         
         {anyPhotoHasError && !anyPhotoUploading && (
-          <div className="flex items-center text-red-600 text-sm">
-            <AlertCircle className="w-4 h-4 mr-1" />
+          <div className="flex items-center text-red-600 text-sm" role="alert">
+            <AlertCircle className="w-4 h-4 mr-1" aria-hidden="true" />
             Upload issues detected
           </div>
         )}
@@ -533,12 +593,19 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
       
       {/* Overall progress bar */}
       {anyPhotoUploading && (
-        <div className="mb-4">
+        <div className="mb-4" role="group" aria-labelledby="overall-progress-label">
           <div className="flex justify-between text-xs text-gray-600 mb-1">
-            <span>Overall Progress</span>
-            <span>{Math.round(overallProgress)}%</span>
+            <span id="overall-progress-label">Overall Progress</span>
+            <span aria-label={`${Math.round(overallProgress)} percent complete`}>{Math.round(overallProgress)}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div 
+            className="w-full bg-gray-200 rounded-full h-2" 
+            role="progressbar" 
+            aria-valuenow={Math.round(overallProgress)} 
+            aria-valuemin={0} 
+            aria-valuemax={100}
+            aria-labelledby="overall-progress-label"
+          >
             <div
               className="bg-blue-500 h-2 rounded-full transition-all duration-500"
               style={{ width: `${overallProgress}%` }}

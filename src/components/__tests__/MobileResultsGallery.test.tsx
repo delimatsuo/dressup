@@ -26,7 +26,7 @@ describe('MobileResultsGallery', () => {
       />
     );
     
-    expect(screen.getByAltText('Image 1')).toBeInTheDocument();
+    expect(screen.getByAltText('AI-generated outfit result: Image 1 First image')).toBeInTheDocument();
     expect(screen.getByText('Image 1')).toBeInTheDocument();
     expect(screen.getByText('First image')).toBeInTheDocument();
   });
@@ -43,7 +43,7 @@ describe('MobileResultsGallery', () => {
     const nextButton = screen.getByLabelText('Next image');
     fireEvent.click(nextButton);
     
-    expect(screen.getByAltText('Image 2')).toBeInTheDocument();
+    expect(screen.getByAltText('AI-generated outfit result: Image 2 Second image')).toBeInTheDocument();
     expect(screen.getByText('2 / 3')).toBeInTheDocument();
   });
 
@@ -58,7 +58,7 @@ describe('MobileResultsGallery', () => {
     const prevButton = screen.getByLabelText('Previous image');
     fireEvent.click(prevButton);
     
-    expect(screen.getByAltText('Image 1')).toBeInTheDocument();
+    expect(screen.getByAltText('AI-generated outfit result: Image 1 First image')).toBeInTheDocument();
     expect(screen.getByText('1 / 3')).toBeInTheDocument();
   });
 
@@ -70,44 +70,44 @@ describe('MobileResultsGallery', () => {
     fireEvent.click(nextButton); // Go to 3
     fireEvent.click(nextButton); // Wrap to 1
     
-    expect(screen.getByAltText('Image 1')).toBeInTheDocument();
+    expect(screen.getByAltText('AI-generated outfit result: Image 1 First image')).toBeInTheDocument();
     expect(screen.getByText('1 / 3')).toBeInTheDocument();
   });
 
   it('should handle swipe gestures', () => {
     render(<MobileResultsGallery images={mockImages} />);
     
-    const gallery = screen.getByAltText('Image 1').parentElement;
+    const gallery = screen.getByAltText('AI-generated outfit result: Image 1 First image').parentElement;
     
     // Simulate swipe left (next)
     fireEvent.touchStart(gallery!, { touches: [{ clientX: 100 }] });
     fireEvent.touchEnd(gallery!, { changedTouches: [{ clientX: 20 }] });
     
-    expect(screen.getByAltText('Image 2')).toBeInTheDocument();
+    expect(screen.getByAltText('AI-generated outfit result: Image 2 Second image')).toBeInTheDocument();
   });
 
   it('should show thumbnail gallery', () => {
     render(<MobileResultsGallery images={mockImages} />);
     
-    expect(screen.getByAltText('Thumbnail 1')).toBeInTheDocument();
-    expect(screen.getByAltText('Thumbnail 2')).toBeInTheDocument();
-    expect(screen.getByAltText('Thumbnail 3')).toBeInTheDocument();
+    expect(screen.getByAltText('Thumbnail 1: Image 1 pose preview')).toBeInTheDocument();
+    expect(screen.getByAltText('Thumbnail 2: Image 2 pose preview')).toBeInTheDocument();
+    expect(screen.getByAltText('Thumbnail 3: Image 3 pose preview')).toBeInTheDocument();
   });
 
   it('should highlight current thumbnail', () => {
     render(<MobileResultsGallery images={mockImages} />);
     
-    const firstThumbnail = screen.getByAltText('Thumbnail 1').parentElement;
+    const firstThumbnail = screen.getByAltText('Thumbnail 1: Image 1 pose preview').parentElement;
     expect(firstThumbnail).toHaveClass('border-purple-500');
   });
 
   it('should navigate via thumbnail click', () => {
     render(<MobileResultsGallery images={mockImages} />);
     
-    const thirdThumbnail = screen.getByAltText('Thumbnail 3').parentElement;
+    const thirdThumbnail = screen.getByAltText('Thumbnail 3: Image 3 pose preview').parentElement;
     fireEvent.click(thirdThumbnail!);
     
-    expect(screen.getByAltText('Image 3')).toBeInTheDocument();
+    expect(screen.getByAltText('AI-generated outfit result: Image 3 Third image')).toBeInTheDocument();
     expect(screen.getByText('3 / 3')).toBeInTheDocument();
   });
 
@@ -142,22 +142,22 @@ describe('MobileResultsGallery', () => {
   it('should open fullscreen mode', () => {
     render(<MobileResultsGallery images={mockImages} />);
     
-    const fullscreenButton = screen.getByLabelText('View fullscreen');
+    const fullscreenButton = screen.getByLabelText(/View fullscreen/);
     fireEvent.click(fullscreenButton);
     
-    expect(screen.getByLabelText('Close fullscreen')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Close fullscreen/)).toBeInTheDocument();
   });
 
   it('should close fullscreen mode', () => {
     render(<MobileResultsGallery images={mockImages} />);
     
-    const fullscreenButton = screen.getByLabelText('View fullscreen');
+    const fullscreenButton = screen.getByLabelText(/View fullscreen/);
     fireEvent.click(fullscreenButton);
     
-    const closeButton = screen.getByLabelText('Close fullscreen');
+    const closeButton = screen.getByLabelText(/Close fullscreen/);
     fireEvent.click(closeButton);
     
-    expect(screen.queryByLabelText('Close fullscreen')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Close fullscreen/)).not.toBeInTheDocument();
   });
 
   it('should show swipe indicator on mobile', () => {

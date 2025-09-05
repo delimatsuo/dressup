@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Star, ThumbsUp, AlertTriangle, MessageSquare, Send } from 'lucide-react';
+import { StatusAnnouncement, FormValidationAnnouncement } from './ScreenReaderOnly';
 
 interface FeedbackData {
   rating: number;

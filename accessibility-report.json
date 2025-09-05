@@ -1,0 +1,522 @@
+{
+  "timestamp": "2025-09-05T21:58:16.455Z",
+  "summary": {
+    "totalComponents": 9,
+    "ariaAttributesFound": 206,
+    "issuesCount": 0,
+    "warningsCount": 13,
+    "recommendationsCount": 13,
+    "complianceScore": 74
+  },
+  "screenReaderFeatures": {
+    "liveRegions": 18,
+    "landmarks": 23,
+    "properHeadings": 38,
+    "altTexts": 0,
+    "skipLinks": 0,
+    "headingStructure": 38,
+    "ariaLabels": 34,
+    "roles": 76,
+    "focusManagement": 9
+  },
+  "issues": [],
+  "warnings": [
+    {
+      "file": "PhotoUploadInterface.tsx",
+      "type": "Keyboard Accessibility",
+      "message": "Interactive elements should support both mouse and keyboard interaction"
+    },
+    {
+      "file": "MultiPhotoUpload.tsx",
+      "type": "Unlabeled Input",
+      "message": "Input element #1 lacks proper labeling"
+    },
+    {
+      "file": "MultiPhotoUpload.tsx",
+      "type": "Keyboard Accessibility",
+      "message": "Interactive elements should support both mouse and keyboard interaction"
+    },
+    {
+      "file": "MobilePhotoUpload.tsx",
+      "type": "Unlabeled Input",
+      "message": "Input element #1 lacks proper labeling"
+    },
+    {
+      "file": "MobilePhotoUpload.tsx",
+      "type": "Keyboard Accessibility",
+      "message": "Interactive elements should support both mouse and keyboard interaction"
+    },
+    {
+      "file": "ResultsDisplay.tsx",
+      "type": "Keyboard Accessibility",
+      "message": "Interactive elements should support both mouse and keyboard interaction"
+    },
+    {
+      "file": "FeedbackSection.tsx",
+      "type": "Keyboard Accessibility",
+      "message": "Interactive elements should support both mouse and keyboard interaction"
+    },
+    {
+      "file": "MobileFeedbackForm.tsx",
+      "type": "No Live Regions",
+      "message": "Component may benefit from ARIA live regions for dynamic content"
+    },
+    {
+      "file": "MobileFeedbackForm.tsx",
+      "type": "Keyboard Accessibility",
+      "message": "Interactive elements should support both mouse and keyboard interaction"
+    },
+    {
+      "file": "WelcomeConsentModal.tsx",
+      "type": "No Live Regions",
+      "message": "Component may benefit from ARIA live regions for dynamic content"
+    },
+    {
+      "file": "WelcomeConsentModal.tsx",
+      "type": "Keyboard Accessibility",
+      "message": "Interactive elements should support both mouse and keyboard interaction"
+    },
+    {
+      "file": "WelcomeConsentModal.tsx",
+      "type": "Loading States",
+      "message": "Loading states should be announced to screen readers"
+    },
+    {
+      "file": "ScreenReaderOnly.tsx",
+      "type": "Missing Labels",
+      "message": "Component lacks proper labeling (aria-label or aria-labelledby)"
+    }
+  ],
+  "recommendations": [
+    {
+      "file": "PhotoUploadInterface.tsx",
+      "type": "Keyboard Navigation",
+      "message": "Consider adding keyboard navigation support for interactive elements"
+    },
+    {
+      "file": "PhotoUploadInterface.tsx",
+      "type": "Disabled States",
+      "message": "Consider using aria-disabled in addition to visual disabled states"
+    },
+    {
+      "file": "MultiPhotoUpload.tsx",
+      "type": "Keyboard Navigation",
+      "message": "Consider adding keyboard navigation support for interactive elements"
+    },
+    {
+      "file": "MultiPhotoUpload.tsx",
+      "type": "Disabled States",
+      "message": "Consider using aria-disabled in addition to visual disabled states"
+    },
+    {
+      "file": "MobilePhotoUpload.tsx",
+      "type": "Keyboard Navigation",
+      "message": "Consider adding keyboard navigation support for interactive elements"
+    },
+    {
+      "file": "MobilePhotoUpload.tsx",
+      "type": "Disabled States",
+      "message": "Consider using aria-disabled in addition to visual disabled states"
+    },
+    {
+      "file": "ResultsDisplay.tsx",
+      "type": "Keyboard Navigation",
+      "message": "Consider adding keyboard navigation support for interactive elements"
+    },
+    {
+      "file": "FeedbackSection.tsx",
+      "type": "Keyboard Navigation",
+      "message": "Consider adding keyboard navigation support for interactive elements"
+    },
+    {
+      "file": "FeedbackSection.tsx",
+      "type": "Disabled States",
+      "message": "Consider using aria-disabled in addition to visual disabled states"
+    },
+    {
+      "file": "MobileFeedbackForm.tsx",
+      "type": "Keyboard Navigation",
+      "message": "Consider adding keyboard navigation support for interactive elements"
+    },
+    {
+      "file": "MobileFeedbackForm.tsx",
+      "type": "Disabled States",
+      "message": "Consider using aria-disabled in addition to visual disabled states"
+    },
+    {
+      "file": "WelcomeConsentModal.tsx",
+      "type": "Keyboard Navigation",
+      "message": "Consider adding keyboard navigation support for interactive elements"
+    },
+    {
+      "file": "WelcomeConsentModal.tsx",
+      "type": "Disabled States",
+      "message": "Consider using aria-disabled in addition to visual disabled states"
+    }
+  ],
+  "ariaDetails": [
+    {
+      "file": "PhotoUploadInterface.tsx",
+      "attribute": "aria-label",
+      "count": 7,
+      "samples": [
+        "aria-label=\"Upload progress\"",
+        "aria-label=\"Go back to upload your photos step\"",
+        "aria-label=\"Generation statistics\""
+      ]
+    },
+    {
+      "file": "PhotoUploadInterface.tsx",
+      "attribute": "aria-labelledby",
+      "count": 6,
+      "samples": [
+        "aria-labelledby=\"upload-progress\"",
+        "aria-labelledby=\"current-step-heading\"",
+        "aria-labelledby=\"current-step-heading\""
+      ]
+    },
+    {
+      "file": "PhotoUploadInterface.tsx",
+      "attribute": "aria-live",
+      "count": 2,
+      "samples": [
+        "aria-live=\"assertive\"",
+        "aria-live=\"polite\""
+      ]
+    },
+    {
+      "file": "PhotoUploadInterface.tsx",
+      "attribute": "role",
+      "count": 12,
+      "samples": [
+        "role=\"group\"",
+        "role=\"img\"",
+        "role=\"img\""
+      ]
+    },
+    {
+      "file": "PhotoUploadInterface.tsx",
+      "attribute": "aria-hidden",
+      "count": 8,
+      "samples": [
+        "aria-hidden=\"true\"",
+        "aria-hidden=\"true\"",
+        "aria-hidden=\"true\""
+      ]
+    },
+    {
+      "file": "MultiPhotoUpload.tsx",
+      "attribute": "aria-label",
+      "count": 1,
+      "samples": [
+        "aria-label=\"Photo uploaded successfully\""
+      ]
+    },
+    {
+      "file": "MultiPhotoUpload.tsx",
+      "attribute": "aria-labelledby",
+      "count": 3,
+      "samples": [
+        "aria-labelledby=\"multi-photo-upload-heading\"",
+        "aria-labelledby=\"overall-progress-label\"",
+        "aria-labelledby=\"overall-progress-label\""
+      ]
+    },
+    {
+      "file": "MultiPhotoUpload.tsx",
+      "attribute": "aria-live",
+      "count": 6,
+      "samples": [
+        "aria-live=\"polite\"",
+        "aria-live=\"polite\"",
+        "aria-live=\"polite\""
+      ]
+    },
+    {
+      "file": "MultiPhotoUpload.tsx",
+      "attribute": "role",
+      "count": 9,
+      "samples": [
+        "role=\"group\"",
+        "role=\"button\"",
+        "role=\"img\""
+      ]
+    },
+    {
+      "file": "MultiPhotoUpload.tsx",
+      "attribute": "aria-hidden",
+      "count": 11,
+      "samples": [
+        "aria-hidden=\"true\"",
+        "aria-hidden=\"true\"",
+        "aria-hidden=\"true\""
+      ]
+    },
+    {
+      "file": "MultiPhotoUpload.tsx",
+      "attribute": "aria-atomic",
+      "count": 1,
+      "samples": [
+        "aria-atomic=\"false\""
+      ]
+    },
+    {
+      "file": "MobilePhotoUpload.tsx",
+      "attribute": "aria-label",
+      "count": 2,
+      "samples": [
+        "aria-label=\"Photo capture navigation\"",
+        "aria-label=\"Complete photo capture and continue\""
+      ]
+    },
+    {
+      "file": "MobilePhotoUpload.tsx",
+      "attribute": "aria-labelledby",
+      "count": 4,
+      "samples": [
+        "aria-labelledby=\"mobile-upload-heading\"",
+        "aria-labelledby=\"mobile-upload-heading\"",
+        "aria-labelledby=\"progress-indicator-label\""
+      ]
+    },
+    {
+      "file": "MobilePhotoUpload.tsx",
+      "attribute": "aria-describedby",
+      "count": 2,
+      "samples": [
+        "aria-describedby=\"next-button-help\"",
+        "aria-describedby=\"complete-button-help\""
+      ]
+    },
+    {
+      "file": "MobilePhotoUpload.tsx",
+      "attribute": "aria-live",
+      "count": 2,
+      "samples": [
+        "aria-live=\"polite\"",
+        "aria-live=\"polite\""
+      ]
+    },
+    {
+      "file": "MobilePhotoUpload.tsx",
+      "attribute": "role",
+      "count": 9,
+      "samples": [
+        "role=\"main\"",
+        "role=\"region\"",
+        "role=\"group\""
+      ]
+    },
+    {
+      "file": "MobilePhotoUpload.tsx",
+      "attribute": "aria-hidden",
+      "count": 6,
+      "samples": [
+        "aria-hidden=\"true\"",
+        "aria-hidden=\"true\"",
+        "aria-hidden=\"true\""
+      ]
+    },
+    {
+      "file": "ResultsDisplay.tsx",
+      "attribute": "aria-label",
+      "count": 8,
+      "samples": [
+        "aria-label=\"Try generating outfit again\"",
+        "aria-label=\"Original photos before outfit application\"",
+        "aria-label=\"Before and after comparison\""
+      ]
+    },
+    {
+      "file": "ResultsDisplay.tsx",
+      "attribute": "aria-labelledby",
+      "count": 9,
+      "samples": [
+        "aria-labelledby=\"loading-heading\"",
+        "aria-labelledby=\"error-heading\"",
+        "aria-labelledby=\"no-result-heading\""
+      ]
+    },
+    {
+      "file": "ResultsDisplay.tsx",
+      "attribute": "aria-live",
+      "count": 2,
+      "samples": [
+        "aria-live=\"polite\"",
+        "aria-live=\"polite\""
+      ]
+    },
+    {
+      "file": "ResultsDisplay.tsx",
+      "attribute": "role",
+      "count": 17,
+      "samples": [
+        "role=\"region\"",
+        "role=\"status\"",
+        "role=\"region\""
+      ]
+    },
+    {
+      "file": "ResultsDisplay.tsx",
+      "attribute": "aria-hidden",
+      "count": 1,
+      "samples": [
+        "aria-hidden=\"true\""
+      ]
+    },
+    {
+      "file": "FeedbackSection.tsx",
+      "attribute": "aria-label",
+      "count": 3,
+      "samples": [
+        "aria-label=\"Quick feedback: Love the results\"",
+        "aria-label=\"Quick feedback: Results need improvement\"",
+        "aria-label=\"Quick feedback: Report a technical issue\""
+      ]
+    },
+    {
+      "file": "FeedbackSection.tsx",
+      "attribute": "aria-labelledby",
+      "count": 6,
+      "samples": [
+        "aria-labelledby=\"feedback-success-heading\"",
+        "aria-labelledby=\"feedback-heading\"",
+        "aria-labelledby=\"overall-rating-instructions\""
+      ]
+    },
+    {
+      "file": "FeedbackSection.tsx",
+      "attribute": "aria-describedby",
+      "count": 5,
+      "samples": [
+        "aria-describedby=\"star-rating-instructions\"",
+        "aria-describedby=\"star-rating-instructions\"",
+        "aria-describedby=\"star-rating-instructions\""
+      ]
+    },
+    {
+      "file": "FeedbackSection.tsx",
+      "attribute": "aria-live",
+      "count": 4,
+      "samples": [
+        "aria-live=\"polite\"",
+        "aria-live=\"polite\"",
+        "aria-live=\"polite\""
+      ]
+    },
+    {
+      "file": "FeedbackSection.tsx",
+      "attribute": "role",
+      "count": 7,
+      "samples": [
+        "role=\"region\"",
+        "role=\"main\"",
+        "role=\"radiogroup\""
+      ]
+    },
+    {
+      "file": "FeedbackSection.tsx",
+      "attribute": "aria-atomic",
+      "count": 3,
+      "samples": [
+        "aria-atomic=\"true\"",
+        "aria-atomic=\"true\"",
+        "aria-atomic=\"true\""
+      ]
+    },
+    {
+      "file": "MobileResultsGallery.tsx",
+      "attribute": "aria-label",
+      "count": 9,
+      "samples": [
+        "aria-label=\"Previous image\"",
+        "aria-label=\"Next image\"",
+        "aria-label=\"Share image\""
+      ]
+    },
+    {
+      "file": "MobileResultsGallery.tsx",
+      "attribute": "aria-describedby",
+      "count": 1,
+      "samples": [
+        "aria-describedby=\"gallery-instructions\""
+      ]
+    },
+    {
+      "file": "MobileResultsGallery.tsx",
+      "attribute": "aria-live",
+      "count": 2,
+      "samples": [
+        "aria-live=\"polite\"",
+        "aria-live=\"polite\""
+      ]
+    },
+    {
+      "file": "MobileResultsGallery.tsx",
+      "attribute": "role",
+      "count": 4,
+      "samples": [
+        "role=\"region\"",
+        "role=\"tablist\"",
+        "role=\"tab\""
+      ]
+    },
+    {
+      "file": "WelcomeConsentModal.tsx",
+      "attribute": "aria-label",
+      "count": 4,
+      "samples": [
+        "aria-label=\"Privacy and security shield icon\"",
+        "aria-label=\"Close welcome modal\"",
+        "aria-label=\"Modal action buttons\""
+      ]
+    },
+    {
+      "file": "WelcomeConsentModal.tsx",
+      "attribute": "aria-labelledby",
+      "count": 5,
+      "samples": [
+        "aria-labelledby=\"modal-title\"",
+        "aria-labelledby=\"welcome-section-heading\"",
+        "aria-labelledby=\"features-heading\""
+      ]
+    },
+    {
+      "file": "WelcomeConsentModal.tsx",
+      "attribute": "aria-describedby",
+      "count": 2,
+      "samples": [
+        "aria-describedby=\"modal-description\"",
+        "aria-describedby=\"consent-details\""
+      ]
+    },
+    {
+      "file": "WelcomeConsentModal.tsx",
+      "attribute": "role",
+      "count": 18,
+      "samples": [
+        "role=\"dialog\"",
+        "role=\"document\"",
+        "role=\"img\""
+      ]
+    },
+    {
+      "file": "WelcomeConsentModal.tsx",
+      "attribute": "aria-hidden",
+      "count": 4,
+      "samples": [
+        "aria-hidden=\"true\"",
+        "aria-hidden=\"true\"",
+        "aria-hidden=\"true\""
+      ]
+    },
+    {
+      "file": "ScreenReaderOnly.tsx",
+      "attribute": "aria-atomic",
+      "count": 1,
+      "samples": [
+        "aria-atomic=\"true\""
+      ]
+    }
+  ]
+}
