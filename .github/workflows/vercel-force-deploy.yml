@@ -1,0 +1,123 @@
+name: Force Vercel Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_hash:
+        description: 'Specific commit hash to deploy (optional)'
+        required: false
+        default: ''
+  push:
+    branches: [main]
+    paths:
+      - '.vercel-trigger'
+      - 'package.json'
+      - 'next.config.js'
+      - 'vercel.json'
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  force-deploy:
+    name: 'Force Deploy to Vercel'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.commit_hash || github.sha }}
+
+      - name: Log Deployment Details
+        run: |
+          echo "🚀 Forcing Vercel deployment"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: $(git rev-parse HEAD)"
+          echo "Commit Message: $(git log -1 --pretty=format:'%s')"
+          echo "Files Changed: $(git diff-tree --no-commit-id --name-only -r HEAD)"
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel (Production)
+        run: |
+          DEPLOYMENT_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "DEPLOYMENT_URL=$DEPLOYMENT_URL" >> $GITHUB_ENV
+          echo "✅ Deployed to: $DEPLOYMENT_URL"
+
+      - name: Verify Deployment
+        run: |
+          sleep 30
+          echo "🔍 Verifying deployment at: ${{ env.DEPLOYMENT_URL }}"
+          
+          # Test main page
+          curl -f ${{ env.DEPLOYMENT_URL }}/ || exit 1
+          
+          # Check for SSR content
+          CONTENT=$(curl -s ${{ env.DEPLOYMENT_URL }}/)
+          if echo "$CONTENT" | grep -q "AI-Powered Fashion Assistant"; then
+            echo "✅ SSR content verified"
+          else
+            echo "❌ SSR content not found"
+            exit 1
+          fi
+          
+          # Check security headers
+          curl -I ${{ env.DEPLOYMENT_URL }}/ | grep -E "(X-Frame-Options|X-Content-Type-Options)" || echo "⚠️ Some security headers missing"
+
+      - name: Update Deployment Status
+        if: success()
+        run: |
+          echo "🎉 Vercel deployment successful!"
+          echo "URL: ${{ env.DEPLOYMENT_URL }}"
+          echo "Commit: $(git rev-parse HEAD)"
+          
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "❌ Vercel deployment failed"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: $(git rev-parse HEAD)"
+          exit 1
+
+  cleanup:
+    name: 'Cleanup Trigger Files'
+    runs-on: ubuntu-latest
+    needs: force-deploy
+    if: always() && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Remove Trigger File
+        run: |
+          if [ -f .vercel-trigger ]; then
+            rm .vercel-trigger
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add .vercel-trigger
+            git commit -m "cleanup: remove deployment trigger file [skip ci]" || echo "No changes to commit"
+            git push || echo "Nothing to push"
+          fi
