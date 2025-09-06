@@ -29,6 +29,12 @@ export function useSession() {
 
   // Load session from localStorage on mount
   useEffect(() => {
+    // Skip during SSR/build time
+    if (typeof window === 'undefined') {
+      setLoading(false);
+      return;
+    }
+
     const storedSession = localStorage.getItem('dressup_session');
     if (storedSession) {
       try {
@@ -41,7 +47,9 @@ export function useSession() {
           setRemainingTime(Math.floor((expiresAt.getTime() - Date.now()) / 1000));
         } else {
           // Session expired, clear it
-          localStorage.removeItem('dressup_session');
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('dressup_session');
+          }
           createNewSession();
         }
       } catch (e) {
@@ -74,6 +82,12 @@ export function useSession() {
   }, [session]);
 
   const createNewSession = useCallback(async () => {
+    // Skip during SSR/build time
+    if (typeof window === 'undefined') {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     
@@ -119,7 +133,9 @@ export function useSession() {
         expiresAt: newExpiresAt
       };
       
-      localStorage.setItem('dressup_session', JSON.stringify(updatedSession));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('dressup_session', JSON.stringify(updatedSession));
+      }
       setSession(updatedSession);
       setRemainingTime(Math.floor((newExpiresAt.getTime() - Date.now()) / 1000));
       
@@ -172,7 +188,9 @@ export function useSession() {
       const deleteFn = httpsCallable(functions, 'deleteSession');
       await deleteFn({ sessionId: session.sessionId });
       
-      localStorage.removeItem('dressup_session');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('dressup_session');
+      }
       setSession(null);
       
       // Create a new session

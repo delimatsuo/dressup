@@ -45,6 +45,11 @@ export default function HomePage() {
 
   // Initialize session and Firebase
   useEffect(() => {
+    // Skip during SSR/build time
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     // Initialize Firebase
     try {
       if (process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
@@ -59,9 +64,7 @@ export default function HomePage() {
     setSessionId(newSessionId);
     
     // Store in sessionStorage for tracking
-    if (typeof window !== 'undefined') {
-      window.sessionStorage.setItem('sessionId', newSessionId);
-    }
+    window.sessionStorage.setItem('sessionId', newSessionId);
   }, []);
 
   const handlePhotoUploadComplete = (data: PhotoData) => {

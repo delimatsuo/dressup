@@ -26,6 +26,11 @@ interface GarmentData {
 let garmentsCache: GarmentData[] | null = null;
 
 export const initializeFirebase = () => {
+  // Skip during SSR/build time
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  
   if (app) return app;
 
   const firebaseConfig = {
@@ -53,6 +58,11 @@ export const initializeFirebase = () => {
 };
 
 export const uploadImage = async (file: File, sessionId: string): Promise<string> => {
+  // Skip during SSR/build time
+  if (typeof window === 'undefined') {
+    throw new Error('Upload not available during server-side rendering');
+  }
+
   // Validate file type
   if (!file.type.startsWith('image/')) {
     throw new Error('Please upload an image file');
@@ -80,6 +90,11 @@ export const uploadImage = async (file: File, sessionId: string): Promise<string
 };
 
 export const getGarments = async (): Promise<GarmentData[]> => {
+  // Skip during SSR/build time
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
   // Return cached garments if available
   if (garmentsCache) {
     return garmentsCache;
@@ -121,6 +136,11 @@ export const processImage = async (
   resultId?: string;
   success?: boolean;
 }> => {
+  // Skip during SSR/build time
+  if (typeof window === 'undefined') {
+    throw new Error('Image processing not available during server-side rendering');
+  }
+
   if (!functions) {
     initializeFirebase();
     functions = getFunctions();
@@ -178,6 +198,11 @@ export const processMultiPhotoOutfit = async (
   resultId?: string;
   success?: boolean;
 }> => {
+  // Skip during SSR/build time
+  if (typeof window === 'undefined') {
+    throw new Error('Multi-photo processing not available during server-side rendering');
+  }
+
   if (!functions) {
     initializeFirebase();
     functions = getFunctions();
@@ -293,6 +318,11 @@ export const submitFeedback = async (feedback: {
   // Ensure at least one rating is provided
   if (!feedback.rating && !feedback.realismRating && !feedback.helpfulnessRating) {
     throw new Error('At least one rating must be provided');
+  }
+
+  // Skip during SSR/build time
+  if (typeof window === 'undefined') {
+    return { success: true };
   }
 
   if (!functions) {
