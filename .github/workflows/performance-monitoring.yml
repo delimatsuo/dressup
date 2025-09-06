@@ -1,0 +1,275 @@
+name: Performance Monitoring
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run performance tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  performance-tests:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Run performance tests
+      run: npm run test:performance
+
+    - name: Check performance budget
+      run: npm run performance:budget
+
+    - name: Bundle analysis
+      if: github.event_name == 'pull_request'
+      run: npm run analyze
+
+    - name: Upload bundle analysis
+      if: github.event_name == 'pull_request'
+      uses: actions/upload-artifact@v4
+      with:
+        name: bundle-analysis
+        path: |
+          .next/client-bundle-report.html
+          .next/server-bundle-report.html
+        retention-days: 7
+
+  lighthouse-ci:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Start application
+      run: |
+        npm run start &
+        sleep 10
+        curl --retry 10 --retry-delay 1 --retry-connrefused http://localhost:3000
+
+    - name: Run Lighthouse CI
+      uses: treosh/lighthouse-ci-action@v12
+      with:
+        urls: |
+          http://localhost:3000
+        configPath: './.lighthouserc.json'
+        uploadArtifacts: true
+        temporaryPublicStorage: true
+
+  performance-regression-detection:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build current version
+      run: npm run build
+      
+    - name: Run current performance tests
+      run: npm run performance:budget > current-performance.txt
+
+    - name: Checkout base branch
+      run: git checkout ${{ github.base_ref }}
+
+    - name: Install base dependencies
+      run: npm ci
+
+    - name: Build base version
+      run: npm run build
+
+    - name: Run base performance tests
+      run: npm run performance:budget > base-performance.txt
+
+    - name: Compare performance
+      run: |
+        echo "## Performance Comparison" >> performance-comment.md
+        echo "" >> performance-comment.md
+        echo "### Current Branch" >> performance-comment.md
+        echo '```' >> performance-comment.md
+        cat current-performance.txt >> performance-comment.md
+        echo '```' >> performance-comment.md
+        echo "" >> performance-comment.md
+        echo "### Base Branch (${{ github.base_ref }})" >> performance-comment.md
+        echo '```' >> performance-comment.md
+        cat base-performance.txt >> performance-comment.md
+        echo '```' >> performance-comment.md
+
+    - name: Comment PR
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const fs = require('fs');
+          const comment = fs.readFileSync('performance-comment.md', 'utf8');
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  web-vitals-monitoring:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build and start application
+      run: |
+        npm run build
+        npm run start &
+        sleep 10
+
+    - name: Install Puppeteer
+      run: npm install puppeteer
+
+    - name: Collect Web Vitals
+      run: |
+        node -e "
+        const puppeteer = require('puppeteer');
+        
+        (async () => {
+          const browser = await puppeteer.launch();
+          const page = await browser.newPage();
+          
+          const metrics = {};
+          
+          page.on('console', (msg) => {
+            if (msg.text().includes('Web Vital:')) {
+              const match = msg.text().match(/Web Vital: (\w+).*value: ([\d.]+)/);
+              if (match) {
+                metrics[match[1]] = parseFloat(match[2]);
+              }
+            }
+          });
+          
+          await page.goto('http://localhost:3000');
+          await page.waitForTimeout(5000);
+          
+          console.log('Web Vitals Metrics:', JSON.stringify(metrics, null, 2));
+          
+          // Check against performance budget
+          const budget = {
+            LCP: 2500,
+            FID: 100,
+            CLS: 0.1,
+            TTFB: 600,
+            FCP: 1800
+          };
+          
+          let hasViolations = false;
+          for (const [metric, value] of Object.entries(metrics)) {
+            if (budget[metric] && value > budget[metric]) {
+              console.error(\`❌ \${metric} exceeds budget: \${value} > \${budget[metric]}\`);
+              hasViolations = true;
+            } else {
+              console.log(\`✅ \${metric} within budget: \${value}\`);
+            }
+          }
+          
+          await browser.close();
+          process.exit(hasViolations ? 1 : 0);
+        })();
+        "
+
+    - name: Send metrics to monitoring service
+      if: always()
+      run: |
+        # This would send metrics to your monitoring service
+        echo "Sending metrics to monitoring service..."
+        # curl -X POST https://your-monitoring-service.com/api/metrics \
+        #   -H "Content-Type: application/json" \
+        #   -d '{"project": "dressup", "metrics": {...}}'
+
+  security-performance-audit:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Security audit
+      run: npm audit --audit-level=moderate
+
+    - name: Check for known vulnerabilities in dependencies
+      run: |
+        npm install -g auditjs
+        auditjs ossi
+
+    - name: Bundle security analysis
+      run: |
+        npm run build
+        # Check for potential security issues in bundles
+        find .next -name "*.js" -exec grep -l "eval\|Function\|setTimeout.*string" {} \; || true
+        
+    - name: Performance security check
+      run: |
+        # Check for common performance anti-patterns that could be security risks
+        echo "Checking for performance-security anti-patterns..."
+        grep -r "dangerouslySetInnerHTML\|eval\|Function(" src/ || true
+        grep -r "setTimeout.*string\|setInterval.*string" src/ || true
