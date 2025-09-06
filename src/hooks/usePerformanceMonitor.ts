@@ -106,19 +106,27 @@ export function useComponentPerformance(componentName: string) {
   });
 
   const startRender = useCallback(() => {
+    // Disable performance monitoring during builds or in production
+    if (typeof window === 'undefined' || typeof performance === 'undefined' || process.env.NODE_ENV === 'production') return;
+    
     renderTimeRef.current = performance.now();
     componentPerformanceTracker.startRender(componentName);
   }, [componentName]);
 
   const endRender = useCallback(() => {
+    // Disable performance monitoring during builds or in production
+    if (typeof window === 'undefined' || typeof performance === 'undefined' || process.env.NODE_ENV === 'production') return;
+    
     if (renderTimeRef.current) {
       componentPerformanceTracker.endRender(componentName);
       setRenderStats(componentPerformanceTracker.getRenderStats(componentName));
     }
   }, [componentName]);
 
-  // Track render automatically
+  // Track render automatically - but only in development
   useEffect(() => {
+    if (typeof window === 'undefined' || process.env.NODE_ENV === 'production') return;
+    
     startRender();
     
     return () => {

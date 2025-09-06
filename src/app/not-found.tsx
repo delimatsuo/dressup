@@ -1,27 +1,48 @@
-import type { Metadata } from 'next'
-import Link from 'next/link'
-
-export const metadata: Metadata = {
-  title: '404 - Page Not Found | DressUp',
-  description: 'The page you are looking for could not be found.',
-}
-
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-600">
-      <div className="text-center text-white px-6 py-8">
-        <h1 className="text-6xl font-bold mb-4">404</h1>
-        <h2 className="text-2xl font-semibold mb-4">Page Not Found</h2>
-        <p className="text-lg mb-8 opacity-90">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
-        <Link
-          href="/"
-          className="inline-block bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors duration-200"
-        >
-          Return Home
-        </Link>
-      </div>
-    </div>
+    <html>
+      <head>
+        <title>404 - Page Not Found | DressUp</title>
+        <meta name="description" content="The page you are looking for could not be found." />
+      </head>
+      <body>
+        <div style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'linear-gradient(to bottom right, rgb(147, 51, 234), rgb(219, 39, 119))',
+          margin: 0,
+          fontFamily: 'system-ui, sans-serif'
+        }}>
+          <div style={{
+            textAlign: 'center',
+            color: 'white',
+            padding: '2rem'
+          }}>
+            <h1 style={{ fontSize: '4rem', fontWeight: 'bold', marginBottom: '1rem' }}>404</h1>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '1rem' }}>Page Not Found</h2>
+            <p style={{ fontSize: '1.125rem', marginBottom: '2rem', opacity: 0.9 }}>
+              The page you're looking for doesn't exist or has been moved.
+            </p>
+            <a
+              href="/"
+              style={{
+                display: 'inline-block',
+                background: 'white',
+                color: 'rgb(147, 51, 234)',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '0.5rem',
+                fontWeight: '600',
+                textDecoration: 'none',
+                transition: 'background-color 0.2s'
+              }}
+            >
+              Return Home
+            </a>
+          </div>
+        </div>
+      </body>
+    </html>
   )
 }

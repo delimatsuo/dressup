@@ -328,19 +328,22 @@ export default function HomePage() {
                 }}
               />
             </div>
+            
+            {/* Only show feedback section after successful result generation */}
+            {result && !processing && (
+              <aside aria-labelledby="feedback-section" className="mt-8">
+                <h2 id="feedback-section" className="sr-only">User Feedback</h2>
+                <FeedbackSection
+                  onSubmit={handleFeedbackSubmit}
+                  onQuickFeedback={(type) => {
+                    console.log('Quick feedback:', type);
+                  }}
+                />
+              </aside>
+            )}
           </section>
         )}
       </main>
-      
-      <aside aria-labelledby="feedback-section">
-        <h2 id="feedback-section" className="sr-only">User Feedback</h2>
-        <FeedbackSection
-          onSubmit={handleFeedbackSubmit}
-          onQuickFeedback={(type) => {
-            console.log('Quick feedback:', type);
-          }}
-        />
-      </aside>
     </div>
   );
 }

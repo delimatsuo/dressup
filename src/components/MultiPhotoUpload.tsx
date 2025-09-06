@@ -202,15 +202,26 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
     }));
 
     try {
-      // Initialize Firebase if needed
-      const app = initializeFirebase();
-      const { getStorage } = await import('firebase/storage');
-      const storage = getStorage(app);
+      // Try Firebase upload first
+      let uploadURL: string | null = null;
       
-      // Create storage reference
+      try {
+        // Initialize Firebase if needed
+        const app = initializeFirebase();
+        if (!app) {
+          throw new Error('Firebase not initialized');
+        }
+        const { getStorage } = await import('firebase/storage');
+        const storage = getStorage(app);
+        
+      // Create storage reference matching Firebase security rules
       const timestamp = Date.now();
-      const fileName = `sessions/${sessionId}/${category}/${type}_${timestamp}_${file.name}`;
+      const fileName = `uploads/${sessionId}/${timestamp}_${type}/${file.name}`;
       const storageRef = ref(storage, fileName);
+
+      console.log('Starting Firebase upload to:', fileName);
+      console.log('Storage reference:', storageRef);
+      console.log('File details:', { name: file.name, size: file.size, type: file.type });
 
       // Upload file with enhanced progress tracking
       const uploadTask = uploadBytesResumable(storageRef, file);
@@ -251,7 +262,14 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
           }));
         },
         (error) => {
-          console.error('Upload error:', error);
+          console.error('Upload error details:', {
+            code: error.code,
+            message: error.message,
+            fileName,
+            sessionId,
+            category,
+            type
+          });
           
           // Determine if we should retry
           const shouldRetry = retryAttempt < MAX_RETRIES && 
@@ -315,11 +333,17 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
           }
         }
       );
+      
+      } catch (firebaseError) {
+        console.error('Firebase error:', firebaseError);
+        throw firebaseError;
+      }
+      
     } catch (error) {
       console.error('Upload initialization error:', error);
       setPhotos(prev => ({
         ...prev,
-        [type]: { ...prev[type], uploading: false, error: 'Failed to start upload. Please try again.' }
+        [type]: { ...prev[type], uploading: false, error: `Upload failed: ${error.message}` }
       }));
     }
   };
@@ -518,11 +542,11 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
     );
   };
 
-  const allRequiredPhotosUploaded = photos.front.url && photos.side.url;
+  const allRequiredPhotosUploaded = photos.front.url; // only front view is required
   const anyPhotoUploading = Object.values(photos).some(p => p.uploading);
   const uploadedCount = Object.values(photos).filter(p => p.url).length;
   const totalPhotos = 3; // front, side, back
-  const requiredPhotos = 2; // front and side are required
+  const requiredPhotos = 1; // only front view is required
   const anyPhotoHasError = Object.values(photos).some(p => p.error);
   
   // Calculate overall upload progress

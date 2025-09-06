@@ -46,9 +46,16 @@ export const initializeFirebase = () => {
   const requiredKeys = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
   for (const key of requiredKeys) {
     if (!firebaseConfig[key as keyof typeof firebaseConfig]) {
+      console.error('Firebase config:', firebaseConfig);
+      console.error(`Missing Firebase configuration: ${key}`);
       throw new Error(`Firebase configuration missing: ${key}`);
     }
   }
+  
+  console.log('Firebase initializing with config:', {
+    projectId: firebaseConfig.projectId,
+    storageBucket: firebaseConfig.storageBucket
+  });
 
   app = initializeApp(firebaseConfig);
   storage = getStorage(app);

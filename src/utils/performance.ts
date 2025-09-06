@@ -1,4 +1,14 @@
-import { getCLS, getFID, getFCP, getLCP, getTTFB, Metric } from 'web-vitals';
+let getCLS: any, getFID: any, getFCP: any, getLCP: any, getTTFB: any, Metric: any;
+
+if (typeof window !== 'undefined') {
+  const webVitals = require('web-vitals');
+  getCLS = webVitals.getCLS;
+  getFID = webVitals.getFID;
+  getFCP = webVitals.getFCP;
+  getLCP = webVitals.getLCP;
+  getTTFB = webVitals.getTTFB;
+  Metric = webVitals.Metric;
+}
 
 export interface PerformanceMetrics {
   cls: number | null;
@@ -91,18 +101,24 @@ export class PerformanceMonitor {
     
     this.isInitialized = true;
     
-    // Initialize Web Vitals monitoring
-    getCLS(this.handleMetric.bind(this));
-    getFID(this.handleMetric.bind(this));
-    getFCP(this.handleMetric.bind(this));
-    getLCP(this.handleMetric.bind(this));
-    getTTFB(this.handleMetric.bind(this));
+    try {
+      // Initialize Web Vitals monitoring only if functions are available
+      if (getCLS && getFID && getFCP && getLCP && getTTFB) {
+        getCLS(this.handleMetric.bind(this));
+        getFID(this.handleMetric.bind(this));
+        getFCP(this.handleMetric.bind(this));
+        getLCP(this.handleMetric.bind(this));
+        getTTFB(this.handleMetric.bind(this));
 
-    // Add page lifecycle listeners
-    this.addPageLifecycleListeners();
+        // Add page lifecycle listeners
+        this.addPageLifecycleListeners();
+      }
+    } catch (error) {
+      console.warn('Failed to initialize performance monitoring:', error);
+    }
   }
 
-  private handleMetric(metric: Metric): void {
+  private handleMetric(metric: any): void {
     const metricName = metric.name.toLowerCase() as keyof Pick<PerformanceMetrics, 'cls' | 'fid' | 'fcp' | 'lcp' | 'ttfb'>;
     this.metrics[metricName] = metric.value;
     this.metrics.timestamp = Date.now();
@@ -156,7 +172,7 @@ export class PerformanceMonitor {
     }
   }
 
-  private sendToAnalytics(metric: Metric): void {
+  private sendToAnalytics(metric: any): void {
     // This would integrate with analytics services like Google Analytics 4
     if (typeof gtag !== 'undefined') {
       gtag('event', metric.name, {
@@ -214,10 +230,13 @@ export class ComponentPerformanceTracker {
   private currentRenders: Map<string, number> = new Map();
 
   public startRender(componentName: string): void {
+    if (typeof performance === 'undefined') return;
     this.currentRenders.set(componentName, performance.now());
   }
 
   public endRender(componentName: string): number {
+    if (typeof performance === 'undefined') return 0;
+    
     const startTime = this.currentRenders.get(componentName);
     if (!startTime) {
       console.warn(`No start time found for component: ${componentName}`);
