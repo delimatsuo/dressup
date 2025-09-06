@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SessionProvider } from "@/components/SessionProvider";
 import { SessionTimer } from "@/components/SessionTimer";
@@ -17,19 +17,20 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "DressUp - Virtual Outfit Try-On",
   description: "Try on outfits virtually with AI-powered fashion technology",
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
-  themeColor: '#8B5CF6',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'DressUp AI',
   },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#8B5CF6',
 };
 
 export default function RootLayout({

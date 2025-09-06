@@ -6,6 +6,11 @@ import { useSessionContext } from './SessionProvider';
 export function SessionTimer() {
   const { formattedRemainingTime, extendSession, loading } = useSessionContext();
 
+  // Don't render during SSR/build time
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
   const handleExtend = async () => {
     const success = await extendSession(30);
     if (success) {
