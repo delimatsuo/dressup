@@ -246,7 +246,7 @@ export default function HomePage() {
             <h2 id="upload-section" className="sr-only">Photo Upload</h2>
             <PhotoUploadInterface 
               onComplete={handlePhotoUploadComplete}
-              existingUserPhotos={savedUserPhotos}
+              existingUserPhotos={savedUserPhotos || undefined}
             />
           </section>
         )}
@@ -312,9 +312,9 @@ export default function HomePage() {
             <h2 id="results-section" className="sr-only">Generated Results</h2>
             <div aria-live="polite" aria-atomic="true">
               <ResultsDisplay
-                result={result}
+                result={result || undefined}
                 loading={processing}
-                error={error}
+                error={error || undefined}
                 showComparison={true}
                 onTryAnother={handleTryAnother}
                 onStartOver={handleStartOver}

@@ -343,7 +343,7 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
       console.error('Upload initialization error:', error);
       setPhotos(prev => ({
         ...prev,
-        [type]: { ...prev[type], uploading: false, error: `Upload failed: ${error.message}` }
+        [type]: { ...prev[type], uploading: false, error: `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}` }
       }));
     }
   };
@@ -393,7 +393,7 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
         
         <div className="relative">
           <input
-            ref={el => fileInputRefs.current[type] = el}
+            ref={el => { fileInputRefs.current[type] = el; }}
             type="file"
             accept="image/jpeg,image/png,image/heic,image/heif,image/webp"
             onChange={(e) => handleFileSelect(type, e)}

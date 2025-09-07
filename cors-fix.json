@@ -1,0 +1,15 @@
+[
+  {
+    "origin": ["*"],
+    "method": ["GET", "HEAD", "PUT", "POST", "DELETE", "OPTIONS"],
+    "responseHeader": [
+      "Content-Type", 
+      "Authorization", 
+      "Range",
+      "x-goog-*",
+      "x-firebase-*",
+      "firebase-*"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]

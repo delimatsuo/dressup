@@ -103,7 +103,7 @@ export function useSession() {
       if (!functions) {
         console.warn('Firebase functions not available, creating mock session');
         const mockSession: Session = {
-          sessionId: `mock-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+          sessionId: `session-${Date.now()}-${Math.random().toString(36).substring(7)}`,
           expiresIn: 1800, // 30 minutes
           expiresAt: new Date(Date.now() + 30 * 60 * 1000)
         };
