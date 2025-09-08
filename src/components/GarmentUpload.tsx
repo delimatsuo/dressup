@@ -2,7 +2,8 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import { Upload, Image as ImageIcon, X, ShoppingBag, Camera, Link, Smartphone } from 'lucide-react';
-import { uploadToFirebase } from '../lib/firebaseHelpers';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { storage } from '../lib/firebase';
 import { useSession } from '../hooks/useSession';
 
 interface GarmentUploadProps {
@@ -50,17 +51,28 @@ export const GarmentUpload: React.FC<GarmentUploadProps> = ({
       };
       reader.readAsDataURL(file);
 
-      // Upload to Firebase
-      const uploadPath = `uploads/${sessionId}/garment-${Date.now()}`;
-      const downloadUrl = await uploadToFirebase(
-        file,
-        uploadPath,
-        (progress) => setUploadProgress(progress)
-      );
+      // Upload to Firebase Storage
+      const uploadPath = `uploads/${sessionId}/garment-${Date.now()}-${file.name}`;
+      const storageRef = ref(storage, uploadPath);
+      const uploadTask = uploadBytesResumable(storageRef, file);
 
-      // Store the uploaded URL
-      setGarmentImage(downloadUrl);
-      setUploading(false);
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(Math.round(progress));
+        },
+        (error) => {
+          console.error('Upload error:', error);
+          setError('Failed to upload image. Please try again.');
+          setUploading(false);
+        },
+        async () => {
+          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+          setGarmentImage(downloadUrl);
+          setUploading(false);
+        }
+      );
     } catch (err) {
       console.error('Upload failed:', err);
       setError('Failed to upload image. Please try again.');
