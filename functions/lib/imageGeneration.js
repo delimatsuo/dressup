@@ -58,7 +58,7 @@ const imageGenerationModel = genAI.getGenerativeModel({
 async function getBackgroundSuggestion(garmentImageBase64) {
     const logger = (0, logger_1.createLogger)('getBackgroundSuggestion');
     try {
-        const prompt = `You are a professional fashion photographer planning a photoshoot. Examine this garment carefully - notice its fabric texture, cut, formality level, and the lifestyle it represents. Based on these details, envision where this garment would naturally be worn and look most compelling in a photograph. Consider the lighting that would best complement the fabric's properties and the atmosphere that matches the garment's intended use. Describe a specific, photorealistic location setting that would create a harmonious and aspirational scene. For example, a silk evening gown might call for 'the grand staircase of an opulent opera house with warm golden chandelier lighting,' while casual linen shorts suggest 'a sun-drenched Mediterranean beach cafe with natural afternoon light.' Respond with ONLY the setting description in 10 words or less.`;
+        const prompt = `Look at this garment and suggest an appropriate background location where someone would naturally wear it. Consider the garment's style and formality. Examples: evening gown = "elegant ballroom", casual dress = "outdoor garden party", business suit = "modern office lobby". Respond with ONLY a brief location description in 10 words or less.`;
         const result = await imageGenerationModel.generateContent([
             prompt,
             { inlineData: { mimeType: 'image/jpeg', data: garmentImageBase64 } },
@@ -90,29 +90,54 @@ sessionId, customInstructions) {
         const garmentImageBase64 = await fetchImageAsBase64(garmentImageUrl);
         // Generate image using Gemini 2.5 Flash
         const startTime = Date.now();
-        // Create the prompt using Gemini's best practices: narrative description, photographic terminology, and step-by-step instructions
-        const basePrompt = `You are creating a professional fashion e-commerce virtual try-on experience. The person in the first image is your model, and they need to see themselves wearing the garment from the second image in a realistic, aspirational context.
+        // Create a clear, goal-oriented prompt that communicates the virtual try-on objective
+        const basePrompt = `**VIRTUAL TRY-ON TASK:**
+Your goal is to help someone see what they would look like wearing a specific garment. This is a virtual fitting room experience.
 
-**Step 1 - Preserve the Model's Identity:**
-Carefully study the person in the first image. Note their exact facial features: the shape of their eyes, their unique eye color and expression, the specific curve of their nose, their distinctive lip shape and natural color, their exact skin tone and texture, any visible freckles or beauty marks, their precise haircut and hair color including any highlights or natural variations, their facial bone structure including jawline and cheekbones, and their natural body proportions. These details must remain absolutely unchanged - this is the same person, just wearing different clothes.
+**INPUTS PROVIDED:**
+- Image 1: A real person (the customer) wearing their current clothes
+- Image 2: A garment/outfit from an online store that they want to try on virtually
 
-**Step 2 - Understand the Garment:**
-Analyze the clothing in the second image. Identify whether this is a complete outfit or a single garment piece. Notice the fabric texture, drape, fit, color accuracy, and any distinctive design elements like buttons, zippers, patterns, or logos. This exact garment must appear naturally fitted to the person's body.
+**YOUR OBJECTIVE:**
+Generate 2 realistic photos showing THE EXACT SAME PERSON from Image 1 now wearing THE EXACT GARMENT from Image 2.
 
-**Step 3 - Create the Standing Portrait:**
-Generate a high-resolution, professional fashion photograph captured with a virtual 85mm portrait lens at f/2.8. The person from image one is now wearing the garment from image two, standing in a three-quarter pose that naturally showcases the outfit. They are positioned in ${location}, with professional three-point lighting that creates soft shadows and highlights the fabric's texture. The background should have a subtle bokeh effect while keeping the subject in sharp focus. The image should feel like it was shot for a premium fashion e-commerce site - clean, aspirational, and photorealistic.
+**CRITICAL REQUIREMENTS:**
 
-**Step 4 - Create the Sitting Variation:**
-Using the same photographic setup and location, create a second image where the person is seated comfortably - perhaps on a designer chair, bench, or architectural element that fits the scene. The pose should be relaxed yet elegant, showing how the garment moves and drapes when sitting. Maintain the same lighting quality and professional finish. The person's face should be clearly visible and recognizable as the exact same individual from the first image.
+1. **THE PERSON MUST BE THE SAME** 
+   - This is the most important requirement!
+   - Use the exact person from Image 1 - their face, hair, body type, skin tone, and all unique features
+   - The customer needs to recognize themselves in the result
+   - If the person doesn't look like themselves, the virtual try-on has failed
 
-**Critical Quality Checks:**
-- The person's face must be identical to the original - same eye shape, same nose, same lips, same skin tone, same hair
-- The garment must be the exact one from the second image - correct color, pattern, and design details
-- Both images should have consistent, professional lighting and color grading
-- The final result should be indistinguishable from a real photoshoot`;
-        // Add custom instructions if provided, integrating them into the narrative
+2. **THE GARMENT MUST BE ACCURATE**
+   - The clothing from Image 2 should appear exactly as shown (same color, style, design)
+   - It should fit naturally on the specific person's body from Image 1
+   - Preserve all details: patterns, textures, buttons, logos, etc.
+
+3. **CREATE TWO DIFFERENT POSES:**
+   - Photo 1: The person standing naturally in ${location}
+   - Photo 2: The same person sitting or in a different pose in the same location
+   - Both must clearly show the person wearing the garment
+
+**THINK OF IT THIS WAY:**
+You're creating a magical mirror where the customer (Image 1) can instantly see themselves wearing any outfit (Image 2) they find online. They should think "That's ME in that dress/outfit!" not "That's someone else" or "That's just the original product photo."
+
+**QUALITY EXPECTATIONS:**
+- Photorealistic results that look like actual photos
+- Natural lighting that flatters both person and garment
+- The person should look comfortable and natural
+- The garment should fit realistically on their body type
+
+**SUCCESS CRITERIA:**
+✓ The person can immediately recognize themselves
+✓ The garment looks exactly like what they want to buy
+✓ The images look like real photos, not artificial
+✓ Two different poses showing how the outfit looks
+
+Remember: This is about showing a real person (Image 1) what they personally would look like in the clothes (Image 2). Keep the person's identity intact!`;
+        // Add custom instructions if provided
         const prompt = customInstructions
-            ? `${basePrompt}\n\n**Step 5 - Apply Custom Modifications:**\nWhile maintaining the person's exact identity and the garment's design, apply these specific adjustments to the scene: ${customInstructions}. Integrate these changes naturally into the photoshoot, ensuring they enhance rather than compromise the professional quality and identity preservation. If the instructions conflict with preserving the person's face or the garment's essential design, prioritize accuracy of identity and garment over the modification request.`
+            ? `${basePrompt}\n\n**ADDITIONAL CUSTOMER REQUEST:**\n${customInstructions}\n\nApply this request while keeping the person recognizable as themselves and the garment accurate to what they want to buy.`
             : basePrompt;
         // Generate content with images
         const result = await imageGenerationModel.generateContent([
