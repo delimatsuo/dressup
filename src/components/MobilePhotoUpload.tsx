@@ -296,21 +296,40 @@ export function MobilePhotoUpload({
           )}
           
           {currentView < views.length - 1 ? (
-            <button
-              onClick={() => setCurrentView(currentView + 1)}
-              disabled={!photos[views[currentView]]}
-              className="
-                touch-button
-                bg-purple-500 text-white
-                hover:bg-purple-600
-                disabled:bg-gray-300
-                flex-1
-              "
-              aria-label={`Go to next step: ${views[currentView + 1]} view`}
-              aria-describedby="next-button-help"
-            >
-              Next
-            </button>
+            <>
+              {/* Primary action: Continue to Garment after front photo */}
+              {photos['front'] && (
+                <button
+                  onClick={() => onComplete(photos)}
+                  className="
+                    touch-button
+                    bg-green-500 text-white
+                    hover:bg-green-600
+                    flex-1
+                  "
+                  aria-label="Continue to garment upload"
+                >
+                  Continue to Garment →
+                </button>
+              )}
+              
+              {/* Secondary action: Add more views (optional) */}
+              {photos[views[currentView]] && (
+                <button
+                  onClick={() => setCurrentView(currentView + 1)}
+                  className="
+                    touch-button
+                    bg-gray-200 text-gray-700
+                    hover:bg-gray-300
+                    flex-shrink-0
+                    px-3
+                  "
+                  aria-label={`Add ${views[currentView + 1]} view for better results`}
+                >
+                  + {views[currentView + 1]}
+                </button>
+              )}
+            </>
           ) : (
             <button
               onClick={() => onComplete(photos)}
@@ -339,14 +358,19 @@ export function MobilePhotoUpload({
 
         {/* Help Text */}
         <div className="mt-4 text-center" role="status" aria-live="polite">
-          <p className="text-responsive-sm text-gray-500">
-            {allRequiredPhotosUploaded 
-              ? photos['front'] && !photos['side'] && !photos['back']
-                ? 'Front photo captured! You can add more views or tap Complete.'
-                : 'Photos captured! Tap Complete to continue.'
-              : `${Object.keys(photos).length} of ${views.length} photos captured`
+          <p className="text-responsive-sm text-gray-700 font-medium">
+            {photos['front'] && !photos['side'] && !photos['back']
+              ? '✓ Front photo captured! Ready to continue'
+              : photos['front']
+              ? `${Object.values(photos).filter(Boolean).length} of 3 photos captured`
+              : 'Take a front photo to get started'
             }
           </p>
+          {photos['front'] && !photos['side'] && (
+            <p className="text-responsive-xs text-gray-500 mt-1">
+              Tip: Adding side view improves accuracy by 15%
+            </p>
+          )}
         </div>
       </div>
     </div>

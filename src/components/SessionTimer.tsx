@@ -6,8 +6,13 @@ import { useSessionContext } from './SessionProvider';
 export function SessionTimer() {
   const { formattedRemainingTime, extendSession, loading } = useSessionContext();
 
-  // Don't render during SSR/build time
+  // Don't render during SSR/build time or on mobile
   if (typeof window === 'undefined') {
+    return null;
+  }
+  
+  // Hide on mobile devices
+  if (window.innerWidth < 768) {
     return null;
   }
 
@@ -18,21 +23,15 @@ export function SessionTimer() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="fixed top-4 right-4 bg-white rounded-lg shadow-md p-4">
-        <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-24"></div>
-        </div>
-      </div>
-    );
+  if (loading || !formattedRemainingTime) {
+    return null; // Don't show anything while loading or if no time data
   }
 
   const timeNumber = parseInt(formattedRemainingTime.split(':')[0]);
   const isLowTime = timeNumber < 5; // Less than 5 minutes
 
   return (
-    <div className="fixed top-4 right-4 bg-white rounded-lg shadow-md p-4 z-50">
+    <div className="fixed top-4 right-4 bg-white rounded-lg shadow-md p-4 z-50 hidden md:block">
       <div className="flex items-center space-x-3">
         <div>
           <p className="text-xs text-gray-500 uppercase tracking-wide">Session Time</p>
