@@ -2,6 +2,9 @@
 
 import React, { useState, useRef } from 'react';
 import { Camera, Image as ImageIcon, X, Check, RotateCw } from 'lucide-react';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { storage } from '../lib/firebase';
+import { useSession } from '../hooks/useSession';
 import { ProgressAnnouncement, StatusAnnouncement, Instructions } from './ScreenReaderOnly';
 
 interface MobilePhotoUploadProps {
@@ -18,26 +21,69 @@ export function MobilePhotoUpload({
   description 
 }: MobilePhotoUploadProps) {
   const [photos, setPhotos] = useState<Record<string, string>>({});
+  const [localPreviews, setLocalPreviews] = useState<Record<string, string>>({});
+  const [uploadingViews, setUploadingViews] = useState<Record<string, boolean>>({});
   const [currentView, setCurrentView] = useState(0);
   const fileInputRefs = useRef<Record<string, HTMLInputElement>>({});
+  const { session } = useSession();
+  const sessionId = session?.sessionId || `temp-${Date.now()}`;
 
-  const handlePhotoCapture = (view: string, event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoCapture = async (view: string, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const newPhotos = {
-          ...photos,
-          [view]: reader.result as string
-        };
-        setPhotos(newPhotos);
-        
-        // Auto-advance to next view
-        if (currentView < views.length - 1) {
-          setTimeout(() => setCurrentView(currentView + 1), 300);
+    if (!file) return;
+
+    // Set uploading state
+    setUploadingViews(prev => ({ ...prev, [view]: true }));
+
+    // Create local preview immediately
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLocalPreviews(prev => ({
+        ...prev,
+        [view]: reader.result as string
+      }));
+    };
+    reader.readAsDataURL(file);
+
+    try {
+      // Upload to Firebase Storage
+      const uploadPath = `uploads/${sessionId}/user-${view}-${Date.now()}-${file.name}`;
+      const storageRef = ref(storage, uploadPath);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          // Progress tracking if needed
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log(`Upload progress for ${view}: ${progress}%`);
+        },
+        (error) => {
+          console.error(`Upload error for ${view}:`, error);
+          setUploadingViews(prev => ({ ...prev, [view]: false }));
+          // Keep the local preview even if upload fails
+        },
+        async () => {
+          // Upload completed successfully
+          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+          
+          // Store the Firebase Storage URL, not the base64
+          const newPhotos = {
+            ...photos,
+            [view]: downloadUrl
+          };
+          setPhotos(newPhotos);
+          setUploadingViews(prev => ({ ...prev, [view]: false }));
+          
+          // Auto-advance to next view
+          if (currentView < views.length - 1) {
+            setTimeout(() => setCurrentView(currentView + 1), 300);
+          }
         }
-      };
-      reader.readAsDataURL(file);
+      );
+    } catch (error) {
+      console.error(`Failed to upload ${view} photo:`, error);
+      setUploadingViews(prev => ({ ...prev, [view]: false }));
     }
   };
 
@@ -45,6 +91,10 @@ export function MobilePhotoUpload({
     const newPhotos = { ...photos };
     delete newPhotos[view];
     setPhotos(newPhotos);
+    
+    const newPreviews = { ...localPreviews };
+    delete newPreviews[view];
+    setLocalPreviews(newPreviews);
   };
 
   const retakePhoto = (view: string) => {
@@ -149,7 +199,7 @@ export function MobilePhotoUpload({
               aria-labelledby={`step-${index + 1}-button`}
               id={`photo-capture-${view}`}
             >
-              {!photos[view] ? (
+              {!photos[view] && !localPreviews[view] ? (
                 <div className="relative">
                   <input
                     ref={el => {
@@ -193,40 +243,50 @@ export function MobilePhotoUpload({
                   </label>
                 </div>
               ) : (
-                <div className="relative" role="group" aria-label={`${view} view photo captured`}>
-                  <div className="aspect-square rounded-2xl overflow-hidden bg-gray-100">
+                <div className="relative" role="group" aria-label={`${view} view photo ${uploadingViews[view] ? 'uploading' : 'captured'}`}>
+                  <div className="aspect-square rounded-2xl overflow-hidden bg-gray-100 relative">
                     <img
-                      src={photos[view]}
+                      src={localPreviews[view] || photos[view]}
                       alt={`Captured ${view} view photo for upload`}
                       className="w-full h-full object-cover"
                     />
+                    {uploadingViews[view] && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <div className="text-white text-center">
+                          <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-2"></div>
+                          <p className="text-sm font-medium">Uploading...</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
-                  {/* Action buttons */}
-                  <div className="absolute top-2 right-2 flex gap-2">
-                    <button
-                      onClick={() => retakePhoto(view)}
-                      className="
-                        p-2 bg-white/90 backdrop-blur-sm rounded-full
-                        shadow-lg hover:bg-white active:scale-95
-                        transition-all focus:outline-none focus:ring-2 focus:ring-purple-500
-                      "
-                      aria-label={`Retake ${view} view photo`}
-                    >
-                      <RotateCw className="w-5 h-5 text-gray-700" aria-hidden="true" />
-                    </button>
-                    <button
-                      onClick={() => removePhoto(view)}
-                      className="
-                        p-2 bg-white/90 backdrop-blur-sm rounded-full
-                        shadow-lg hover:bg-white active:scale-95
-                        transition-all focus:outline-none focus:ring-2 focus:ring-red-500
-                      "
-                      aria-label={`Remove ${view} view photo`}
-                    >
-                      <X className="w-5 h-5 text-red-500" aria-hidden="true" />
-                    </button>
-                  </div>
+                  {/* Action buttons - disabled while uploading */}
+                  {!uploadingViews[view] && (
+                    <div className="absolute top-2 right-2 flex gap-2">
+                      <button
+                        onClick={() => retakePhoto(view)}
+                        className="
+                          p-2 bg-white/90 backdrop-blur-sm rounded-full
+                          shadow-lg hover:bg-white active:scale-95
+                          transition-all focus:outline-none focus:ring-2 focus:ring-purple-500
+                        "
+                        aria-label={`Retake ${view} view photo`}
+                      >
+                        <RotateCw className="w-5 h-5 text-gray-700" aria-hidden="true" />
+                      </button>
+                      <button
+                        onClick={() => removePhoto(view)}
+                        className="
+                          p-2 bg-white/90 backdrop-blur-sm rounded-full
+                          shadow-lg hover:bg-white active:scale-95
+                          transition-all focus:outline-none focus:ring-2 focus:ring-red-500
+                        "
+                        aria-label={`Remove ${view} view photo`}
+                      >
+                        <X className="w-5 h-5 text-red-500" aria-hidden="true" />
+                      </button>
+                    </div>
+                  )}
 
                   {/* View label */}
                   <div className="absolute bottom-2 left-2">
@@ -261,9 +321,9 @@ export function MobilePhotoUpload({
                     ${!photos[view] ? 'bg-gray-100' : ''}
                   `}
                 >
-                  {photos[view] ? (
+                  {(photos[view] || localPreviews[view]) ? (
                     <img
-                      src={photos[view]}
+                      src={localPreviews[view] || photos[view]}
                       alt={`${view} thumbnail`}
                       className="w-full h-full object-cover"
                     />

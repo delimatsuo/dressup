@@ -22,7 +22,8 @@ export const GarmentUpload: React.FC<GarmentUploadProps> = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { sessionId } = useSession();
+  const { session } = useSession();
+  const sessionId = session?.sessionId || `temp-${Date.now()}`;
 
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
