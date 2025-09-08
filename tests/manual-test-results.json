@@ -1,0 +1,17 @@
+{
+  "timestamp": "2025-09-07T15:38:13.943Z",
+  "result": "FAIL",
+  "message": "Could not find file upload inputs on the page",
+  "modalClosed": true,
+  "consoleErrors": [],
+  "pageTitle": "DressUp - Virtual Outfit Try-On",
+  "currentUrl": "http://localhost:3000/",
+  "buttonCount": 4,
+  "inputCount": 0,
+  "screenshots": [
+    "tests/screenshots/manual-initial-state.png",
+    "tests/screenshots/manual-after-modal-close.png",
+    "tests/screenshots/manual-interface-loaded.png",
+    "tests/screenshots/manual-upload-search-complete.png"
+  ]
+}

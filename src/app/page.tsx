@@ -36,12 +36,12 @@ export default function HomePage() {
   useKeyboardDetection();
   
   const [sessionId, setSessionId] = useState<string>('');
-  const [photoData, setPhotoData] = useState<PhotoData | null>(null);
   const [savedUserPhotos, setSavedUserPhotos] = useState<PhotoData['userPhotos'] | null>(null);
+  const [savedGarmentPhotos, setSavedGarmentPhotos] = useState<PhotoData['garmentPhotos'] | null>(null);
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState<'upload' | 'generate' | 'results'>('upload');
+  const [showResults, setShowResults] = useState(false);
 
   // Initialize session and Firebase
   useEffect(() => {
@@ -67,24 +67,20 @@ export default function HomePage() {
     window.sessionStorage.setItem('sessionId', newSessionId);
   }, []);
 
-  const handlePhotoUploadComplete = (data: PhotoData) => {
-    setPhotoData(data);
+  const handleGenerateOutfit = async (data: PhotoData) => {
+    if (!data) return;
+
     setSavedUserPhotos(data.userPhotos); // Save user photos for "Try Another" functionality
-    setStep('generate');
-  };
-
-  const handleGenerateOutfit = async () => {
-    if (!photoData) return;
-
+    setSavedGarmentPhotos(data.garmentPhotos); // Save garment photos for regeneration
     setProcessing(true);
     setError(null);
-    setStep('results');
+    setShowResults(true);
 
     try {
       // Use the new multi-photo processing function
       const processedResult = await processMultiPhotoOutfit(
-        photoData.userPhotos,
-        photoData.garmentPhotos,
+        data.userPhotos,
+        data.garmentPhotos,
         sessionId
       );
 
@@ -100,7 +96,7 @@ export default function HomePage() {
       setResult(newResult);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to process outfit images');
-      setStep('generate');
+      setShowResults(false); // Go back to upload on error
     } finally {
       setProcessing(false);
     }
@@ -131,18 +127,49 @@ export default function HomePage() {
   const handleTryAnother = () => {
     setResult(null);
     setError(null);
-    
-    // Keep user photos and go back to upload step for new garment selection
-    setPhotoData(null); // Reset photoData so PhotoUploadInterface starts fresh
-    setStep('upload');   // Go back to upload step
+    setShowResults(false);
   };
 
   const handleStartOver = () => {
     setResult(null);
-    setPhotoData(null);
     setSavedUserPhotos(null);
+    setSavedGarmentPhotos(null);
     setError(null);
-    setStep('upload');
+    setShowResults(false);
+  };
+
+  const handleRegenerateWithInstructions = async (instructions: string) => {
+    if (!savedUserPhotos || !savedGarmentPhotos) {
+      setError('Missing photo data for regeneration');
+      return;
+    }
+
+    setProcessing(true);
+    setError(null);
+
+    try {
+      const processedResult = await processMultiPhotoOutfit(
+        savedUserPhotos,
+        savedGarmentPhotos,
+        sessionId,
+        instructions
+      );
+
+      const newResult: Result = {
+        id: `result-${Date.now()}`,
+        poses: processedResult.poses,
+        garmentName: 'Your Custom Outfit',
+        processingTime: processedResult.processingTime,
+        timestamp: new Date().toISOString(),
+        description: processedResult.description,
+      };
+
+      setResult(newResult);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to regenerate outfit with instructions');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const handleConsent = () => {
@@ -154,7 +181,11 @@ export default function HomePage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" role="status" aria-label="Loading"></div>
+          <div 
+            className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" 
+            role="status" 
+            aria-label="Loading"
+          ></div>
           <p className="text-gray-700">Loading...</p>
         </div>
       </div>
@@ -175,8 +206,10 @@ export default function HomePage() {
         />
         <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
           <div className="text-center">
-            <h1 className="text-responsive-3xl font-bold text-gray-900 mb-4">DressUp AI</h1>
-            <p className="text-responsive-base text-gray-700">Please review and accept our terms to continue.</p>
+            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+              DressUp AI
+            </h1>
+            <p className="text-lg text-gray-800 font-medium">Please review and accept our terms to continue.</p>
           </div>
         </div>
       </>
@@ -194,156 +227,110 @@ export default function HomePage() {
       </a>
       
       <header className="text-center mb-6 sm:mb-12" role="banner">
-        <h1 className="text-responsive-3xl font-bold mb-2 sm:mb-4 text-gray-900">DressUp</h1>
-        <p className="text-responsive-lg text-gray-700">
-          Transform your look with AI-powered virtual outfit try-on
-        </p>
-      </header>
-
-      <section className="mb-6 sm:mb-8 bg-blue-50 rounded-lg p-4 sm:p-6" aria-labelledby="how-it-works">
-        <h2 id="how-it-works" className="text-responsive-2xl font-semibold mb-4">How It Works</h2>
-        <ol className="grid grid-cols-1 sm:grid-cols-3 gap-4" role="list">
-          <li className="flex items-start">
-            <span className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-3" aria-hidden="true">
-              1
-            </span>
-            <div>
-              <h3 className="font-semibold text-responsive-base">Upload Your Photos</h3>
-              <p className="text-responsive-sm text-gray-700">Upload photos of yourself and the garment (front, side views)</p>
-            </div>
-          </li>
-          <li className="flex items-start">
-            <span className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-3" aria-hidden="true">
-              2
-            </span>
-            <div>
-              <h3 className="font-semibold text-responsive-base">Generate Poses</h3>
-              <p className="text-responsive-sm text-gray-700">Our AI creates multiple outfit poses for you</p>
-            </div>
-          </li>
-          <li className="flex items-start">
-            <span className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-3" aria-hidden="true">
-              3
-            </span>
-            <div>
-              <h3 className="font-semibold text-responsive-base">See Your Results</h3>
-              <p className="text-responsive-sm text-gray-700">View realistic outfit visualizations</p>
-            </div>
-          </li>
-        </ol>
-      </section>
-
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-300 rounded-lg text-red-800" role="alert" aria-live="assertive">
-          <h2 className="sr-only">Error</h2>
-          <strong className="font-medium">Error:</strong> {error}
-        </div>
-      )}
-
-      <main id="main-content" role="main">
-        {step === 'upload' && (
-          <section aria-labelledby="upload-section">
-            <h2 id="upload-section" className="sr-only">Photo Upload</h2>
-            <PhotoUploadInterface 
-              onComplete={handlePhotoUploadComplete}
-              existingUserPhotos={savedUserPhotos || undefined}
-            />
-          </section>
-        )}
-
-        {step === 'generate' && photoData && (
-          <section className="max-w-2xl mx-auto text-center py-6 sm:py-12" aria-labelledby="generate-section">
-            <h2 id="generate-section" className="text-responsive-2xl font-bold text-gray-900 mb-2 sm:mb-4">Ready to Generate!</h2>
-            <p className="text-responsive-base text-gray-700 mb-6 sm:mb-8">
-              All photos uploaded successfully. Click below to generate your virtual outfit poses.
+        <h1 className="text-5xl sm:text-6xl font-bold mb-2 sm:mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              DressUp AI
+            </h1>
+            <p className="text-lg sm:text-xl text-gray-800 font-medium">
+              Transform your look with AI-powered virtual outfit try-on
             </p>
-            
-            <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-6 sm:mb-8">
-              <figure>
-                <h3 className="font-medium text-responsive-base text-gray-900 mb-1 sm:mb-2">Your Photo</h3>
-                <img 
-                  src={photoData.userPhotos.front} 
-                  alt="Front view photo of user for outfit try-on"
-                  className="w-full aspect-[3/4] object-cover rounded-lg border"
-                />
-              </figure>
-              <figure>
-                <h3 className="font-medium text-responsive-base text-gray-900 mb-1 sm:mb-2">Garment</h3>
-                <img 
-                  src={photoData.garmentPhotos.front} 
-                  alt="Front view of garment to be tried on"
-                  className="w-full aspect-[3/4] object-cover rounded-lg border"
-                />
-              </figure>
-            </div>
+          </header>
 
-            <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-              <button
-                onClick={() => setStep('upload')}
-                className="touch-button bg-gray-100 text-gray-700 hover:bg-gray-200 w-full sm:w-auto"
-                aria-describedby="back-to-upload-description"
-              >
-                ← Back to Upload
-              </button>
-              <span id="back-to-upload-description" className="sr-only">Return to photo upload step to select different photos</span>
-              
-              <button
-                onClick={handleGenerateOutfit}
-                disabled={processing}
-                className="touch-button bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 w-full sm:w-auto"
-                aria-describedby="generate-description"
-              >
-                {processing ? (
-                  <>
-                    <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" aria-hidden="true"></span>
-                    Generating...
-                  </>
-                ) : (
-                  'Generate My Poses!'
-                )}
-              </button>
-              <span id="generate-description" className="sr-only">Start AI processing to generate outfit visualization</span>
-            </div>
+          <section className="mb-6 sm:mb-8 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 sm:p-8 shadow-lg border border-blue-100" aria-labelledby="how-it-works">
+            <h2 id="how-it-works" className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">How It Works</h2>
+            <ol className="grid grid-cols-1 sm:grid-cols-3 gap-4" role="list">
+              <li className="flex items-start">
+                <span className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center font-bold mr-3 shadow-md" aria-hidden="true">
+                  1
+                </span>
+                <div>
+                  <h3 className="font-bold text-lg text-gray-900">Upload Your Photos</h3>
+                  <p className="text-sm text-gray-700 mt-1">Upload photos of yourself and the garment (front, side views)</p>
+                </div>
+              </li>
+              <li className="flex items-start">
+                <span className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-full flex items-center justify-center font-bold mr-3 shadow-md" aria-hidden="true">
+                  2
+                </span>
+                <div>
+                  <h3 className="font-bold text-lg text-gray-900">Generate Poses</h3>
+                  <p className="text-sm text-gray-700 mt-1">Our AI creates multiple outfit poses for you</p>
+                </div>
+              </li>
+              <li className="flex items-start">
+                <span className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-full flex items-center justify-center font-bold mr-3 shadow-md" aria-hidden="true">
+                  3
+                </span>
+                <div>
+                  <h3 className="font-bold text-lg text-gray-900">See Your Results</h3>
+                  <p className="text-sm text-gray-700 mt-1">View realistic outfit visualizations</p>
+                </div>
+              </li>
+            </ol>
           </section>
-        )}
 
-        {step === 'results' && (
-          <section className="mb-8" aria-labelledby="results-section">
-            <h2 id="results-section" className="sr-only">Generated Results</h2>
-            <div aria-live="polite" aria-atomic="true">
-              <ResultsDisplay
-                result={result || undefined}
-                loading={processing}
-                error={error || undefined}
-                showComparison={true}
-                onTryAnother={handleTryAnother}
-                onStartOver={handleStartOver}
-                onDownload={(result) => {
-                  // Implement download functionality
-                  console.log('Download:', result);
-                }}
-                onShare={(result) => {
-                  // Implement share functionality
-                  console.log('Share:', result);
-                }}
-              />
+          {error && !showResults && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-300 rounded-lg text-red-800" role="alert" aria-live="assertive">
+              <h2 className="sr-only">Error</h2>
+              <strong className="font-medium">Error:</strong> {error}
             </div>
-            
-            {/* Only show feedback section after successful result generation */}
-            {result && !processing && (
-              <aside aria-labelledby="feedback-section" className="mt-8">
-                <h2 id="feedback-section" className="sr-only">User Feedback</h2>
-                <FeedbackSection
-                  onSubmit={handleFeedbackSubmit}
-                  onQuickFeedback={(type) => {
-                    console.log('Quick feedback:', type);
+          )}
+
+          <main id="main-content" role="main">
+            {showResults ? (
+              <section aria-labelledby="results-section">
+                <h2 id="results-section" className="sr-only">Generated Results</h2>
+                <ResultsDisplay
+                  result={result || undefined}
+                  loading={processing}
+                  error={error || undefined}
+                  showComparison={false}
+                  onTryAnother={handleTryAnother}
+                  onStartOver={handleStartOver}
+                  onRegenerateWithInstructions={handleRegenerateWithInstructions}
+                  onDownload={async (result) => {
+                      for (const pose of result.poses) {
+                        try {
+                          const response = await fetch(pose.processedImageUrl);
+                          const blob = await response.blob();
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.style.display = 'none';
+                          a.href = url;
+                          a.download = `${pose.name.toLowerCase().replace(/ /g, '-')}.png`;
+                          document.body.appendChild(a);
+                          a.click();
+                          window.URL.revokeObjectURL(url);
+                          a.remove();
+                        } catch (err) {
+                          console.error('Failed to download image:', err);
+                          setError('Failed to download one or more images.');
+                        }
+                      }
                   }}
                 />
-              </aside>
+                {/* Only show feedback section after successful result generation */}
+                {result && !processing && (
+                  <aside aria-labelledby="feedback-section" className="mt-8">
+                    <h2 id="feedback-section" className="sr-only">User Feedback</h2>
+                    <FeedbackSection
+                      onSubmit={handleFeedbackSubmit}
+                      onQuickFeedback={(type) => {
+                        console.log('Quick feedback:', type);
+                      }}
+                    />
+                  </aside>
+                )}
+              </section>
+            ) : (
+              <section aria-labelledby="upload-section">
+                <h2 id="upload-section" className="sr-only">Photo Upload</h2>
+                <PhotoUploadInterface 
+                  onComplete={handleGenerateOutfit}
+                  existingUserPhotos={savedUserPhotos || undefined}
+                />
+              </section>
             )}
-          </section>
-        )}
-      </main>
-    </div>
-  );
+          </main>
+        </div>
+      );
 }

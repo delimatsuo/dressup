@@ -32,7 +32,7 @@ interface ResultsDisplayProps {
   onDownload?: (result: Result) => void;
   onTryAnother?: () => void;
   onStartOver?: () => void;
-  onShare?: (result: Result) => void;
+  onRegenerateWithInstructions?: (instructions: string) => void;
 }
 
 const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
@@ -43,9 +43,25 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
   onDownload,
   onTryAnother,
   onStartOver,
-  onShare,
+  onRegenerateWithInstructions,
 }) => {
   const { isMobileOrTouch } = useMobileDetection();
+  const [showRegenerateInstructions, setShowRegenerateInstructions] = useState(false);
+  const [instructionsText, setInstructionsText] = useState('');
+
+  const onRegenerateWithInstructionsToggle = () => {
+    setShowRegenerateInstructions(prev => !prev);
+    setInstructionsText(''); // Clear text when toggling
+  };
+
+  const handleSubmitInstructions = () => {
+    if (onRegenerateWithInstructions) {
+      onRegenerateWithInstructions(instructionsText);
+      setShowRegenerateInstructions(false);
+      setInstructionsText('');
+    }
+  };
+
   if (loading) {
     return (
       <div className="results-display mobile-card" role="region" aria-labelledby="loading-heading" aria-live="polite">
@@ -182,48 +198,14 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
           ) : (
             <>
               <h3 className="text-responsive-lg font-semibold mb-4" id="desktop-gallery-heading">Generated Poses</h3>
-              <div className="grid gap-6" role="group" aria-labelledby="desktop-gallery-heading">
+              <div className="grid md:grid-cols-2 gap-6" role="group" aria-labelledby="desktop-gallery-heading">
                 {poses.map((pose, index) => (
-                  <div key={index} className="border rounded-lg p-4" role="region" aria-labelledby={`pose-${index}-heading`}>
-                    <h4 id={`pose-${index}-heading`} className="text-md font-medium mb-3 flex items-center justify-between">
-                      {pose.name}
-                      <span className="text-sm text-gray-700 bg-gray-100 px-2 py-1 rounded" aria-label={`${Math.round(pose.confidence * 100)} percent confidence level`}>
-                        {Math.round(pose.confidence * 100)}% confidence
-                      </span>
-                    </h4>
-                    
-                    {showComparison ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" role="group" aria-label="Before and after comparison">
-                        <div>
-                          <h5 className="text-sm font-semibold mb-2 text-gray-800" id={`before-${index}-heading`}>Before</h5>
-                          <img
-                            src={pose.originalImageUrl}
-                            alt={`Original photo showing ${pose.name} pose before outfit try-on`}
-                            className="w-full rounded-lg shadow"
-                            role="img"
-                            aria-labelledby={`before-${index}-heading`}
-                          />
-                        </div>
-                        <div>
-                          <h5 className="text-sm font-semibold mb-2 text-gray-800" id={`after-${index}-heading`}>After</h5>
-                          <img
-                            src={pose.processedImageUrl}
-                            alt={`AI-generated ${pose.name} pose with new outfit applied - ${Math.round(pose.confidence * 100)}% confidence`}
-                            className="w-full rounded-lg shadow"
-                            role="img"
-                            aria-labelledby={`after-${index}-heading`}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div>
-                        <img
-                          src={pose.processedImageUrl}
-                          alt={`AI-generated ${pose.name} pose showing you wearing the selected outfit with ${Math.round(pose.confidence * 100)}% confidence`}
-                          className="w-full max-w-md mx-auto rounded-lg shadow-lg"
-                        />
-                      </div>
-                    )}
+                  <div key={index}>
+                    <img
+                      src={pose.processedImageUrl}
+                      alt={`AI-generated ${pose.name} pose`}
+                      className="w-full rounded-lg shadow-lg"
+                    />
                   </div>
                 ))}
               </div>
@@ -249,13 +231,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
                 Download All
               </button>
               
-              <button
-                onClick={() => onShare?.(result)}
-                className="touch-button bg-blue-500 text-white hover:bg-blue-600 w-full sm:w-auto focus:ring-2 focus:ring-blue-300"
-                aria-label="Share generated results"
-              >
-                Share
-              </button>
+              
             </>
           )}
 
@@ -264,7 +240,15 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
             className="touch-button bg-blue-500 text-white hover:bg-blue-600 w-full sm:w-auto focus:ring-2 focus:ring-blue-300"
             aria-label="Try a different outfit with the same photos"
           >
-            Try Another Outfit
+            Try Again
+          </button>
+          
+          <button
+            onClick={onRegenerateWithInstructionsToggle}
+            className="touch-button bg-purple-500 text-white hover:bg-purple-600 w-full sm:w-auto focus:ring-2 focus:ring-purple-300"
+            aria-label="Request modifications and regenerate outfit"
+          >
+            Regenerate with Instructions
           </button>
           
           {onStartOver && (
@@ -277,6 +261,29 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
             </button>
           )}
         </div>
+
+        {showRegenerateInstructions && (
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg shadow-inner">
+            <label htmlFor="instructions-text" className="block text-sm font-medium text-gray-700 mb-2">
+              Enter specific instructions for regeneration:
+            </label>
+            <textarea
+              id="instructions-text"
+              rows={3}
+              className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 bg-white text-gray-900 placeholder-gray-400"
+              placeholder="e.g., 'Change my pants to jeans and put me in a cafe.'"
+              value={instructionsText}
+              onChange={(e) => setInstructionsText(e.target.value)}
+            ></textarea>
+            <button
+              onClick={handleSubmitInstructions}
+              disabled={!instructionsText.trim()}
+              className="mt-3 touch-button bg-green-600 text-white hover:bg-green-600 disabled:opacity-50"
+            >
+              Submit Instructions & Regenerate
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -68,10 +68,7 @@ export function PhotoUploadInterface({ onComplete, existingUserPhotos }: PhotoUp
 
   const handleGarmentPhotosComplete = (photos: Record<string, string>) => {
     setGarmentPhotos(photos);
-    setStep('complete');
-    setShowSuccessAnimation(true);
-    
-    // Call the completion callback
+    // DO NOT set step to complete, just call the callback
     if (onComplete && userPhotos) {
       onComplete({
         userPhotos: userPhotos as any,

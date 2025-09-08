@@ -2,7 +2,7 @@
   {
     "testUrl": "https://dressup-hsu24fo3h-deli-matsuos-projects.vercel.app",
     "status": 401,
-    "finalUrl": "https://vercel.com/login?next=%2Fsso-api%3Furl%3Dhttps%253A%252F%252Fdressup-hsu24fo3h-deli-matsuos-projects.vercel.app%252F%26nonce%3D945228e4e895725ed9e8df61962bc3cafe2ca2975423aec0ad0e78cf06d94b9c",
+    "finalUrl": "https://vercel.com/login?next=%2Fsso-api%3Furl%3Dhttps%253A%252F%252Fdressup-hsu24fo3h-deli-matsuos-projects.vercel.app%252F%26nonce%3D17d4a3c2700c0364fe0c9474cc9c5dbdde8c9a80aa9c4422926446b99e370b2b",
     "title": "Login – Vercel",
     "accessible": false,
     "isDressUp": false
@@ -10,7 +10,7 @@
   {
     "testUrl": "https://dressup-hsu24fo3h-deli-matsuos-projects.vercel.app/",
     "status": 401,
-    "finalUrl": "https://vercel.com/login?next=%2Fsso-api%3Furl%3Dhttps%253A%252F%252Fdressup-hsu24fo3h-deli-matsuos-projects.vercel.app%252F%26nonce%3D945228e4e895725ed9e8df61962bc3cafe2ca2975423aec0ad0e78cf06d94b9c",
+    "finalUrl": "https://vercel.com/login?next=%2Fsso-api%3Furl%3Dhttps%253A%252F%252Fdressup-hsu24fo3h-deli-matsuos-projects.vercel.app%252F%26nonce%3D17d4a3c2700c0364fe0c9474cc9c5dbdde8c9a80aa9c4422926446b99e370b2b",
     "title": "Login – Vercel",
     "accessible": false,
     "isDressUp": false

@@ -23,11 +23,9 @@ export {
   cleanupExpiredSessionsStorage
 } from './storageCleanup';
 
-// Initialize Firebase Admin with service account
-const serviceAccount = require('../serviceAccount.json');
+// Initialize Firebase Admin with default credentials
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  storageBucket: 'project-friday-471118.appspot.com'
+  storageBucket: 'projectdressup.firebasestorage.app'
 });
 
 // Set global options for all functions
@@ -53,6 +51,7 @@ interface MultiPoseRequest {
   garmentId?: string;
   poseType?: string;
   instructions?: string;
+  customInstructions?: string;
 }
 
 // Interface for pose generation result
@@ -73,6 +72,8 @@ export const processImageWithGemini = onCall(
     timeoutSeconds: 540, // 9 minutes for multi-pose processing
     memory: '4GiB', // Increased memory for parallel processing
     maxInstances: 3, // Reduced to manage resource usage
+    cors: true, // Enable CORS
+    secrets: ['GOOGLE_AI_API_KEY'], // Add Google AI API key
   },
   async (request) => {
     const structuredLogger = createLogger('processImageWithGemini');
@@ -106,6 +107,7 @@ export const processImageWithGemini = onCall(
           sessionId,
           garmentImageUrl,
           userPhotos,
+          customInstructions: requestData.customInstructions,
           startTime,
           logger: structuredLogger
         });
@@ -209,32 +211,44 @@ async function processMultiPoseGeneration(params: {
   sessionId: string;
   garmentImageUrl: string;
   userPhotos: { front: string; side: string; back: string };
+  customInstructions?: string;
   startTime: number;
   logger: any;
 }) {
-  const { sessionId, garmentImageUrl, userPhotos, startTime } = params;
+  const { sessionId, garmentImageUrl, userPhotos, customInstructions, startTime } = params;
 
-  // Define the three poses to generate
-  const poseDefinitions = [
+  // Get a background suggestion based on the garment
+  const { getBackgroundSuggestion, fetchImageAsBase64 } = await import('./imageGeneration');
+  const garmentImageBase64 = await fetchImageAsBase64(garmentImageUrl);
+  const location = await getBackgroundSuggestion(garmentImageBase64);
+
+  // Define poses based on available photos
+  const poseDefinitions: Array<{
+    name: string;
+    userImageUrl: string;
+    poseType: 'standing' | 'sitting';
+    instructions: string;
+  }> = [
     {
-      name: 'Standing Front',
+      name: 'Standing View',
       userImageUrl: userPhotos.front,
-      poseType: 'standing_front',
-      instructions: 'Generate a standing front view with the garment fitted naturally, showing the complete outfit from head to toe'
+      poseType: 'standing',
+      instructions: 'Generate a standing front view with the garment fitted naturally.'
     },
     {
-      name: 'Standing Side',
-      userImageUrl: userPhotos.side,
-      poseType: 'standing_side', 
-      instructions: 'Generate a standing side view showing the garment profile and how it drapes on the body from a side angle'
-    },
-    {
-      name: 'Walking Side',
-      userImageUrl: userPhotos.side, // Use side photo as base
-      poseType: 'walking_side',
-      instructions: 'Generate a walking side view with natural movement and garment flow, showing how the outfit moves dynamically'
+      name: 'Sitting View',
+      userImageUrl: userPhotos.front, // Use front photo for sitting pose as well
+      poseType: 'sitting',
+      instructions: 'Generate a sitting view, for example at a cafe or on a stylish chair.'
     }
   ];
+  
+  
+  
+  // If no valid photos, throw error
+  if (poseDefinitions.length === 0) {
+    throw new Error('At least one user photo is required');
+  }
 
   console.log(`Starting parallel processing of ${poseDefinitions.length} poses`);
 
@@ -244,11 +258,20 @@ async function processMultiPoseGeneration(params: {
       console.log(`Starting pose ${index + 1}: ${pose.name}`);
       const poseStartTime = Date.now();
       
-      const analysis = await analyzeOutfitWithGemini(
+      // Generate actual virtual try-on image
+      const { generateVirtualTryOnImage } = await import('./imageGeneration');
+      const poseMap: { [key: string]: 'standing' | 'sitting' } = {
+        'standing_front': 'standing',
+        'standing_side': 'standing'
+      };
+      
+      const generationResult = await generateVirtualTryOnImage(
         pose.userImageUrl,
         garmentImageUrl,
-        pose.instructions,
-        sessionId
+        poseMap[pose.poseType] || 'standing',
+        location, // Pass the dynamic location
+        sessionId,
+        customInstructions
       );
       
       const poseProcessingTime = (Date.now() - poseStartTime) / 1000;
@@ -257,9 +280,9 @@ async function processMultiPoseGeneration(params: {
       return {
         name: pose.name,
         originalImageUrl: pose.userImageUrl,
-        processedImageUrl: pose.userImageUrl, // For now, using original as processed
-        confidence: analysis.confidence,
-        description: `${pose.name}: ${analysis.description}`,
+        processedImageUrl: generationResult.generatedImageUrl, // Use generated image
+        confidence: generationResult.confidence,
+        description: `${pose.name}: ${generationResult.description}`,
         processingTime: poseProcessingTime,
         success: true
       };
@@ -415,8 +438,19 @@ async function processLegacySinglePose(params: {
 
   const processingTime = (Date.now() - startTime) / 1000;
 
-  // For now, we'll use the original image URL as processed
-  const processedImageUrl = userImageUrl;
+  // Generate actual virtual try-on image using Gemini
+  const { generateVirtualTryOnImage, getBackgroundSuggestion, fetchImageAsBase64 } = await import('./imageGeneration');
+  const garmentImageBase64 = await fetchImageAsBase64(effectiveGarmentImageUrl!);
+  const location = await getBackgroundSuggestion(garmentImageBase64);
+
+  const generationResult = await generateVirtualTryOnImage(
+    userImageUrl,
+    effectiveGarmentImageUrl!,
+    'standing', // Default pose
+    location,
+    sessionId
+  );
+  const processedImageUrl = generationResult.generatedImageUrl;
   const description = analysis.description;
 
   // Store result in Firestore

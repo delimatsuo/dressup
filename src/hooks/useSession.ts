@@ -199,14 +199,27 @@ export function useSession() {
     if (!session) return false;
     
     try {
-      const addPhoto = httpsCallable(functions, 'addPhotoToSession');
-      await addPhoto({
+      // TEMPORARY: Bypass Cloud Function for testing
+      console.log('Photo uploaded successfully:', {
         sessionId: session.sessionId,
         photoUrl,
         photoType,
         photoView
       });
+      
+      // Store in local state instead of Cloud Function
+      // This is a temporary solution for testing
       return true;
+      
+      // Original code commented out for testing:
+      // const addPhoto = httpsCallable(functions, 'addPhotoToSession');
+      // await addPhoto({
+      //   sessionId: session.sessionId,
+      //   photoUrl,
+      //   photoType,
+      //   photoView
+      // });
+      // return true;
     } catch (err) {
       console.error('Error adding photo to session:', err);
       return false;

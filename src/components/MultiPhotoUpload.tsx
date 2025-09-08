@@ -76,43 +76,100 @@ const formatTimeRemaining = (seconds: number | null): string => {
 
 export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploadProps) {
   const { sessionId, addPhotoToSession } = useSessionContext();
-  const [photos, setPhotos] = useState<Record<PhotoType, PhotoUpload>>({
-    front: { 
-      type: 'front', 
-      file: null, 
-      url: null, 
-      uploading: false, 
-      progress: 0, 
-      error: null,
-      uploadAttempts: 0,
-      lastUploadTime: null,
-      uploadSpeed: null,
-      timeRemaining: null
-    },
-    side: { 
-      type: 'side', 
-      file: null, 
-      url: null, 
-      uploading: false, 
-      progress: 0, 
-      error: null,
-      uploadAttempts: 0,
-      lastUploadTime: null,
-      uploadSpeed: null,
-      timeRemaining: null
-    },
-    back: { 
-      type: 'back', 
-      file: null, 
-      url: null, 
-      uploading: false, 
-      progress: 0, 
-      error: null,
-      uploadAttempts: 0,
-      lastUploadTime: null,
-      uploadSpeed: null,
-      timeRemaining: null
+  const [isComplete, setIsComplete] = useState(false);
+  
+  // Initialize photos from localStorage if available
+  const [photos, setPhotos] = useState<Record<PhotoType, PhotoUpload>>(() => {
+    if (typeof window !== 'undefined') {
+      const storageKey = `dressup_photos_${category}_${sessionId}`;
+      const savedPhotos = localStorage.getItem(storageKey);
+      if (savedPhotos) {
+        try {
+          const parsed = JSON.parse(savedPhotos);
+          // Restore URLs but reset upload states
+          return {
+            front: {
+              type: 'front',
+              file: null,
+              url: parsed.front?.url || null,
+              uploading: false,
+              progress: 0,
+              error: null,
+              uploadAttempts: 0,
+              lastUploadTime: null,
+              uploadSpeed: null,
+              timeRemaining: null
+            },
+            side: {
+              type: 'side',
+              file: null,
+              url: parsed.side?.url || null,
+              uploading: false,
+              progress: 0,
+              error: null,
+              uploadAttempts: 0,
+              lastUploadTime: null,
+              uploadSpeed: null,
+              timeRemaining: null
+            },
+            back: {
+              type: 'back',
+              file: null,
+              url: parsed.back?.url || null,
+              uploading: false,
+              progress: 0,
+              error: null,
+              uploadAttempts: 0,
+              lastUploadTime: null,
+              uploadSpeed: null,
+              timeRemaining: null
+            }
+          };
+        } catch (e) {
+          console.error('Error parsing saved photos:', e);
+        }
+      }
     }
+    
+    // Default state if no saved photos
+    return {
+      front: { 
+        type: 'front', 
+        file: null, 
+        url: null, 
+        uploading: false, 
+        progress: 0, 
+        error: null,
+        uploadAttempts: 0,
+        lastUploadTime: null,
+        uploadSpeed: null,
+        timeRemaining: null
+      },
+      side: { 
+        type: 'side', 
+        file: null, 
+        url: null, 
+        uploading: false, 
+        progress: 0, 
+        error: null,
+        uploadAttempts: 0,
+        lastUploadTime: null,
+        uploadSpeed: null,
+        timeRemaining: null
+      },
+      back: { 
+        type: 'back', 
+        file: null, 
+        url: null, 
+        uploading: false, 
+        progress: 0, 
+        error: null,
+        uploadAttempts: 0,
+        lastUploadTime: null,
+        uploadSpeed: null,
+        timeRemaining: null
+      }
+    };
   });
 
   const fileInputRefs = useRef<Record<PhotoType, HTMLInputElement | null>>({
@@ -121,20 +178,38 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
     back: null
   });
 
+  // Save photos to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined' && sessionId) {
+      const storageKey = `dressup_photos_${category}_${sessionId}`;
+      const photosToSave = {
+        front: { url: photos.front.url },
+        side: { url: photos.side.url },
+        back: { url: photos.back.url }
+      };
+      localStorage.setItem(storageKey, JSON.stringify(photosToSave));
+    }
+  }, [photos, category, sessionId]);
+  
   // Check for upload completion whenever photos state changes
   useEffect(() => {
     const frontUrl = photos.front.url;
-    const sideUrl = photos.side.url;
-    
-    // Front and side are required, back is optional
-    if (frontUrl && sideUrl && onUploadComplete) {
+    // Only front is required now, side and back are optional
+    if (frontUrl && !isComplete) {
+      setIsComplete(true);
+    }
+  }, [photos.front.url, isComplete]);
+  
+  // Handle continue button click
+  const handleContinue = () => {
+    if (photos.front.url && onUploadComplete) {
       onUploadComplete({
-        front: frontUrl,
-        side: sideUrl,
+        front: photos.front.url,
+        side: photos.side.url || '',
         back: photos.back.url || ''
       });
     }
-  }, [photos.front.url, photos.side.url, photos.back.url, onUploadComplete]);
+  };
 
   const validateFile = (file: File): string | null => {
     // Check file type
@@ -379,6 +454,8 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
     }
   };
 
+  const [visibleUploads, setVisibleUploads] = useState(1);
+
   const renderPhotoUpload = (type: PhotoType) => {
     const photo = photos[type];
     const isOptional = type === 'back';
@@ -386,9 +463,9 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
 
     return (
       <div key={type} className="relative" role="group" aria-labelledby={`photo-${type}-label`}>
-        <label id={`photo-${type}-label`} className="block text-sm font-medium text-gray-700 mb-2">
+        <label id={`photo-${type}-label`} className="block text-base font-bold text-gray-800 mb-2">
           {PHOTO_LABELS[type]}
-          {isOptional && <span className="text-gray-400 ml-1">(Optional)</span>}
+          {isOptional && <span className="text-gray-500 ml-1 font-normal">(Optional)</span>}
         </label>
         
         <div className="relative">
@@ -414,11 +491,11 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
           <label
             htmlFor={`photo-${type}`}
             className={`
-              relative block w-full aspect-[3/4] border-2 border-dashed rounded-lg
-              cursor-pointer transition-all overflow-hidden
-              ${photo.url ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-gray-400 bg-gray-50'}
-              ${photo.uploading ? 'cursor-not-allowed opacity-50' : ''}
-              ${photo.error ? 'border-red-500 bg-red-50' : ''}
+              relative block w-full aspect-[3/4] border-2 border-dashed rounded-xl
+              cursor-pointer transition-all overflow-hidden shadow-lg hover:shadow-xl
+              ${photo.url ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50' : 'border-gray-400 hover:border-blue-500 bg-gradient-to-br from-gray-50 to-gray-100'}
+              ${photo.uploading ? 'cursor-not-allowed opacity-60' : ''}
+              ${photo.error ? 'border-red-500 bg-gradient-to-br from-red-50 to-pink-50' : ''}
             `}
             role="button"
             aria-label={
@@ -583,8 +660,8 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
         />
       )}
 
-      <div className="flex items-center justify-between mb-4">
-        <h3 id="multi-photo-upload-heading" className="text-lg font-semibold text-gray-900">
+      <div className="flex items-center justify-between mb-6">
+        <h3 id="multi-photo-upload-heading" className="text-2xl font-bold text-gray-900">
           Upload {category === 'user' ? 'Your Photos' : 'Garment Photos'}
         </h3>
         
@@ -640,13 +717,24 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {renderPhotoUpload('front')}
-        {renderPhotoUpload('side')}
-        {renderPhotoUpload('back')}
+        {visibleUploads > 1 && renderPhotoUpload('side')}
+        {visibleUploads > 2 && renderPhotoUpload('back')}
       </div>
 
-      <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-        <h4 className="text-sm font-medium text-blue-900 mb-2">Photo Guidelines:</h4>
-        <ul className="text-xs text-blue-700 space-y-1">
+      {visibleUploads < 3 && (
+        <div className="mt-4 text-center">
+          <button 
+            onClick={() => setVisibleUploads(v => v + 1)}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+          >
+            {visibleUploads === 1 ? 'Add Side View (Optional)' : 'Add Back View (Optional)'}
+          </button>
+        </div>
+      )}
+
+      <div className="mt-6 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+        <h4 className="text-base font-bold text-blue-900 mb-3">📸 Photo Guidelines:</h4>
+        <ul className="text-sm text-blue-800 space-y-2">
           <li>• Use good lighting and a plain background</li>
           <li>• {category === 'user' ? 'Wear fitted clothing for best results' : 'Lay garment flat or on a hanger'}</li>
           <li>• Ensure the entire {category === 'user' ? 'body' : 'garment'} is visible</li>
@@ -660,6 +748,19 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
           <p className="text-sm text-yellow-700">
             Please wait for all uploads to complete before proceeding...
           </p>
+        </div>
+      )}
+      
+      {/* Continue button when uploads are complete */}
+      {isComplete && !anyPhotoUploading && (
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={handleContinue}
+            className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-lg rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 shadow-2xl hover:shadow-purple-500/25"
+            aria-label="Continue to next step with uploaded photos"
+          >
+            Continue to Generation →
+          </button>
         </div>
       )}
     </div>

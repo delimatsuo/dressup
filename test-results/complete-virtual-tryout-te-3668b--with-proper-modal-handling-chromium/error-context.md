@@ -1,0 +1,118 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e7] [cursor=pointer]:
+    - img [ref=e8] [cursor=pointer]
+  - alert [ref=e11]: DressUp - Virtual Outfit Try-On
+  - generic [ref=e14]:
+    - paragraph [ref=e15]: Session Time
+    - paragraph [ref=e16]: 29:36
+  - generic [ref=e17]:
+    - link "Skip to main content" [ref=e18] [cursor=pointer]:
+      - /url: "#main-content"
+    - banner [ref=e19]:
+      - heading "DressUp AI" [level=1] [ref=e20]
+      - paragraph [ref=e21]: Transform your look with AI-powered virtual outfit try-on
+    - region "How It Works" [ref=e22]:
+      - heading "How It Works" [level=2] [ref=e23]
+      - list [ref=e24]:
+        - listitem [ref=e25]:
+          - generic [ref=e26]: "1"
+          - generic [ref=e27]:
+            - heading "Upload Your Photos" [level=3] [ref=e28]
+            - paragraph [ref=e29]: Upload photos of yourself and the garment (front, side views)
+        - listitem [ref=e30]:
+          - generic [ref=e31]: "2"
+          - generic [ref=e32]:
+            - heading "Generate Poses" [level=3] [ref=e33]
+            - paragraph [ref=e34]: Our AI creates multiple outfit poses for you
+        - listitem [ref=e35]:
+          - generic [ref=e36]: "3"
+          - generic [ref=e37]:
+            - heading "See Your Results" [level=3] [ref=e38]
+            - paragraph [ref=e39]: View realistic outfit visualizations
+    - main [ref=e40]:
+      - region "Photo Upload" [ref=e41]:
+        - heading "Photo Upload" [level=2] [ref=e42]
+        - generic [ref=e43]:
+          - generic [ref=e44]:
+            - heading "Photo Upload Instructions" [level=4] [ref=e45]
+            - paragraph [ref=e46]: "Upload photos by clicking the upload areas or dragging and dropping files. Supported formats: JPG, PNG, HEIC, WebP. Maximum file size: 10MB."
+            - paragraph [ref=e47]: For best results, use good lighting and a plain background. Ensure the entire subject is visible in the frame.
+          - status [ref=e48]: "Step 2 of 2: Upload Garment Photos"
+          - group "Upload Progress" [ref=e49]:
+            - heading "Upload Progress" [level=2] [ref=e50]
+            - generic [ref=e51]:
+              - generic [ref=e52]:
+                - 'img "Step 1: Your Photos - Completed" [ref=e53]':
+                  - img [ref=e54]
+                - generic [ref=e57]:
+                  - paragraph [ref=e58]: Step 1
+                  - paragraph [ref=e59]: Your Photos
+              - img [ref=e60]
+              - generic [ref=e62]:
+                - 'img "Step 2: Garment Photos - In Progress" [ref=e63]':
+                  - img [ref=e64]
+                - generic [ref=e66]:
+                  - paragraph [ref=e67]: Step 2
+                  - paragraph [ref=e68]: Garment Photos
+            - progressbar "Upload progress" [ref=e69]
+          - main "Upload Garment Photos" [ref=e71]:
+            - generic [ref=e72]:
+              - generic [ref=e73]:
+                - heading "Upload Garment Photos" [level=2] [ref=e74]
+                - region "Upload Garment Photos" [ref=e75]: Now upload photos of the garment you want to try on. Multiple angles help create better results.
+                - generic [ref=e76]:
+                  - paragraph [ref=e77]: "For best results with garment photos:"
+                  - list [ref=e78]:
+                    - listitem [ref=e79]: Lay the garment flat or hang it on a hanger
+                    - listitem [ref=e80]: Use even lighting and a plain background
+                    - listitem [ref=e81]: Capture the garment from front, side, and back angles
+                    - listitem [ref=e82]: Ensure all details and the full garment are visible
+                    - listitem [ref=e83]: Avoid wrinkles or shadows when possible
+              - region "Upload Garment Photos" [ref=e84]:
+                - heading "Upload Garment Photos" [level=3] [ref=e86]
+                - generic [ref=e87]:
+                  - group "Front View" [ref=e88]:
+                    - generic [ref=e89]: Front View
+                    - generic [ref=e90]:
+                      - generic [ref=e91]: "Front of the garment. Supported formats: JPG, PNG, HEIC, WebP. Maximum size: 10MB."
+                      - button "Click to upload front view photo" [ref=e92] [cursor=pointer]:
+                        - generic [ref=e93] [cursor=pointer]:
+                          - img [ref=e94] [cursor=pointer]
+                          - paragraph [ref=e97] [cursor=pointer]: Front View
+                          - paragraph [ref=e98] [cursor=pointer]: Front of the garment
+                          - paragraph [ref=e99] [cursor=pointer]: Click to upload
+                  - group "Side View" [ref=e100]:
+                    - generic [ref=e101]: Side View
+                    - generic [ref=e102]:
+                      - generic [ref=e103]: "Side view of garment. Supported formats: JPG, PNG, HEIC, WebP. Maximum size: 10MB."
+                      - button "Click to upload side view photo" [ref=e104] [cursor=pointer]:
+                        - generic [ref=e105] [cursor=pointer]:
+                          - img [ref=e106] [cursor=pointer]
+                          - paragraph [ref=e109] [cursor=pointer]: Side View
+                          - paragraph [ref=e110] [cursor=pointer]: Side view of garment
+                          - paragraph [ref=e111] [cursor=pointer]: Click to upload
+                  - group "Back View (Optional)(Optional)" [ref=e112]:
+                    - generic [ref=e113]:
+                      - text: Back View (Optional)
+                      - generic [ref=e114]: (Optional)
+                    - generic [ref=e115]:
+                      - generic [ref=e116]: "Back of the garment. Supported formats: JPG, PNG, HEIC, WebP. Maximum size: 10MB."
+                      - button "Click to upload back view photo" [ref=e117] [cursor=pointer]:
+                        - generic [ref=e118] [cursor=pointer]:
+                          - img [ref=e119] [cursor=pointer]
+                          - paragraph [ref=e122] [cursor=pointer]: Back View (Optional)
+                          - paragraph [ref=e123] [cursor=pointer]: Back of the garment
+                          - paragraph [ref=e124] [cursor=pointer]: Click to upload
+                - generic [ref=e125]:
+                  - heading "📸 Photo Guidelines:" [level=4] [ref=e126]
+                  - list [ref=e127]:
+                    - listitem [ref=e128]: • Use good lighting and a plain background
+                    - listitem [ref=e129]: • Lay garment flat or on a hanger
+                    - listitem [ref=e130]: • Ensure the entire garment is visible
+                    - listitem [ref=e131]: • File size must be under 10MB
+                    - listitem [ref=e132]: "• Supported formats: JPG, PNG, HEIC, WebP"
+              - button "Go back to upload your photos step" [ref=e133]: ← Back to previous step
+```

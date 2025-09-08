@@ -1,64 +1,32 @@
 rules_version = '2';
 
-// DressUp AI - Privacy-First Cloud Storage Security Rules  
-// Implements session-based access control with automatic privacy cleanup
+// DressUp AI - Secure Storage Rules for Production
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // Public garment catalog - Read Only
-    match /garments/{allPaths=**} {
-      allow read: if true; // Public catalog access
-      allow write: if false; // Only Cloud Functions can manage catalog
+    // Public read for generated images (results) only
+    // These are the AI-generated outfit images users want to share
+    match /results/{sessionId}/{allPaths=**} {
+      allow read: if true;  // Public read for sharing generated images
+      allow write: if false; // Only Cloud Functions can write results
     }
     
-    // Session-based user uploads - Enhanced Security
-    match /uploads/{sessionId}/{timestamp}/{allPaths=**} {
-      // Users can read uploads from any session for processing (temporary access)
-      allow read: if true;
-      
-      // Users can only upload to valid session paths with strict validation
-      allow write: if sessionId.matches('^session-[0-9]+-[a-z0-9]+$') && // Valid session ID format
-                     request.resource.size < 10 * 1024 * 1024 && // Max 10MB for privacy-first storage
-                     request.resource.contentType.matches('image/(jpeg|jpg|png|heic|webp)') && // Strict image formats
-                     timestamp.matches('^[0-9]+_.*$'); // Timestamp prefix required
+    // User upload area with security restrictions
+    // Temporary storage for user-uploaded photos
+    match /uploads/{sessionId}/{allPaths=**} {
+      allow read: if true;  // Need to read for processing
+      allow create: if request.resource.size < 10 * 1024 * 1024  // 10MB max file size
+                    && request.resource.contentType.matches('image/.*'); // Images only
+      allow update, delete: if false; // No modifications after upload
     }
     
-    // Temporary processing files - Restricted Access
-    match /temp/{sessionId}/{allPaths=**} {
-      // Temporary files have very limited read access (processing only)
-      allow read: if sessionId.matches('^session-[0-9]+-[a-z0-9]+$');
-      
-      // Only Cloud Functions can create temporary processing files
-      allow write: if false;
+    // Garment images (if stored in Storage instead of URLs)
+    match /garments/{garmentId}/{allPaths=**} {
+      allow read: if true;  // Public read for garment catalog
+      allow write: if false; // Only admin/functions can manage
     }
     
-    // Generated results - Session-based Read Access
-    match /results/{sessionId}/{timestamp}/{allPaths=**} {
-      // Users can read results but only with valid session format
-      allow read: if sessionId.matches('^session-[0-9]+-[a-z0-9]+$');
-      
-      // Only Cloud Functions can write processing results
-      allow write: if false;
-    }
-    
-    // Cache folder for optimized images - Function Only
-    match /cache/{allPaths=**} {
-      allow read: if true; // Cached images can be publicly read for performance
-      allow write: if false; // Only Cloud Functions can create cached versions
-    }
-    
-    // Admin and system files - Function Only
-    match /admin/{allPaths=**} {
-      allow read, write: if false; // Only Cloud Functions for admin operations
-    }
-    
-    // Processing workspace - Function Only
-    match /processing/{allPaths=**} {
-      allow read, write: if false; // Only Cloud Functions for processing workspace
-    }
-    
-    // Default security rule - DENY ALL
-    // This is the security backstop - anything not explicitly allowed is denied
+    // Default deny rule - Security backstop
+    // Anything not explicitly allowed above is denied
     match /{allPaths=**} {
       allow read, write: if false;
     }

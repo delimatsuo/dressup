@@ -192,7 +192,8 @@ export const processMultiPhotoOutfit = async (
     side: string;
     back: string;
   },
-  sessionId: string
+  sessionId: string,
+  customInstructions?: string
 ): Promise<{
   poses: Array<{
     name: string;
@@ -224,14 +225,16 @@ export const processMultiPhotoOutfit = async (
     console.log('Calling enhanced multi-pose Cloud Function...');
     
     // Single API call with multi-pose data
+    // Only send photos that actually exist (not empty strings)
     const result = await processImageFunction({
       sessionId,
       garmentImageUrl: garmentPhotos.front, // Use front garment photo as primary
       userPhotos: {
-        front: userPhotos.front,
-        side: userPhotos.side,
-        back: userPhotos.back
-      }
+        front: userPhotos.front || '',
+        side: userPhotos.side || '',
+        back: userPhotos.back || ''
+      },
+      customInstructions: customInstructions || undefined
     });
     
     // Extract result from the enhanced Cloud Function
@@ -269,37 +272,9 @@ export const processMultiPhotoOutfit = async (
     };
     
   } catch (error) {
-    console.error('Error processing multi-photo outfit, using enhanced mock:', error);
-    // Enhanced fallback to mock implementation with all three poses
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          poses: [
-            {
-              name: 'Standing Front',
-              originalImageUrl: userPhotos.front,
-              processedImageUrl: userPhotos.front,
-              confidence: 0.95,
-            },
-            {
-              name: 'Standing Side', 
-              originalImageUrl: userPhotos.side,
-              processedImageUrl: userPhotos.side,
-              confidence: 0.90,
-            },
-            {
-              name: 'Walking Side',
-              originalImageUrl: userPhotos.side,
-              processedImageUrl: userPhotos.side,
-              confidence: 0.85,
-            },
-          ],
-          processingTime: 5.8,
-          description: 'Enhanced mock multi-pose result - Firebase functions not available. Showing 3 poses: Standing Front, Standing Side, and Walking Side.',
-          success: true,
-        });
-      }, 4000); // Slightly longer mock processing time
-    });
+    console.error('Error processing multi-photo outfit:', error);
+    // No fallback - throw the actual error
+    throw error;
   }
 };
 

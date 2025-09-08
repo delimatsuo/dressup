@@ -57,11 +57,9 @@ var storageCleanup_1 = require("./storageCleanup");
 Object.defineProperty(exports, "cleanupStorage", { enumerable: true, get: function () { return storageCleanup_1.cleanupStorage; } });
 Object.defineProperty(exports, "manualStorageCleanup", { enumerable: true, get: function () { return storageCleanup_1.manualStorageCleanup; } });
 Object.defineProperty(exports, "cleanupExpiredSessionsStorage", { enumerable: true, get: function () { return storageCleanup_1.cleanupExpiredSessionsStorage; } });
-// Initialize Firebase Admin with service account
-const serviceAccount = require('../serviceAccount.json');
+// Initialize Firebase Admin with default credentials
 admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    storageBucket: 'project-friday-471118.appspot.com'
+    storageBucket: 'projectdressup.firebasestorage.app'
 });
 // Set global options for all functions
 (0, options_1.setGlobalOptions)({
@@ -78,6 +76,8 @@ exports.processImageWithGemini = (0, https_1.onCall)({
     timeoutSeconds: 540, // 9 minutes for multi-pose processing
     memory: '4GiB', // Increased memory for parallel processing
     maxInstances: 3, // Reduced to manage resource usage
+    cors: true, // Enable CORS
+    secrets: ['GOOGLE_AI_API_KEY'], // Add Google AI API key
 }, async (request) => {
     const structuredLogger = (0, logger_1.createLogger)('processImageWithGemini');
     const perfMonitor = (0, logger_1.createPerformanceMonitor)('processImageWithGemini');
@@ -99,6 +99,7 @@ exports.processImageWithGemini = (0, https_1.onCall)({
                 sessionId,
                 garmentImageUrl,
                 userPhotos,
+                customInstructions: requestData.customInstructions,
                 startTime,
                 logger: structuredLogger
             });
@@ -166,43 +167,52 @@ exports.processImageWithGemini = (0, https_1.onCall)({
  * Process multi-pose generation with parallel execution
  */
 async function processMultiPoseGeneration(params) {
-    const { sessionId, garmentImageUrl, userPhotos, startTime } = params;
-    // Define the three poses to generate
+    const { sessionId, garmentImageUrl, userPhotos, customInstructions, startTime } = params;
+    // Get a background suggestion based on the garment
+    const { getBackgroundSuggestion, fetchImageAsBase64 } = await Promise.resolve().then(() => __importStar(require('./imageGeneration')));
+    const garmentImageBase64 = await fetchImageAsBase64(garmentImageUrl);
+    const location = await getBackgroundSuggestion(garmentImageBase64);
+    // Define poses based on available photos
     const poseDefinitions = [
         {
-            name: 'Standing Front',
+            name: 'Standing View',
             userImageUrl: userPhotos.front,
-            poseType: 'standing_front',
-            instructions: 'Generate a standing front view with the garment fitted naturally, showing the complete outfit from head to toe'
+            poseType: 'standing',
+            instructions: 'Generate a standing front view with the garment fitted naturally.'
         },
         {
-            name: 'Standing Side',
-            userImageUrl: userPhotos.side,
-            poseType: 'standing_side',
-            instructions: 'Generate a standing side view showing the garment profile and how it drapes on the body from a side angle'
-        },
-        {
-            name: 'Walking Side',
-            userImageUrl: userPhotos.side, // Use side photo as base
-            poseType: 'walking_side',
-            instructions: 'Generate a walking side view with natural movement and garment flow, showing how the outfit moves dynamically'
+            name: 'Sitting View',
+            userImageUrl: userPhotos.front, // Use front photo for sitting pose as well
+            poseType: 'sitting',
+            instructions: 'Generate a sitting view, for example at a cafe or on a stylish chair.'
         }
     ];
+    // If no valid photos, throw error
+    if (poseDefinitions.length === 0) {
+        throw new Error('At least one user photo is required');
+    }
     console.log(`Starting parallel processing of ${poseDefinitions.length} poses`);
     // Process all poses in parallel using Promise.allSettled
     const posePromises = poseDefinitions.map(async (pose, index) => {
         try {
             console.log(`Starting pose ${index + 1}: ${pose.name}`);
             const poseStartTime = Date.now();
-            const analysis = await (0, vertex_ai_1.analyzeOutfitWithGemini)(pose.userImageUrl, garmentImageUrl, pose.instructions, sessionId);
+            // Generate actual virtual try-on image
+            const { generateVirtualTryOnImage } = await Promise.resolve().then(() => __importStar(require('./imageGeneration')));
+            const poseMap = {
+                'standing_front': 'standing',
+                'standing_side': 'standing'
+            };
+            const generationResult = await generateVirtualTryOnImage(pose.userImageUrl, garmentImageUrl, poseMap[pose.poseType] || 'standing', location, // Pass the dynamic location
+            sessionId, customInstructions);
             const poseProcessingTime = (Date.now() - poseStartTime) / 1000;
             console.log(`Completed pose ${index + 1} in ${poseProcessingTime}s`);
             return {
                 name: pose.name,
                 originalImageUrl: pose.userImageUrl,
-                processedImageUrl: pose.userImageUrl, // For now, using original as processed
-                confidence: analysis.confidence,
-                description: `${pose.name}: ${analysis.description}`,
+                processedImageUrl: generationResult.generatedImageUrl, // Use generated image
+                confidence: generationResult.confidence,
+                description: `${pose.name}: ${generationResult.description}`,
                 processingTime: poseProcessingTime,
                 success: true
             };
@@ -320,8 +330,13 @@ async function processLegacySinglePose(params) {
         : `Generate outfit visualization for ${poseType || 'standard'} pose`;
     const analysis = await (0, vertex_ai_1.analyzeOutfitWithGemini)(userImageUrl, effectiveGarmentImageUrl, enhancedInstructions, sessionId);
     const processingTime = (Date.now() - startTime) / 1000;
-    // For now, we'll use the original image URL as processed
-    const processedImageUrl = userImageUrl;
+    // Generate actual virtual try-on image using Gemini
+    const { generateVirtualTryOnImage, getBackgroundSuggestion, fetchImageAsBase64 } = await Promise.resolve().then(() => __importStar(require('./imageGeneration')));
+    const garmentImageBase64 = await fetchImageAsBase64(effectiveGarmentImageUrl);
+    const location = await getBackgroundSuggestion(garmentImageBase64);
+    const generationResult = await generateVirtualTryOnImage(userImageUrl, effectiveGarmentImageUrl, 'standing', // Default pose
+    location, sessionId);
+    const processedImageUrl = generationResult.generatedImageUrl;
     const description = analysis.description;
     // Store result in Firestore
     const resultData = {
