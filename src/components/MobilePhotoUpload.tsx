@@ -51,7 +51,8 @@ export function MobilePhotoUpload({
     fileInputRefs.current[view]?.click();
   };
 
-  const allPhotosUploaded = views.every(view => photos[view]);
+  // Only front photo is required, others are optional
+  const allRequiredPhotosUploaded = photos['front'] !== null;
 
   return (
     <div className="mobile-container">
@@ -61,7 +62,7 @@ export function MobilePhotoUpload({
           currentStep={currentView + 1}
           totalSteps={views.length}
           stepName={`${views[currentView]} view photo capture`}
-          completed={allPhotosUploaded}
+          completed={allRequiredPhotosUploaded}
         />
 
         {Object.keys(photos).length > 0 && (
@@ -156,7 +157,6 @@ export function MobilePhotoUpload({
                     }}
                     type="file"
                     accept="image/*"
-                    capture="environment"
                     onChange={(e) => handlePhotoCapture(view, e)}
                     className="hidden"
                     id={`photo-${view}`}
@@ -314,7 +314,7 @@ export function MobilePhotoUpload({
           ) : (
             <button
               onClick={() => onComplete(photos)}
-              disabled={!allPhotosUploaded}
+              disabled={!allRequiredPhotosUploaded}
               className="
                 touch-button
                 bg-green-500 text-white
@@ -333,15 +333,17 @@ export function MobilePhotoUpload({
             {!photos[views[currentView]] ? `Take a ${views[currentView]} photo to continue to the next step` : ''}
           </div>
           <div id="complete-button-help" className="sr-only">
-            {!allPhotosUploaded ? `Complete all ${views.length} photo steps to finish` : 'All photos captured, ready to continue'}
+            {!allRequiredPhotosUploaded ? `Take at least a front photo to continue` : 'Ready to continue'}
           </div>
         </div>
 
         {/* Help Text */}
         <div className="mt-4 text-center" role="status" aria-live="polite">
           <p className="text-responsive-sm text-gray-500">
-            {allPhotosUploaded 
-              ? 'All photos captured! Tap Complete to continue.'
+            {allRequiredPhotosUploaded 
+              ? photos['front'] && !photos['side'] && !photos['back']
+                ? 'Front photo captured! You can add more views or tap Complete.'
+                : 'Photos captured! Tap Complete to continue.'
               : `${Object.keys(photos).length} of ${views.length} photos captured`
             }
           </p>

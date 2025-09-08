@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { MultiPhotoUpload } from './MultiPhotoUpload';
 import { MobilePhotoUpload } from './MobilePhotoUpload';
+import { GarmentUpload } from './GarmentUpload';
 import { ChevronRight, CheckCircle, User, Shirt, Sparkles, Loader2 } from 'lucide-react';
 import { generateOutfitPose } from '@/services/generationService';
 import { useSessionContext } from './SessionProvider';
@@ -255,29 +256,28 @@ export function PhotoUploadInterface({ onComplete, existingUserPhotos }: PhotoUp
         {step === 'garment' && (
           <div className="space-y-6">
             <div>
-              <h2 id="current-step-heading" className="text-responsive-2xl font-bold text-gray-900 mb-2">Upload Garment Photos</h2>
+              <h2 id="current-step-heading" className="text-responsive-2xl font-bold text-gray-900 mb-2">Upload Garment</h2>
               <p className="text-responsive-base text-gray-700" role="region" aria-labelledby="current-step-heading">
-                Now upload photos of the garment you want to try on. Multiple angles help
-                create better results.
+                Upload a screenshot or photo of the garment you want to virtually try on.
+                Works with any online store!
               </p>
               <Instructions id="garment-photo-guidelines">
-                <p>For best results with garment photos:</p>
+                <p>Quick tips for garment upload:</p>
                 <ul>
-                  <li>Lay the garment flat or hang it on a hanger</li>
-                  <li>Use even lighting and a plain background</li>
-                  <li>Capture the garment from front, side, and back angles</li>
-                  <li>Ensure all details and the full garment are visible</li>
-                  <li>Avoid wrinkles or shadows when possible</li>
+                  <li>Browse any shopping website or app</li>
+                  <li>Take a screenshot of the garment you like</li>
+                  <li>Or save the product image directly</li>
+                  <li>Upload from your phone's gallery</li>
+                  <li>Works with Zara, H&M, ASOS, Shein, Amazon, and more!</li>
                 </ul>
               </Instructions>
             </div>
             
             {isMobileOrTouch ? (
-              <MobilePhotoUpload
-                views={['front', 'side', 'back']}
+              <GarmentUpload
                 onComplete={handleGarmentPhotosComplete}
-                title="Garment Photos"
-                description="Capture the garment from different angles"
+                title="Upload Garment"
+                description="Upload a screenshot or photo of the garment you want to try on"
               />
             ) : (
               <MultiPhotoUpload 
