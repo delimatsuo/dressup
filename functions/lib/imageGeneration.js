@@ -90,70 +90,73 @@ sessionId, customInstructions) {
         const garmentImageBase64 = await fetchImageAsBase64(garmentImageUrl);
         // Generate image using Gemini 2.5 Flash
         const startTime = Date.now();
-        // Create a clear, goal-oriented prompt that communicates the virtual try-on objective
-        const basePrompt = `**VIRTUAL TRY-ON TASK:**
-Your goal is to help someone see what they would look like wearing a specific garment. This is a virtual fitting room experience.
+        // Create an extremely clear prompt that prevents misinterpretation
+        const basePrompt = `**VIRTUAL CLOTHING TRY-ON TASK**
 
-**INPUTS PROVIDED:**
-- Image 1: A real person (the customer) wearing their current clothes
-- Image 2: A garment/outfit from an online store that they want to try on virtually
+I need you to perform a virtual clothing try-on. Here's what you have:
 
-**YOUR OBJECTIVE:**
-Generate 2 realistic photos showing THE EXACT SAME PERSON from Image 1 now wearing THE EXACT GARMENT from Image 2.
+IMAGE 1: A real person (customer) - they want to see THEMSELVES in new clothes
+IMAGE 2: A clothing item/garment (might be a website screenshot, product photo, or catalog image)
 
-**CRITICAL REQUIREMENTS:**
+**YOUR JOB:**
+Take the PERSON from Image 1 and show them wearing the CLOTHING from Image 2.
 
-1. **THE PERSON MUST BE THE SAME** 
-   - This is the most important requirement!
-   - Use the exact person from Image 1 - their face, hair, body type, skin tone, and all unique features
-   - The customer needs to recognize themselves in the result
-   - If the person doesn't look like themselves, the virtual try-on has failed
+**IMPORTANT - DO NOT:**
+- Do NOT use the model from Image 2 (that's not the customer!)
+- Do NOT create a website screenshot or web frame
+- Do NOT just modify the product photo
+- Do NOT replace the customer with someone else
 
-2. **THE GARMENT MUST BE ACCURATE**
-   - The clothing from Image 2 should appear exactly as shown (same color, style, design)
-   - It should fit naturally on the specific person's body from Image 1
-   - Preserve all details: patterns, textures, buttons, logos, etc.
+**INSTEAD, YOU MUST:**
+1. Keep the EXACT SAME PERSON from Image 1:
+   - Same face (eyes, nose, mouth, facial structure)
+   - Same hair (color, style, length)
+   - Same skin tone
+   - Same body type and proportions
+   - They MUST be recognizable as the same person
 
-3. **CREATE TWO DIFFERENT POSES:**
-   - Photo 1: The person standing naturally in ${location}
-   - Photo 2: The same person sitting or in a different pose in the same location
-   - Both must clearly show the person wearing the garment
+2. Put them in the CLOTHING from Image 2:
+   - Extract just the garment/outfit (ignore any model wearing it)
+   - Keep the garment's exact design, color, and style
+   - Fit it naturally to the person from Image 1's body
 
-**THINK OF IT THIS WAY:**
-You're creating a magical mirror where the customer (Image 1) can instantly see themselves wearing any outfit (Image 2) they find online. They should think "That's ME in that dress/outfit!" not "That's someone else" or "That's just the original product photo."
+3. Create 2 clean photos (NOT screenshots):
+   - Photo 1: Person from Image 1 standing, wearing the garment, in ${location}
+   - Photo 2: Same person in a different pose (sitting/walking), same outfit, same location
+   - Make them look like real photos taken with a camera, not website images
 
-**QUALITY EXPECTATIONS:**
-- Photorealistic results that look like actual photos
-- Natural lighting that flatters both person and garment
-- The person should look comfortable and natural
-- The garment should fit realistically on their body type
+**THE RESULT:**
+The person from Image 1 should be able to look at your generated images and say:
+"Yes, that's ME wearing that dress/outfit!"
 
-**SUCCESS CRITERIA:**
-✓ The person can immediately recognize themselves
-✓ The garment looks exactly like what they want to buy
-✓ The images look like real photos, not artificial
-✓ Two different poses showing how the outfit looks
+If they say "That's not me" or "That's just the website photo" - you've failed the task.
 
-Remember: This is about showing a real person (Image 1) what they personally would look like in the clothes (Image 2). Keep the person's identity intact!`;
+**REMEMBER:**
+- Person = from Image 1 (the customer)
+- Clothes = from Image 2 (what they want to try)
+- Output = clean photos, no web frames or screenshots`;
         // Add custom instructions if provided
         const prompt = customInstructions
             ? `${basePrompt}\n\n**ADDITIONAL CUSTOMER REQUEST:**\n${customInstructions}\n\nApply this request while keeping the person recognizable as themselves and the garment accurate to what they want to buy.`
             : basePrompt;
-        // Generate content with images
+        // Generate content with explicitly labeled images
         const result = await imageGenerationModel.generateContent([
-            prompt,
+            "IMAGE 1 (THE CUSTOMER/PERSON TO USE):",
             {
                 inlineData: {
                     mimeType: 'image/jpeg',
                     data: userImageBase64,
                 }
             },
+            "IMAGE 2 (THE GARMENT/CLOTHING TO WEAR):",
             {
                 inlineData: {
                     mimeType: 'image/jpeg',
                     data: garmentImageBase64,
                 }
-            }
+            },
+            "TASK TO PERFORM:",
+            prompt
         ]);
         const processingTime = (Date.now() - startTime) / 1000;
         const response = result.response;
