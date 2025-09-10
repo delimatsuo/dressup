@@ -2,8 +2,6 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import { Upload, Image as ImageIcon, X, ShoppingBag, Camera, Link, Smartphone } from 'lucide-react';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from '../lib/firebase';
 import { useSession } from '../hooks/useSession';
 
 interface GarmentUploadProps {

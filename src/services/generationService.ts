@@ -1,5 +1,5 @@
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { initializeFirebase } from '@/lib/firebase';
+// Placeholder for generation service - will be replaced with Vercel implementation
+// Task 1.6 will implement the actual AI processing with Gemini
 
 interface GenerationResult {
   imageUrl: string;
@@ -8,15 +8,8 @@ interface GenerationResult {
   description: string;
 }
 
-interface FirebaseGenerationResponse {
-  processedImageUrl: string;
-  processingTime: number;
-  confidence: number;
-  description: string;
-}
-
 /**
- * Generates an outfit pose using the Cloud Function from Task 6
+ * Placeholder for outfit generation - will be implemented with Vercel Edge Functions
  * @param sessionId - The user's session ID
  * @param garmentImageUrl - URL of the garment image to try on
  * @returns Promise that resolves with generated image URL and metadata
@@ -34,55 +27,17 @@ export const generateOutfitPose = async (
     throw new Error('garmentImageUrl is required');
   }
 
-  // Initialize Firebase if needed
-  initializeFirebase();
-  
-  const functions = getFunctions();
-  
-  try {
-    // Call the Cloud Function from Task 6
-    const processImageFunction = httpsCallable(functions, 'processImageWithGemini', {
-      timeout: 60000 // 60 second timeout
-    });
-    
-    const result = await processImageFunction({
-      sessionId,
-      garmentImageUrl
-    });
-    
-    const data = result.data as FirebaseGenerationResponse;
-    
-    // Validate response structure
-    if (!data || !data.processedImageUrl) {
-      throw new Error('Invalid response from generation service');
-    }
-    
-    // Transform the response to match our interface
-    return {
-      imageUrl: data.processedImageUrl,
-      processingTime: data.processingTime || 0,
-      confidence: data.confidence || 0,
-      description: data.description || 'Outfit generated successfully'
-    };
-    
-  } catch (error: any) {
-    console.error('Generation service error:', error);
-    
-    // Handle specific Firebase error codes
-    if (error?.code === 'functions/deadline-exceeded') {
-      throw new Error('Generation timeout - please try again');
-    }
-    
-    if (error?.code === 'functions/unauthenticated') {
-      throw new Error('Authentication required - please refresh the page');
-    }
-    
-    // Re-throw validation errors as-is
-    if (error?.message?.includes('required') || error?.message?.includes('Invalid response')) {
-      throw error;
-    }
-    
-    // Wrap other errors with context
-    throw new Error(`Failed to generate outfit pose: ${error?.message || 'Unknown error'}`);
-  }
+  // TODO: Implement with Vercel Edge Functions in Task 1.6
+  throw new Error('Generation service not yet implemented - pending Vercel migration');
+};
+
+/**
+ * Placeholder for batch processing - will be implemented in Task 7
+ */
+export const generateMultiplePoses = async (
+  sessionId: string,
+  garmentImageUrl: string,
+  poseTypes: string[]
+): Promise<GenerationResult[]> => {
+  throw new Error('Multiple pose generation not yet implemented - pending Task 7');
 };

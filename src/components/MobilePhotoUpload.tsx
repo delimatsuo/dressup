@@ -2,8 +2,6 @@
 
 import React, { useState, useRef } from 'react';
 import { Camera, Image as ImageIcon, X, Check, RotateCw } from 'lucide-react';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from '../lib/firebase';
 import { useSession } from '../hooks/useSession';
 import { ProgressAnnouncement, StatusAnnouncement, Instructions } from './ScreenReaderOnly';
 
