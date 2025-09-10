@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateUpload, ALLOWED_TYPES, MAX_FILE_SIZE } from '@/lib/upload';
+import { uploadToBlob } from '@/lib/blob';
 
 export const runtime = 'edge';
 
@@ -66,27 +67,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: validation.error }, { status: 400 });
     }
 
-    // TODO: integrate with Vercel Blob client. For now, return deterministic URL
-    const mockUrl = `https://blob.vercel-storage.com/${validation.value.path}`;
-    
-    return NextResponse.json({
-      success: true,
-      data: {
-        url: mockUrl,
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type,
-        sessionId,
-        category,
-        type,
-        uploadedAt: new Date().toISOString()
-      }
-    }, {
-      status: 201,
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
+    // Upload to Blob storage (requires BLOB_READ_WRITE_TOKEN env)
+    try {
+      const { url } = await uploadToBlob(validation.value.path, file, file.type);
+      return NextResponse.json({
+        success: true,
+        data: {
+          url,
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type,
+          sessionId,
+          category,
+          type,
+          uploadedAt: new Date().toISOString()
+        }
+      }, {
+        status: 201,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+    } catch (e: any) {
+      const msg = e?.message || 'Upload failed';
+      return NextResponse.json({ success: false, error: msg }, { status: 500 });
+    }
   } catch (error) {
     console.error('Upload error:', error);
     
