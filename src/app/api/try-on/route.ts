@@ -1,76 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { type TryOnRequest, submitTryOn } from '@/lib/tryon';
+import { updateSession } from '@/lib/session';
 
 export const runtime = 'edge';
-
-interface TryOnRequest {
-  sessionId: string;
-  userPhotos: {
-    front: string;
-    side: string;
-    back?: string;
-  };
-  garmentPhotos: {
-    front: string;
-    side: string;
-    back?: string;
-  };
-  options?: {
-    generateMultiplePoses?: boolean;
-    enhanceBackground?: boolean;
-  };
-}
 
 export async function POST(request: NextRequest) {
   try {
     const body: TryOnRequest = await request.json();
-    
-    // Validate required fields
-    if (!body.sessionId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Session ID is required'
-      }, {
-        status: 400
-      });
-    }
-    
-    if (!body.userPhotos?.front || !body.userPhotos?.side) {
-      return NextResponse.json({
-        success: false,
-        error: 'User front and side photos are required'
-      }, {
-        status: 400
-      });
-    }
-    
-    if (!body.garmentPhotos?.front || !body.garmentPhotos?.side) {
-      return NextResponse.json({
-        success: false,
-        error: 'Garment front and side photos are required'
-      }, {
-        status: 400
-      });
-    }
-    
-    // TODO: In Task 1.6, this will call Gemini AI for processing
-    // For now, return mock processing result
-    const mockResults = {
-      sessionId: body.sessionId,
-      status: 'processing',
-      jobId: `job_${Date.now()}`,
-      estimatedTime: 30,
-      results: []
-    };
-    
-    // Simulate async processing
-    setTimeout(() => {
-      // This would be handled by a webhook or polling in production
-      console.log('Processing complete for job:', mockResults.jobId);
-    }, 5000);
-    
+    const job = await submitTryOn(body);
+    // Refresh session TTL on activity (best effort)
+    try { await updateSession(body.sessionId, {}); } catch {}
     return NextResponse.json({
       success: true,
-      data: mockResults
+      data: {
+        sessionId: body.sessionId,
+        status: 'processing',
+        jobId: job.jobId,
+        estimatedTime: job.estimatedTime,
+        results: []
+      }
     }, {
       status: 202, // Accepted for processing
       headers: {
