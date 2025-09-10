@@ -28,9 +28,9 @@ export async function processMultiPhotoOutfit(
   processingTime: number;
   description: string;
 }> {
-  // Call our new try-on API (accepted job), then return immediate stubbed results
+  // Call our new try-on API; if it returns results immediately, use them
   try {
-    await fetch('/api/try-on', {
+    const res = await fetch('/api/try-on', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -41,6 +41,17 @@ export async function processMultiPhotoOutfit(
         instructions,
       }),
     });
+    if (res.ok) {
+      const json = await res.json();
+      const data = json?.data;
+      if (data?.results?.length) {
+        return {
+          poses: data.results,
+          processingTime: data.processingTime || 3,
+          description: data.description || 'AI-generated outfit visualization',
+        };
+      }
+    }
   } catch {
     // Non-fatal for now; UI expects results immediately
   }
@@ -68,4 +79,3 @@ export async function submitFeedback(args: {
   // Placeholder: could POST to an API route
   return { success: true };
 }
-

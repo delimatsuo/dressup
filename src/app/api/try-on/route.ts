@@ -1,30 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { type TryOnRequest, submitTryOn } from '@/lib/tryon';
 import { updateSession } from '@/lib/session';
+import { processWithGemini } from '@/lib/tryon-processing';
 
 export const runtime = 'edge';
 
 export async function POST(request: NextRequest) {
   try {
     const body: TryOnRequest = await request.json();
-    const job = await submitTryOn(body);
-    // Refresh session TTL on activity (best effort)
-    try { await updateSession(body.sessionId, {}); } catch {}
-    return NextResponse.json({
-      success: true,
-      data: {
-        sessionId: body.sessionId,
-        status: 'processing',
-        jobId: job.jobId,
-        estimatedTime: job.estimatedTime,
-        results: []
-      }
-    }, {
-      status: 202, // Accepted for processing
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
+    // If we have an AI key, process synchronously for MVP
+    if (process.env.GOOGLE_AI_API_KEY) {
+      const out = await processWithGemini(body);
+      try { await updateSession(body.sessionId, {}); } catch {}
+      return NextResponse.json({ success: true, data: out }, { headers: { 'Content-Type': 'application/json' } });
+    } else {
+      const job = await submitTryOn(body);
+      // Refresh session TTL on activity (best effort)
+      try { await updateSession(body.sessionId, {}); } catch {}
+      return NextResponse.json({
+        success: true,
+        data: {
+          sessionId: body.sessionId,
+          status: 'processing',
+          jobId: job.jobId,
+          estimatedTime: job.estimatedTime,
+          results: []
+        }
+      }, {
+        status: 202, // Accepted for processing
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+    }
   } catch (error) {
     console.error('Try-on processing error:', error);
     
