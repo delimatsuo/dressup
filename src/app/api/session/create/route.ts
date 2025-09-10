@@ -1,33 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { nanoid } from 'nanoid';
+import { createSession, SESSION_TTL } from '@/lib/session';
 
 export const runtime = 'edge';
 
-// Session configuration
-const SESSION_TTL = 1800; // 30 minutes in seconds
-
 export async function POST(request: NextRequest) {
   try {
-    // Generate unique session ID
-    const sessionId = `session_${nanoid()}`;
-    const timestamp = Date.now();
-    const expiresAt = new Date(timestamp + SESSION_TTL * 1000);
-    
-    // TODO: In Task 1.4, this will store in Vercel KV
-    // For now, return session data directly
-    const session = {
-      sessionId,
-      createdAt: new Date(timestamp),
-      expiresAt,
-      userPhotos: [],
-      garmentPhotos: [],
-      status: 'active',
-      ttl: SESSION_TTL
-    };
+    const session = await createSession();
     
     return NextResponse.json({
       success: true,
-      data: session
+      data: { ...session, ttl: SESSION_TTL }
     }, {
       status: 201,
       headers: {

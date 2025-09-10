@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSession, updateSession, deleteSession } from '@/lib/session';
 
 export const runtime = 'edge';
 
@@ -8,7 +9,6 @@ export async function GET(
 ) {
   try {
     const sessionId = params.id;
-    
     if (!sessionId) {
       return NextResponse.json({
         success: false,
@@ -17,22 +17,13 @@ export async function GET(
         status: 400
       });
     }
-    
-    // TODO: In Task 1.4, this will retrieve from Vercel KV
-    // For now, return mock session data
-    const mockSession = {
-      sessionId,
-      createdAt: new Date(),
-      expiresAt: new Date(Date.now() + 1800000),
-      userPhotos: [],
-      garmentPhotos: [],
-      status: 'active',
-      remainingTime: 1800
-    };
-    
+    const session = await getSession(sessionId);
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Session not found' }, { status: 404 });
+    }
     return NextResponse.json({
       success: true,
-      data: mockSession
+      data: session
     }, {
       headers: {
         'Content-Type': 'application/json',
@@ -58,17 +49,15 @@ export async function PUT(
   try {
     const sessionId = params.id;
     const body = await request.json();
-    
-    // TODO: In Task 1.4, this will update in Vercel KV
-    // For now, return success
-    return NextResponse.json({
-      success: true,
-      data: {
-        sessionId,
-        updated: true,
-        ...body
-      }
+    const next = await updateSession(sessionId, {
+      userPhotos: body.userPhotos,
+      garmentPhotos: body.garmentPhotos,
+      status: body.status,
     });
+    if (!next) {
+      return NextResponse.json({ success: false, error: 'Session not found' }, { status: 404 });
+    }
+    return NextResponse.json({ success: true, data: next });
   } catch (error) {
     console.error('Session update error:', error);
     
@@ -87,13 +76,11 @@ export async function DELETE(
 ) {
   try {
     const sessionId = params.id;
-    
-    // TODO: In Task 1.4, this will delete from Vercel KV
-    // For now, return success
-    return NextResponse.json({
-      success: true,
-      message: `Session ${sessionId} deleted`
-    });
+    const ok = await deleteSession(sessionId);
+    if (!ok) {
+      return NextResponse.json({ success: false, error: 'Session not found' }, { status: 404 });
+    }
+    return NextResponse.json({ success: true, message: `Session ${sessionId} deleted` });
   } catch (error) {
     console.error('Session deletion error:', error);
     
