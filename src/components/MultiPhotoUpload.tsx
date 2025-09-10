@@ -52,29 +52,44 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
   });
 
   const handleFileSelect = async (type: PhotoType, file: File) => {
-    // TODO: Implement file upload with Vercel Blob in Task 1.5
-    // For now, use data URL as placeholder
-    const reader = new FileReader();
-    
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
+    // Upload to /api/upload using FormData
+    if (!sessionId) {
+      setPhotos(prev => ({ ...prev, [type]: { ...prev[type], error: 'Missing session', uploading: false } }));
+      return;
+    }
+    setPhotos(prev => ({ ...prev, [type]: { ...prev[type], uploading: true, error: null, progress: 0 } }));
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('sessionId', sessionId);
+      formData.append('category', category);
+      formData.append('type', type);
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const json = await res.json();
+      if (!res.ok || !json?.success) {
+        throw new Error(json?.error || 'Upload failed');
+      }
+      const url = json.data?.url as string;
+      setPhotos(prev => {
+        const next = {
+          ...prev,
+          [type]: { ...prev[type], file, url, uploading: false, progress: 100, error: null }
+        } as typeof prev;
+        if (next.front.url && next.side.url && onUploadComplete) {
+          onUploadComplete({
+            front: next.front.url!,
+            side: next.side.url!,
+            back: next.back.url || ''
+          });
+        }
+        return next;
+      });
+    } catch (err: any) {
       setPhotos(prev => ({
         ...prev,
-        [type]: { ...prev[type], file, url: dataUrl, uploading: false, progress: 100 }
+        [type]: { ...prev[type], uploading: false, error: err?.message || 'Upload failed' }
       }));
-      
-      // Check if all required photos are uploaded
-      const allPhotos = { ...photos, [type]: { ...photos[type], url: dataUrl } };
-      if (allPhotos.front.url && allPhotos.side.url && onUploadComplete) {
-        onUploadComplete({
-          front: allPhotos.front.url,
-          side: allPhotos.side.url,
-          back: allPhotos.back.url || ''
-        });
-      }
-    };
-    
-    reader.readAsDataURL(file);
+    }
   };
 
   const removePhoto = (type: PhotoType) => {

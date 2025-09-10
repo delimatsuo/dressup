@@ -22,6 +22,7 @@ export function useSession() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [remainingTime, setRemainingTime] = useState<number>(0);
+  const formattedRemainingTime = `${Math.floor(remainingTime / 60)}:${String(remainingTime % 60).padStart(2, '0')}`;
 
   // Load session from localStorage on mount
   useEffect(() => {
@@ -79,24 +80,20 @@ export function useSession() {
     setError(null);
     
     try {
-      // TODO: Replace with Vercel KV session creation in Task 1.4
-      // For now, create a temporary local session
-      const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const expiresIn = 1800; // 30 minutes
-      const expiresAt = new Date(Date.now() + expiresIn * 1000);
-      
-      const newSession = {
-        sessionId,
-        expiresIn,
-        expiresAt
+      const res = await fetch('/api/session/create', { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to create session');
+      const json = await res.json();
+      const data = json.data || json;
+      const expiresAt = new Date(data.expiresAt);
+      const expiresIn = Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000));
+      const newSession: Session = {
+        sessionId: data.sessionId,
+        expiresIn: expiresIn || 1800,
+        expiresAt,
       };
-      
       setSession(newSession);
-      setRemainingTime(expiresIn);
-      
-      // Store in localStorage
+      setRemainingTime(newSession.expiresIn);
       localStorage.setItem('dressup_session', JSON.stringify(newSession));
-      
       return newSession;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create session');
@@ -151,6 +148,7 @@ export function useSession() {
     loading,
     error,
     remainingTime,
+    formattedRemainingTime,
     createSession,
     getSessionStatus,
     extendSession,

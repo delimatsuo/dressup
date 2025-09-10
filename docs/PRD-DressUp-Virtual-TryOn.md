@@ -103,8 +103,8 @@
 ### Phase 1: Core MVP (Week 1-2)
 1. **Setup**: Next.js project with Tailwind CSS
 2. **Basic UI**: Photo upload, garment upload, results display
-3. **AI Integration**: Gemini API integration
-4. **Session Management**: Simple session creation and cleanup
+3. **AI Integration**: Gemini API integration (stubbed job acceptance initially)
+4. **Session Management**: 30-minute KV-backed sessions (auto-refresh on activity)
 5. **Deployment**: Vercel hosting setup
 
 ### Phase 2: Polish & Performance (Week 3)
@@ -187,10 +187,38 @@ This approach eliminates the deployment complexity, TypeScript compilation issue
 
 ## Next Steps
 
-1. **Approval**: Review and approve this technical approach
-2. **Setup**: Initialize new Next.js project with recommended structure
-3. **Core Development**: Build MVP following the implementation plan
-4. **Testing**: Deploy and test core functionality
-5. **Iterate**: Based on initial results and feedback
+1. **Finalize Upload Storage**: Swap validated upload stub to real Vercel Blob client
+2. **Gemini Processing**: Replace stubbed acceptance with actual Gemini call + status polling
+3. **Frontend Wiring**: Confirm all components use new APIs (desktop + mobile upload flows)
+4. **Production Readiness**: Rate limiting, security headers, monitoring
+5. **Iterate**: Background/pose quality improvements; performance
+
+## 11. Current Implementation Status (2025-09-10)
+
+- API Routes (Edge Runtime):
+  - `POST /api/session/create`: Creates KV-backed session with 30m TTL (done)
+  - `GET|PUT|DELETE /api/session/[id]`: Retrieve/update/delete sessions (done)
+  - `POST /api/upload`: Validates and accepts uploads; returns deterministic URL (validation done; storage wiring pending)
+  - `POST /api/try-on`: Validates input and accepts job (stub); refreshes session TTL (done)
+
+- Libraries:
+  - `src/lib/session.ts`: KV session CRUD + TTL refresh (done)
+  - `src/lib/upload.ts`: File validation + path sanitization (done)
+  - `src/lib/tryon.ts`: Input validation, prompt builder, job submission stub (done)
+
+- Frontend Integration:
+  - Adapter `src/lib/firebase.ts` bridges existing UI to new routes (done)
+  - `MultiPhotoUpload` calls `/api/upload` and uses returned URLs (done)
+  - `useSession` creates session via `/api/session/create` (done)
+  - Results rendering uses stubbed results via adapter while Gemini is integrated (done for MVP)
+
+- Tests:
+  - Unit tests for session, upload, try-on libs, adapter, and component-level upload (passing)
+
+- Pending Work:
+  - Wire real Vercel Blob storage
+  - Implement real Gemini calls and job status flow
+  - Complete mobile upload components to use the same API path
+  - Add rate limiting and security headers
 
 The key difference: This stack is designed for reliability and simplicity rather than flexibility. Every component is chosen because it integrates well with the others and has minimal configuration overhead.
