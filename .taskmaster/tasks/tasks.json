@@ -50,7 +50,7 @@
               "1.3"
             ],
             "details": "Implement POST /api/session/create for session initialization. Create GET /api/session/[id] for session retrieval. Add PUT /api/session/[id] for session updates. Implement session cleanup with 30-minute TTL. Add session validation and error handling throughout.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -61,7 +61,7 @@
               "1.3"
             ],
             "details": "Implement POST /api/upload for image upload to Vercel Blob. Add image format validation (JPEG, PNG, WebP, HEIC). Implement image compression and optimization. Create automatic cleanup mechanism with 30-minute expiration. Add secure URL generation for temporary access.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": ""
           },
           {
@@ -747,7 +747,7 @@
     ],
     "metadata": {
       "created": "2025-09-09T22:44:43.662Z",
-      "updated": "2025-09-10T14:10:49.928Z",
+      "updated": "2025-09-10T14:49:27.047Z",
       "description": "Tasks for master context"
     }
   }

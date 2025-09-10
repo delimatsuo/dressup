@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { validateUpload, ALLOWED_TYPES, MAX_FILE_SIZE } from '@/lib/upload';
 
 export const runtime = 'edge';
 
-// Maximum file size (4MB)
-const MAX_FILE_SIZE = 4 * 1024 * 1024;
-
-// Allowed file types
-const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic'];
+// Re-use constants from upload lib for consistency
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,9 +53,21 @@ export async function POST(request: NextRequest) {
       });
     }
     
-    // TODO: In Task 1.5, this will upload to Vercel Blob storage
-    // For now, return mock upload result
-    const mockUrl = `https://blob.vercel-storage.com/${sessionId}/${category}/${type}/${file.name}`;
+    // Validate
+    const validation = validateUpload({
+      sessionId,
+      category,
+      type,
+      fileName: file.name,
+      contentType: file.type,
+      size: file.size,
+    });
+    if (!validation.ok) {
+      return NextResponse.json({ success: false, error: validation.error }, { status: 400 });
+    }
+
+    // TODO: integrate with Vercel Blob client. For now, return deterministic URL
+    const mockUrl = `https://blob.vercel-storage.com/${validation.value.path}`;
     
     return NextResponse.json({
       success: true,
