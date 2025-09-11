@@ -276,7 +276,7 @@ export class SecurityMiddleware {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: https: blob:",
-      "connect-src 'self' https://firestore.googleapis.com https://firebase.googleapis.com https://storage.googleapis.com",
+      "connect-src 'self'",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "object-src 'none'"

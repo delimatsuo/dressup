@@ -10,15 +10,6 @@ jest.mock('next/image', () => ({
   default: (props: any) => <img {...props} />,
 }));
 
-// Mock Firebase
-jest.mock('@/lib/firebase', () => ({
-  initializeFirebase: jest.fn(() => ({})),
-  getGarments: jest.fn(() => Promise.resolve([])),
-  processImage: jest.fn(),
-  processMultiPhotoOutfit: jest.fn(),
-  submitFeedback: jest.fn(() => Promise.resolve(true)),
-}));
-
 // Mock hooks
 jest.mock('@/hooks/useConsent', () => ({
   useConsent: jest.fn(() => ({

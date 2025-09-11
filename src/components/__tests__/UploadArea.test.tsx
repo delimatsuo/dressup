@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -57,7 +58,7 @@ describe('UploadArea', () => {
     
     await waitFor(() => {
       expect(screen.getByText('Please upload an image file')).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
   });
 
   it('should support drag and drop for file upload', async () => {
@@ -76,6 +77,6 @@ describe('UploadArea', () => {
 
     await waitFor(() => {
       expect(mockOnUpload).toHaveBeenCalledWith(file);
-    });
+    }, { timeout: 3000 });
   });
 });

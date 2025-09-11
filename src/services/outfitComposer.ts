@@ -208,23 +208,38 @@ export class OutfitComposer {
     }, {} as Record<string, GarmentItem[]>);
   }
 
+  private filterGarmentsByFormality(garments: GarmentItem[], formalityLevel?: number): GarmentItem[] {
+    if (!formalityLevel) return garments;
+
+    return garments.filter(garment =>
+      Math.abs(garment.formality - formalityLevel) <= 1 // Allow a difference of 1
+    );
+  }
+
   private generateDressOutfits(
     byCategory: Record<string, GarmentItem[]>,
     options: OutfitGenerationOptions
   ): OutfitCombination[] {
     const combinations: OutfitCombination[] = [];
+    const formalDresses = this.filterGarmentsByFormality(byCategory.dress || [], options.formalityLevel);
 
-    byCategory.dress?.forEach(dress => {
+    formalDresses.forEach(dress => {
       const items: GarmentItem[] = [dress];
 
       // Add shoes if available
       if (byCategory.shoes) {
-        items.push(this.selectBestMatch(dress, byCategory.shoes));
+        const matchedShoes = this.selectBestMatch(dress, this.filterGarmentsByFormality(byCategory.shoes, options.formalityLevel));
+        if (matchedShoes) {
+          items.push(matchedShoes);
+        }
       }
 
       // Add outer layer if needed
       if (byCategory.outer && (options.season === 'fall' || options.season === 'winter')) {
-        items.push(this.selectBestMatch(dress, byCategory.outer));
+        const matchedOuter = this.selectBestMatch(dress, this.filterGarmentsByFormality(byCategory.outer, options.formalityLevel));
+        if (matchedOuter) {
+          items.push(matchedOuter);
+        }
       }
 
       combinations.push(this.createOutfitCombination(items, options));
@@ -238,22 +253,30 @@ export class OutfitComposer {
     options: OutfitGenerationOptions
   ): OutfitCombination[] {
     const combinations: OutfitCombination[] = [];
+    const formalTops = this.filterGarmentsByFormality(byCategory.top || [], options.formalityLevel);
+    const formalBottoms = this.filterGarmentsByFormality(byCategory.bottom || [], options.formalityLevel);
 
-    byCategory.top?.forEach(top => {
-      byCategory.bottom?.forEach(bottom => {
+    formalTops.forEach(top => {
+      formalBottoms.forEach(bottom => {
         const compatibility = this.calculateStyleCompatibility(top, bottom);
-        
+
         if (compatibility.score > 0.3) { // Lower threshold to generate more outfits
           const items: GarmentItem[] = [top, bottom];
 
           // Add shoes
           if (byCategory.shoes) {
-            items.push(this.selectBestMatch(top, byCategory.shoes));
+            const matchedShoes = this.selectBestMatch(top, this.filterGarmentsByFormality(byCategory.shoes, options.formalityLevel));
+            if (matchedShoes) {
+              items.push(matchedShoes);
+            }
           }
 
           // Add outer layer if appropriate
           if (byCategory.outer && this.shouldAddOuterLayer(top, bottom, options)) {
-            items.push(this.selectBestMatch(top, byCategory.outer));
+            const matchedOuter = this.selectBestMatch(top, this.filterGarmentsByFormality(byCategory.outer, options.formalityLevel));
+            if (matchedOuter) {
+              items.push(matchedOuter);
+            }
           }
 
           combinations.push(this.createOutfitCombination(items, options));
@@ -276,7 +299,10 @@ export class OutfitComposer {
     );
   }
 
-  private selectBestMatch(baseItem: GarmentItem, candidates: GarmentItem[]): GarmentItem {
+  private selectBestMatch(baseItem: GarmentItem, candidates: GarmentItem[]): GarmentItem | undefined {
+    if (candidates.length === 0) {
+      return undefined;
+    }
     let bestMatch = candidates[0];
     let bestScore = 0;
 

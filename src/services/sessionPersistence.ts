@@ -79,20 +79,23 @@ export class SessionPersistenceService {
   private readonly HISTORY_LIMIT = 100;
   private readonly SESSION_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
 
-  constructor() {
+  private readonly crypto: Crypto;
+
+  constructor(cryptoImpl: Crypto = global.crypto) {
+    this.crypto = cryptoImpl;
     this.initializeEncryption();
   }
 
   private async initializeEncryption(): Promise<void> {
     try {
-      this.encryptionKey = await crypto.subtle.generateKey(
+      this.encryptionKey = await this.crypto.subtle.generateKey(
         { name: 'AES-GCM', length: 256 },
         true,
         ['encrypt', 'decrypt']
       );
     } catch (error) {
-      console.warn('Encryption initialization failed:', error);
-      // Continue without encryption for graceful degradation
+      console.error('Failed to initialize encryption key:', error);
+      this.encryptionKey = null;
     }
   }
 
@@ -103,9 +106,9 @@ export class SessionPersistenceService {
 
     const encoder = new TextEncoder();
     const dataArray = encoder.encode(data);
-    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const iv = this.crypto.getRandomValues(new Uint8Array(12));
 
-    const encryptedData = await crypto.subtle.encrypt(
+    const encryptedData = await this.crypto.subtle.encrypt(
       { name: 'AES-GCM', iv },
       this.encryptionKey,
       dataArray
@@ -123,7 +126,7 @@ export class SessionPersistenceService {
       throw new Error('Encryption key not available');
     }
 
-    const decryptedData = await crypto.subtle.decrypt(
+    const decryptedData = await this.crypto.subtle.decrypt(
       { name: 'AES-GCM', iv: encryptedData.iv },
       this.encryptionKey,
       encryptedData.data
@@ -519,19 +522,28 @@ export class SessionPersistenceService {
     }
 
     try {
-      const { syncSessionData } = await import('../lib/firebase');
-      
       const settings = await this.getSettings(userId);
       const photoHistory = await this.getPhotoHistory(userId);
       const favorites = await this.getFavorites(userId);
 
-      await syncSessionData(userId, {
-        session: sessionData,
-        settings,
-        photoHistory,
-        favorites,
-        timestamp: Date.now()
+      const response = await fetch('/api/session/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          session: sessionData,
+          settings,
+          photoHistory,
+          favorites,
+          timestamp: Date.now(),
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
     } catch (error) {
       console.error('Failed to sync session to cloud:', error);
       // Don't throw - sync failures shouldn't break the app
@@ -540,49 +552,19 @@ export class SessionPersistenceService {
 
   async resolveConflict(userId: string): Promise<ConflictResolution> {
     try {
-      const { getUserSession } = await import('../lib/firebase');
-      
+      // TODO: Implement Vercel KV based conflict resolution when Vercel KV session management is implemented.
+      // For now, we will prioritize local session data.
       const localSession = await this.getSession(userId);
-      const cloudData = await getUserSession(userId);
-
-      if (!localSession && !cloudData) {
-        throw new Error('No session data found');
-      }
 
       if (!localSession) {
-        return {
-          session: cloudData.session,
-          source: 'cloud',
-          resolvedAt: new Date()
-        };
+        throw new Error('No session data found locally. Cloud data (Firebase) is no longer supported.');
       }
 
-      if (!cloudData) {
-        return {
-          session: localSession,
-          source: 'local',
-          resolvedAt: new Date()
-        };
-      }
-
-      // Use timestamp to resolve conflict
-      const localTimestamp = localSession.lastActivity.getTime();
-      const cloudTimestamp = cloudData.timestamp || 0;
-
-      if (cloudTimestamp > localTimestamp) {
-        await this.createSession(cloudData.session);
-        return {
-          session: cloudData.session,
-          source: 'cloud',
-          resolvedAt: new Date()
-        };
-      } else {
-        return {
-          session: localSession,
-          source: 'local',
-          resolvedAt: new Date()
-        };
-      }
+      return {
+        session: localSession,
+        source: 'local',
+        resolvedAt: new Date()
+      };
     } catch (error) {
       console.error('Failed to resolve session conflict:', error);
       throw error;

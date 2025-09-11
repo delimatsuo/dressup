@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import GarmentGallery from '../GarmentGallery';
@@ -62,14 +63,17 @@ describe('GarmentGallery', () => {
       <GarmentGallery garments={mockGarments} selectedId="2" />
     );
     
-    const selectedGarment = screen.getByText('Business Suit').closest('div');
-    expect(selectedGarment).toHaveClass('selected');
+    // Get the parent div that contains the selected class
+    const selectedGarmentButton = screen.getByText('Business Suit').closest('button');
+    const selectedGarmentDiv = selectedGarmentButton?.querySelector('div');
+    expect(selectedGarmentDiv).toHaveClass('selected');
     
     // Change selection
     rerender(<GarmentGallery garments={mockGarments} selectedId="1" />);
     
-    const newSelected = screen.getByText('Casual T-Shirt').closest('div');
-    expect(newSelected).toHaveClass('selected');
+    const newSelectedButton = screen.getByText('Casual T-Shirt').closest('button');
+    const newSelectedDiv = newSelectedButton?.querySelector('div');
+    expect(newSelectedDiv).toHaveClass('selected');
   });
 
   it('should display loading state', () => {

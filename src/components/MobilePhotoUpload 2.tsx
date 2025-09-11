@@ -23,8 +23,7 @@ export function MobilePhotoUpload({
   const [uploadingViews, setUploadingViews] = useState<Record<string, boolean>>({});
   const [currentView, setCurrentView] = useState(0);
   const fileInputRefs = useRef<Record<string, HTMLInputElement>>({});
-  const { session } = useSession();
-  const sessionId = session?.sessionId || `temp-${Date.now()}`;
+  const { sessionId } = useSession();
 
   const handlePhotoCapture = async (view: string, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -249,33 +248,31 @@ export function MobilePhotoUpload({
                     )}
                   </div>
                   
-                  {/* Action buttons - disabled while uploading */}
-                  {!uploadingViews[view] && (
-                    <div className="absolute top-2 right-2 flex gap-2">
-                      <button
-                        onClick={() => retakePhoto(view)}
-                        className="
-                          p-2 bg-white/90 backdrop-blur-sm rounded-full
-                          shadow-lg hover:bg-white active:scale-95
-                          transition-all focus:outline-none focus:ring-2 focus:ring-purple-500
-                        "
-                        aria-label={`Retake ${view} view photo`}
-                      >
-                        <RotateCw className="w-5 h-5 text-gray-700" aria-hidden="true" />
-                      </button>
-                      <button
-                        onClick={() => removePhoto(view)}
-                        className="
-                          p-2 bg-white/90 backdrop-blur-sm rounded-full
-                          shadow-lg hover:bg-white active:scale-95
-                          transition-all focus:outline-none focus:ring-2 focus:ring-red-500
-                        "
-                        aria-label={`Remove ${view} view photo`}
-                      >
-                        <X className="w-5 h-5 text-red-500" aria-hidden="true" />
-                      </button>
-                    </div>
-                  )}
+                  {/* Action buttons */}
+                  <div className="absolute top-2 right-2 flex gap-2">
+                    <button
+                      onClick={() => retakePhoto(view)}
+                      className="
+                        p-2 bg-white/90 backdrop-blur-sm rounded-full
+                        shadow-lg hover:bg-white active:scale-95
+                        transition-all focus:outline-none focus:ring-2 focus:ring-purple-500
+                      "
+                      aria-label={`Retake ${view} view photo`}
+                    >
+                      <RotateCw className="w-5 h-5 text-gray-700" aria-hidden="true" />
+                    </button>
+                    <button
+                      onClick={() => removePhoto(view)}
+                      className="
+                        p-2 bg-white/90 backdrop-blur-sm rounded-full
+                        shadow-lg hover:bg-white active:scale-95
+                        transition-all focus:outline-none focus:ring-2 focus:ring-red-500
+                      "
+                      aria-label={`Remove ${view} view photo`}
+                    >
+                      <X className="w-5 h-5 text-red-500" aria-hidden="true" />
+                    </button>
+                  </div>
 
                   {/* View label */}
                   <div className="absolute bottom-2 left-2">

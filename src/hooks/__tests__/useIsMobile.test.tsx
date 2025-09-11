@@ -74,17 +74,16 @@ describe('useIsMobile', () => {
 });
 
 describe('useIsTouchDevice', () => {
-  it('should detect touch capability', () => {
-    // Mock touch device
+  beforeEach(() => {
+    // Mock navigator properties for touch detection
     Object.defineProperty(navigator, 'maxTouchPoints', {
       writable: true,
       configurable: true,
-      value: 10,
+      value: 0,
     });
+  });
 
-    const { result } = renderHook(() => useIsTouchDevice());
-    expect(result.current).toBe(true);
-
+  afterEach(() => {
     // Clean up
     Object.defineProperty(navigator, 'maxTouchPoints', {
       writable: true,
@@ -93,12 +92,25 @@ describe('useIsTouchDevice', () => {
     });
   });
 
+  it('should detect touch capability', () => {
+    Object.defineProperty(navigator, 'maxTouchPoints', {
+      writable: true,
+      configurable: true,
+      value: 1,
+    });
+
+    const { result } = renderHook(() => useIsTouchDevice());
+    expect(result.current).toBe(true);
+  });
+
   it('should return false for non-touch devices', () => {
+    // Ensure all touch properties are reset
     Object.defineProperty(navigator, 'maxTouchPoints', {
       writable: true,
       configurable: true,
       value: 0,
     });
+    delete window.ontouchstart;
 
     const { result } = renderHook(() => useIsTouchDevice());
     expect(result.current).toBe(false);
@@ -119,7 +131,18 @@ describe('useMobileDetection', () => {
     });
   });
 
+  afterEach(() => {
+    Object.defineProperty(navigator, 'maxTouchPoints', {
+      writable: true,
+      configurable: true,
+      value: 0,
+    });
+  });
+
   it('should return correct mobile and touch detection', () => {
+    // Ensure touch is disabled
+    delete window.ontouchstart;
+    
     const { result } = renderHook(() => useMobileDetection());
     
     expect(result.current).toEqual({
@@ -135,10 +158,16 @@ describe('useMobileDetection', () => {
       configurable: true,
       value: 500,
     });
+    Object.defineProperty(navigator, 'maxTouchPoints', {
+      writable: true,
+      configurable: true,
+      value: 1,
+    });
 
     const { result } = renderHook(() => useMobileDetection());
     
     expect(result.current.isMobile).toBe(true);
+    expect(result.current.isTouchDevice).toBe(true);
     expect(result.current.isMobileOrTouch).toBe(true);
   });
 });

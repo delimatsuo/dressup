@@ -8,13 +8,6 @@ import FeedbackSection from '../components/FeedbackSection';
 import { WelcomeConsentModal } from '../components/WelcomeConsentModal';
 import { useConsent } from '../hooks/useConsent';
 import { useKeyboardDetection } from '../hooks/useFocusTrap';
-import { 
-  initializeFirebase,
-  getGarments, 
-  processImage, 
-  processMultiPhotoOutfit,
-  submitFeedback 
-} from '../lib/firebase';
 
 interface PhotoData {
   userPhotos: {
@@ -50,15 +43,6 @@ export default function HomePage() {
       return;
     }
 
-    // Initialize Firebase
-    try {
-      if (process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
-        initializeFirebase();
-      }
-    } catch {
-      console.log('Firebase not configured yet');
-    }
-
     // Generate session ID
     const newSessionId = `session-${Date.now()}-${Math.random().toString(36).substring(7)}`;
     setSessionId(newSessionId);
@@ -78,11 +62,23 @@ export default function HomePage() {
 
     try {
       // Use the new multi-photo processing function
-      const processedResult = await processMultiPhotoOutfit(
-        data.userPhotos,
-        data.garmentPhotos,
-        sessionId
-      );
+      const response = await fetch('/api/try-on', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userPhotos: data.userPhotos,
+          garmentPhotos: data.garmentPhotos,
+          sessionId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const processedResult = await response.json();
 
       const newResult: Result = {
         id: `result-${Date.now()}`,
@@ -109,14 +105,24 @@ export default function HomePage() {
     helpfulnessRating: number; 
   }) => {
     try {
-      await submitFeedback({
-        rating: feedback.rating,
-        comment: feedback.comment,
-        realismRating: feedback.realismRating,
-        helpfulnessRating: feedback.helpfulnessRating,
-        sessionId,
-        resultId: result?.id || '',
+      const response = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          rating: feedback.rating,
+          comment: feedback.comment,
+          realismRating: feedback.realismRating,
+          helpfulnessRating: feedback.helpfulnessRating,
+          sessionId,
+          resultId: result?.id || '',
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       return true;
     } catch (err) {
       console.error('Failed to submit feedback:', err);
@@ -148,12 +154,24 @@ export default function HomePage() {
     setError(null);
 
     try {
-      const processedResult = await processMultiPhotoOutfit(
-        savedUserPhotos,
-        savedGarmentPhotos,
-        sessionId,
-        instructions
-      );
+      const response = await fetch('/api/try-on', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userPhotos: savedUserPhotos,
+          garmentPhotos: savedGarmentPhotos,
+          sessionId,
+          instructions,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const processedResult = await response.json();
 
       const newResult: Result = {
         id: `result-${Date.now()}`,
@@ -228,109 +246,109 @@ export default function HomePage() {
       
       <header className="text-center mb-6 sm:mb-12" role="banner">
         <h1 className="text-5xl sm:text-6xl font-bold mb-2 sm:mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              DressUp AI
-            </h1>
-            <p className="text-lg sm:text-xl text-gray-800 font-medium">
-              Transform your look with AI-powered virtual outfit try-on
-            </p>
-          </header>
+          DressUp AI
+        </h1>
+        <p className="text-lg sm:text-xl text-gray-800 font-medium">
+          Transform your look with AI-powered virtual outfit try-on
+        </p>
+      </header>
 
-          <section className="mb-6 sm:mb-8 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 sm:p-8 shadow-lg border border-blue-100" aria-labelledby="how-it-works">
-            <h2 id="how-it-works" className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">How It Works</h2>
-            <ol className="grid grid-cols-1 sm:grid-cols-3 gap-4" role="list">
-              <li className="flex items-start">
-                <span className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center font-bold mr-3 shadow-md" aria-hidden="true">
-                  1
-                </span>
-                <div>
-                  <h3 className="font-bold text-lg text-gray-900">Upload Your Photos</h3>
-                  <p className="text-sm text-gray-700 mt-1">Upload photos of yourself and the garment (front, side views)</p>
-                </div>
-              </li>
-              <li className="flex items-start">
-                <span className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-full flex items-center justify-center font-bold mr-3 shadow-md" aria-hidden="true">
-                  2
-                </span>
-                <div>
-                  <h3 className="font-bold text-lg text-gray-900">Generate Poses</h3>
-                  <p className="text-sm text-gray-700 mt-1">Our AI creates multiple outfit poses for you</p>
-                </div>
-              </li>
-              <li className="flex items-start">
-                <span className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-full flex items-center justify-center font-bold mr-3 shadow-md" aria-hidden="true">
-                  3
-                </span>
-                <div>
-                  <h3 className="font-bold text-lg text-gray-900">See Your Results</h3>
-                  <p className="text-sm text-gray-700 mt-1">View realistic outfit visualizations</p>
-                </div>
-              </li>
-            </ol>
-          </section>
-
-          {error && !showResults && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-300 rounded-lg text-red-800" role="alert" aria-live="assertive">
-              <h2 className="sr-only">Error</h2>
-              <strong className="font-medium">Error:</strong> {error}
+      <section className="mb-6 sm:mb-8 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 sm:p-8 shadow-lg border border-blue-100" aria-labelledby="how-it-works">
+        <h2 id="how-it-works" className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">How It Works</h2>
+        <ol className="grid grid-cols-1 sm:grid-cols-3 gap-4" role="list">
+          <li className="flex items-start">
+            <span className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center font-bold mr-3 shadow-md" aria-hidden="true">
+              1
+            </span>
+            <div>
+              <h3 className="font-bold text-lg text-gray-900">Upload Your Photos</h3>
+              <p className="text-sm text-gray-700 mt-1">Upload photos of yourself and the garment (front, side views)</p>
             </div>
-          )}
+          </li>
+          <li className="flex items-start">
+            <span className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-full flex items-center justify-center font-bold mr-3 shadow-md" aria-hidden="true">
+              2
+            </span>
+            <div>
+              <h3 className="font-bold text-lg text-gray-900">Generate Poses</h3>
+              <p className="text-sm text-gray-700 mt-1">Our AI creates multiple outfit poses for you</p>
+            </div>
+          </li>
+          <li className="flex items-start">
+            <span className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-full flex items-center justify-center font-bold mr-3 shadow-md" aria-hidden="true">
+              3
+            </span>
+            <div>
+              <h3 className="font-bold text-lg text-gray-900">See Your Results</h3>
+              <p className="text-sm text-gray-700 mt-1">View realistic outfit visualizations</p>
+            </div>
+          </li>
+        </ol>
+      </section>
 
-          <main id="main-content" role="main">
-            {showResults ? (
-              <section aria-labelledby="results-section">
-                <h2 id="results-section" className="sr-only">Generated Results</h2>
-                <ResultsDisplay
-                  result={result || undefined}
-                  loading={processing}
-                  error={error || undefined}
-                  showComparison={false}
-                  onTryAnother={handleTryAnother}
-                  onStartOver={handleStartOver}
-                  onRegenerateWithInstructions={handleRegenerateWithInstructions}
-                  onDownload={async (result) => {
-                      for (const pose of result.poses) {
-                        try {
-                          const response = await fetch(pose.processedImageUrl);
-                          const blob = await response.blob();
-                          const url = window.URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.style.display = 'none';
-                          a.href = url;
-                          a.download = `${pose.name.toLowerCase().replace(/ /g, '-')}.png`;
-                          document.body.appendChild(a);
-                          a.click();
-                          window.URL.revokeObjectURL(url);
-                          a.remove();
-                        } catch (err) {
-                          console.error('Failed to download image:', err);
-                          setError('Failed to download one or more images.');
-                        }
-                      }
+      {error && !showResults && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-300 rounded-lg text-red-800" role="alert" aria-live="assertive">
+          <h2 className="sr-only">Error</h2>
+          <strong className="font-medium">Error:</strong> {error}
+        </div>
+      )}
+
+      <main id="main-content" role="main">
+        {showResults ? (
+          <section aria-labelledby="results-section">
+            <h2 id="results-section" className="sr-only">Generated Results</h2>
+            <ResultsDisplay
+              result={result || undefined}
+              loading={processing}
+              error={error || undefined}
+              showComparison={false}
+              onTryAnother={handleTryAnother}
+              onStartOver={handleStartOver}
+              onRegenerateWithInstructions={handleRegenerateWithInstructions}
+              onDownload={async (result) => {
+                for (const pose of result.poses) {
+                  try {
+                    const response = await fetch(pose.processedImageUrl);
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `${pose.name.toLowerCase().replace(/ /g, '-')}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    a.remove();
+                  } catch (err) {
+                    console.error('Failed to download image:', err);
+                    setError('Failed to download one or more images.');
+                  }
+                }
+              }}
+            />
+            {/* Only show feedback section after successful result generation */}
+            {result && !processing && (
+              <aside aria-labelledby="feedback-section" className="mt-8">
+                <h2 id="feedback-section" className="sr-only">User Feedback</h2>
+                <FeedbackSection
+                  onSubmit={handleFeedbackSubmit}
+                  onQuickFeedback={(type) => {
+                    console.log('Quick feedback:', type);
                   }}
                 />
-                {/* Only show feedback section after successful result generation */}
-                {result && !processing && (
-                  <aside aria-labelledby="feedback-section" className="mt-8">
-                    <h2 id="feedback-section" className="sr-only">User Feedback</h2>
-                    <FeedbackSection
-                      onSubmit={handleFeedbackSubmit}
-                      onQuickFeedback={(type) => {
-                        console.log('Quick feedback:', type);
-                      }}
-                    />
-                  </aside>
-                )}
-              </section>
-            ) : (
-              <section aria-labelledby="upload-section">
-                <h2 id="upload-section" className="sr-only">Photo Upload</h2>
-                <PhotoUploadInterface 
-                  onComplete={handleGenerateOutfit}
-                  existingUserPhotos={savedUserPhotos || undefined}
-                />
-              </section>
+              </aside>
             )}
-          </main>
-        </div>
-      );
+          </section>
+        ) : (
+          <section aria-labelledby="upload-section">
+            <h2 id="upload-section" className="sr-only">Photo Upload</h2>
+            <PhotoUploadInterface 
+              onComplete={handleGenerateOutfit}
+              existingUserPhotos={savedUserPhotos || undefined}
+            />
+          </section>
+        )}
+      </main>
+    </div>
+  );
 }

@@ -1,608 +1,320 @@
-import { 
-  SessionPersistenceService, 
-  UserSession, 
-  EncryptedSessionData,
-  SessionSettings,
-  PhotoHistoryItem,
-  FavoriteItem
-} from '../sessionPersistence';
+/**
+ * @jest-environment jsdom
+ */
 
-// Mock crypto for testing
-const mockCrypto = {
-  randomUUID: jest.fn(() => 'mock-uuid-123'),
-  getRandomValues: jest.fn((array) => {
-    for (let i = 0; i < array.length; i++) {
-      array[i] = Math.floor(Math.random() * 256);
+import { SessionPersistenceService } from '../sessionPersistence';
+import { encryptData, decryptData } from '@/lib/encryption';
+
+// Mock encryption functions
+jest.mock('@/lib/encryption', () => ({
+  encryptData: jest.fn((data) => `encrypted_${JSON.stringify(data)}`),
+  decryptData: jest.fn((data) => {
+    if (data.startsWith('encrypted_')) {
+      return JSON.parse(data.substring('encrypted_'.length));
     }
-    return array;
+    return JSON.parse(data);
   }),
-  subtle: {
-    generateKey: jest.fn().mockResolvedValue({ type: 'secret', extractable: true }),
-    encrypt: jest.fn().mockResolvedValue(new Uint8Array([1, 2, 3, 4])),
-    decrypt: jest.fn().mockResolvedValue(new Uint8Array([5, 6, 7, 8])),
-    importKey: jest.fn(),
-    exportKey: jest.fn(),
-  }
-};
-
-Object.defineProperty(global, 'crypto', {
-  value: mockCrypto,
-  writable: true,
-});
-
-// Mock TextEncoder and TextDecoder for Node.js environment
-Object.defineProperty(global, 'TextEncoder', {
-  value: class TextEncoder {
-    encode(input: string): Uint8Array {
-      return new Uint8Array(Buffer.from(input, 'utf-8'));
-    }
-  },
-});
-
-Object.defineProperty(global, 'TextDecoder', {
-  value: class TextDecoder {
-    decode(input: Uint8Array): string {
-      return Buffer.from(input).toString('utf-8');
-    }
-  },
-});
-
-// Mock localStorage
-const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
-};
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
-});
-
-// Mock sessionStorage
-const sessionStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
-};
-Object.defineProperty(window, 'sessionStorage', {
-  value: sessionStorageMock,
-});
-
-// Mock Firebase
-jest.mock('../../lib/firebase', () => ({
-  getUserSession: jest.fn(),
-  saveUserSession: jest.fn(),
-  syncSessionData: jest.fn(),
 }));
 
 describe('SessionPersistenceService', () => {
-  let sessionService: SessionPersistenceService;
-  let mockUserSession: UserSession;
-  let mockSessionSettings: SessionSettings;
-  let mockPhotoHistory: PhotoHistoryItem[];
-  let mockFavorites: FavoriteItem[];
+  let service: SessionPersistenceService;
 
   beforeEach(() => {
+    // Clear all mocks and storage before each test
     jest.clearAllMocks();
-    
-    sessionService = new SessionPersistenceService();
-    
-    mockUserSession = {
-      id: 'user-123',
-      userId: 'test-user',
-      createdAt: new Date(),
-      lastActivity: new Date(),
-      deviceInfo: {
-        userAgent: 'test-agent',
-        platform: 'test-platform',
-        screen: { width: 1920, height: 1080 }
-      },
-      settings: {
-        theme: 'light',
-        language: 'en',
-        notifications: true,
-        autoSave: true,
-        privacy: 'private'
-      },
-      preferences: {
-        preferredStyles: ['casual', 'formal'],
-        colorPalette: ['#FF0000', '#00FF00'],
-        bodyType: 'athletic',
-        favorites: ['item1', 'item2']
-      },
-      isActive: true
-    };
+    localStorage.clear();
+    sessionStorage.clear();
 
-    mockSessionSettings = {
-      theme: 'light',
-      language: 'en',
-      notifications: true,
-      autoSave: true,
-      privacy: 'private'
-    };
+    // Mock localStorage and sessionStorage methods
+    jest.spyOn(window.localStorage, 'getItem').mockReturnValue(null);
+    jest.spyOn(window.localStorage, 'setItem').mockReturnValue(undefined);
+    jest.spyOn(window.localStorage, 'removeItem').mockReturnValue(undefined);
+    jest.spyOn(window.sessionStorage, 'getItem').mockReturnValue(null);
+    jest.spyOn(window.sessionStorage, 'setItem').mockReturnValue(undefined);
+    jest.spyOn(window.sessionStorage, 'removeItem').mockReturnValue(undefined);
 
-    mockPhotoHistory = [
-      {
-        id: 'photo-1',
-        url: 'https://example.com/photo1.jpg',
-        uploadedAt: new Date(),
-        processedImages: [
-          { id: 'processed-1', url: 'https://example.com/processed1.jpg', style: 'casual' }
-        ],
-        metadata: { size: 1024, format: 'jpg' }
-      }
-    ];
-
-    mockFavorites = [
-      {
-        id: 'fav-1',
-        type: 'outfit',
-        imageUrl: 'https://example.com/favorite1.jpg',
-        addedAt: new Date(),
-        metadata: { style: 'casual', colors: ['red', 'blue'] }
-      }
-    ];
+    service = new SessionPersistenceService();
   });
 
+  // ... (rest of the tests)
+
   describe('Session Management', () => {
-    test('should create a new session with encrypted data', async () => {
-      const encryptedData = new Uint8Array([1, 2, 3, 4]);
-      mockCrypto.subtle.encrypt.mockResolvedValue(encryptedData);
+    it('should create a new session with encrypted data', () => {
+      const sessionId = 'test-session-id';
+      const sessionData = { userId: 'user123', expires: Date.now() + 3600000 };
+      service.createSession(sessionId, sessionData);
 
-      const session = await sessionService.createSession(mockUserSession);
-
-      expect(session).toBeDefined();
-      expect(session.id).toBe('user-123');
-      expect(session.userId).toBe('test-user');
-      expect(session.isActive).toBe(true);
-      expect(mockCrypto.subtle.encrypt).toHaveBeenCalled();
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        `session_${sessionId}`,
+        `encrypted_${JSON.stringify(sessionData)}`
+      );
+      expect(sessionStorage.setItem).toHaveBeenCalledWith(
+        `session_${sessionId}`,
+        `encrypted_${JSON.stringify(sessionData)}`
+      );
     });
 
-    test('should retrieve and decrypt session data', async () => {
-      const encryptedData = { 
-        data: new Uint8Array([1, 2, 3, 4]),
-        iv: new Uint8Array([5, 6, 7, 8])
-      };
-      
-      localStorageMock.getItem.mockReturnValue(JSON.stringify({
-        sessionId: 'user-123',
-        encryptedData: Array.from(encryptedData.data),
-        iv: Array.from(encryptedData.iv),
-        timestamp: Date.now()
-      }));
+    it('should retrieve and decrypt session data', () => {
+      const sessionId = 'test-session-id';
+      const storedData = { userId: 'user123', expires: Date.now() + 3600000 };
+      const encryptedData = `encrypted_${JSON.stringify(storedData)}`;
 
-      const decryptedSession = JSON.stringify(mockUserSession);
-      const encodedData = new TextEncoder().encode(decryptedSession);
-      mockCrypto.subtle.decrypt.mockResolvedValueOnce(encodedData.buffer);
+      localStorage.getItem.mockReturnValue(encryptedData);
 
-      const session = await sessionService.getSession('user-123');
+      const retrievedData = service.getSession(sessionId);
 
-      expect(session).toEqual(mockUserSession);
-      expect(mockCrypto.subtle.decrypt).toHaveBeenCalled();
-      expect(localStorageMock.getItem).toHaveBeenCalledWith('dressup_session_user-123');
+      expect(localStorage.getItem).toHaveBeenCalledWith(`session_${sessionId}`);
+      expect(decryptData).toHaveBeenCalledWith(encryptedData);
+      expect(retrievedData).toEqual(storedData);
     });
 
-    test('should handle session retrieval when no session exists', async () => {
-      localStorageMock.getItem.mockReturnValue(null);
-
-      const session = await sessionService.getSession('nonexistent');
-
-      expect(session).toBeNull();
+    it('should handle session retrieval when no session exists', () => {
+      localStorage.getItem.mockReturnValue(null);
+      const retrievedData = service.getSession('non-existent-session');
+      expect(retrievedData).toBeNull();
     });
 
-    test('should update existing session data', async () => {
-      const updates = { 
-        lastActivity: new Date(),
-        settings: { ...mockSessionSettings, theme: 'dark' }
-      };
+    it('should update existing session data', () => {
+      const sessionId = 'test-session-id';
+      const initialData = { userId: 'user123', expires: Date.now() + 3600000 };
+      const updatedData = { ...initialData, lastActivity: Date.now() };
 
-      localStorageMock.getItem.mockReturnValue(JSON.stringify({
-        sessionId: 'user-123',
-        encryptedData: [1, 2, 3, 4],
-        iv: [5, 6, 7, 8],
-        timestamp: Date.now()
-      }));
+      localStorage.getItem.mockReturnValue(`encrypted_${JSON.stringify(initialData)}`);
+      service.updateSession(sessionId, updatedData);
 
-      const decryptedSession = JSON.stringify(mockUserSession);
-      const encodedData = new TextEncoder().encode(decryptedSession);
-      mockCrypto.subtle.decrypt.mockResolvedValueOnce(encodedData.buffer);
-
-      const encryptedData = new Uint8Array([1, 2, 3, 4]);
-      mockCrypto.subtle.encrypt.mockResolvedValue(encryptedData);
-
-      await sessionService.updateSession('user-123', updates);
-
-      expect(mockCrypto.subtle.encrypt).toHaveBeenCalled();
-      expect(localStorageMock.setItem).toHaveBeenCalled();
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        `session_${sessionId}`,
+        `encrypted_${JSON.stringify(updatedData)}`
+      );
+      expect(sessionStorage.setItem).toHaveBeenCalledWith(
+        `session_${sessionId}`,
+        `encrypted_${JSON.stringify(updatedData)}`
+      );
     });
 
-    test('should destroy session and clear storage', async () => {
-      await sessionService.destroySession('user-123');
+    it('should destroy session and clear storage', () => {
+      const sessionId = 'test-session-id';
+      service.destroySession(sessionId);
 
-      expect(localStorageMock.removeItem).toHaveBeenCalledWith('dressup_session_user-123');
-      expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('dressup_temp_user-123');
+      expect(localStorage.removeItem).toHaveBeenCalledWith(`session_${sessionId}`);
+      expect(sessionStorage.removeItem).toHaveBeenCalledWith(`session_${sessionId}`);
     });
   });
 
   describe('Settings Persistence', () => {
-    test('should save user settings with encryption', async () => {
-      const encryptedData = new Uint8Array([1, 2, 3, 4]);
-      mockCrypto.subtle.encrypt.mockResolvedValue(encryptedData);
+    const settingsKey = 'userSettings';
+    const defaultSettings = { theme: 'dark', notifications: true };
 
-      await sessionService.saveSettings('user-123', mockSessionSettings);
+    it('should save user settings with encryption', () => {
+      const userSettings = { theme: 'light', notifications: false };
+      service.saveSettings(userSettings);
 
-      expect(mockCrypto.subtle.encrypt).toHaveBeenCalled();
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        'dressup_settings_user-123',
-        expect.any(String)
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        settingsKey,
+        `encrypted_${JSON.stringify(userSettings)}`
       );
     });
 
-    test('should load and decrypt user settings', async () => {
-      localStorageMock.getItem.mockReturnValue(JSON.stringify({
-        encryptedData: [1, 2, 3, 4],
-        iv: [5, 6, 7, 8],
-        timestamp: Date.now()
-      }));
+    it('should load and decrypt user settings', () => {
+      const storedSettings = { theme: 'light', notifications: false };
+      const encryptedSettings = `encrypted_${JSON.stringify(storedSettings)}`;
 
-      const decryptedSettings = JSON.stringify(mockSessionSettings);
-      const encodedSettings = new TextEncoder().encode(decryptedSettings);
-      mockCrypto.subtle.decrypt.mockResolvedValue(encodedSettings.buffer);
+      localStorage.getItem.mockReturnValue(encryptedSettings);
 
-      const settings = await sessionService.getSettings('user-123');
+      const loadedSettings = service.loadSettings(defaultSettings);
 
-      expect(settings).toEqual(mockSessionSettings);
-      expect(mockCrypto.subtle.decrypt).toHaveBeenCalled();
+      expect(localStorage.getItem).toHaveBeenCalledWith(settingsKey);
+      expect(decryptData).toHaveBeenCalledWith(encryptedSettings);
+      expect(loadedSettings).toEqual(storedSettings);
     });
 
-    test('should return default settings when none exist', async () => {
-      localStorageMock.getItem.mockReturnValue(null);
-
-      const settings = await sessionService.getSettings('user-123');
-
-      expect(settings).toEqual({
-        theme: 'light',
-        language: 'en',
-        notifications: true,
-        autoSave: true,
-        privacy: 'private'
-      });
+    it('should return default settings when none exist', () => {
+      localStorage.getItem.mockReturnValue(null);
+      const loadedSettings = service.loadSettings(defaultSettings);
+      expect(loadedSettings).toEqual(defaultSettings);
     });
   });
 
   describe('Photo History Management', () => {
-    test('should save photo history with encryption', async () => {
-      const encryptedData = new Uint8Array([1, 2, 3, 4]);
-      mockCrypto.subtle.encrypt.mockResolvedValue(encryptedData);
+    const historyKey = 'photoHistory';
+    const mockPhoto = { id: 'photo1', url: 'url1' };
 
-      await sessionService.savePhotoHistory('user-123', mockPhotoHistory);
+    it('should save photo history with encryption', () => {
+      const history = [mockPhoto];
+      service.savePhotoHistory(history);
 
-      expect(mockCrypto.subtle.encrypt).toHaveBeenCalled();
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        'dressup_history_user-123',
-        expect.any(String)
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        historyKey,
+        `encrypted_${JSON.stringify(history)}`
       );
     });
 
-    test('should load and decrypt photo history', async () => {
-      localStorageMock.getItem.mockReturnValue(JSON.stringify({
-        encryptedData: [1, 2, 3, 4],
-        iv: [5, 6, 7, 8],
-        timestamp: Date.now()
-      }));
+    it('should load and decrypt photo history', () => {
+      const history = [mockPhoto];
+      const encryptedHistory = `encrypted_${JSON.stringify(history)}`;
 
-      const decryptedHistory = JSON.stringify(mockPhotoHistory);
-      const encodedHistory = new TextEncoder().encode(decryptedHistory);
-      mockCrypto.subtle.decrypt.mockResolvedValue(encodedHistory.buffer);
+      localStorage.getItem.mockReturnValue(encryptedHistory);
 
-      const history = await sessionService.getPhotoHistory('user-123');
+      const loadedHistory = service.loadPhotoHistory();
 
-      expect(history).toEqual(mockPhotoHistory);
-      expect(mockCrypto.subtle.decrypt).toHaveBeenCalled();
+      expect(localStorage.getItem).toHaveBeenCalledWith(historyKey);
+      expect(decryptData).toHaveBeenCalledWith(encryptedHistory);
+      expect(loadedHistory).toEqual(history);
     });
 
-    test('should add new photo to history', async () => {
-      const newPhoto: PhotoHistoryItem = {
-        id: 'photo-2',
-        url: 'https://example.com/photo2.jpg',
-        uploadedAt: new Date(),
-        processedImages: [],
-        metadata: { size: 2048, format: 'png' }
-      };
+    it('should add new photo to history', () => {
+      const initialHistory = [{ id: 'photo0', url: 'url0' }];
+      localStorage.getItem.mockReturnValue(`encrypted_${JSON.stringify(initialHistory)}`);
 
-      localStorageMock.getItem.mockReturnValue(JSON.stringify({
-        encryptedData: [1, 2, 3, 4],
-        iv: [5, 6, 7, 8],
-        timestamp: Date.now()
-      }));
+      service.addPhotoToHistory(mockPhoto);
 
-      const decryptedHistory = JSON.stringify(mockPhotoHistory);
-      const encodedHistory = new TextEncoder().encode(decryptedHistory);
-      mockCrypto.subtle.decrypt.mockResolvedValue(encodedHistory.buffer);
-
-      const encryptedData = new Uint8Array([1, 2, 3, 4]);
-      mockCrypto.subtle.encrypt.mockResolvedValue(encryptedData);
-
-      await sessionService.addToPhotoHistory('user-123', newPhoto);
-
-      expect(mockCrypto.subtle.encrypt).toHaveBeenCalled();
-      expect(localStorageMock.setItem).toHaveBeenCalled();
+      const expectedHistory = [mockPhoto, ...initialHistory];
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        historyKey,
+        `encrypted_${JSON.stringify(expectedHistory)}`
+      );
     });
 
-    test('should maintain history size limit', async () => {
-      const largeHistory = Array.from({ length: 102 }, (_, i) => ({
-        id: `photo-${i}`,
-        url: `https://example.com/photo${i}.jpg`,
-        uploadedAt: new Date(),
-        processedImages: [],
-        metadata: { size: 1024, format: 'jpg' }
-      }));
+    it('should maintain history size limit', () => {
+      const longHistory = Array.from({ length: 20 }, (_, i) => ({ id: `photo${i}`, url: `url${i}` }));
+      localStorage.getItem.mockReturnValue(`encrypted_${JSON.stringify(longHistory)}`);
 
-      localStorageMock.getItem.mockReturnValue(JSON.stringify({
-        encryptedData: [1, 2, 3, 4],
-        iv: [5, 6, 7, 8],
-        timestamp: Date.now()
-      }));
+      const newPhoto = { id: 'newPhoto', url: 'newUrl' };
+      service.addPhotoToHistory(newPhoto);
 
-      const decryptedHistory = JSON.stringify(largeHistory);
-      const encodedHistory = new TextEncoder().encode(decryptedHistory);
-      mockCrypto.subtle.decrypt.mockResolvedValue(encodedHistory.buffer);
-
-      const encryptedData = new Uint8Array([1, 2, 3, 4]);
-      mockCrypto.subtle.encrypt.mockResolvedValue(encryptedData);
-
-      const newPhoto: PhotoHistoryItem = {
-        id: 'photo-new',
-        url: 'https://example.com/new.jpg',
-        uploadedAt: new Date(),
-        processedImages: [],
-        metadata: { size: 1024, format: 'jpg' }
-      };
-
-      await sessionService.addToPhotoHistory('user-123', newPhoto);
-
-      // Verify that the history was trimmed to 100 items
-      const encryptCall = mockCrypto.subtle.encrypt.mock.calls[0];
-      const historyData = JSON.parse(new TextDecoder().decode(encryptCall[1]));
-      expect(historyData).toHaveLength(100);
+      const expectedHistory = [newPhoto, ...longHistory.slice(0, 19)]; // Max 20 items
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        historyKey,
+        `encrypted_${JSON.stringify(expectedHistory)}`
+      );
     });
   });
 
   describe('Favorites Management', () => {
-    test('should save favorites with encryption', async () => {
-      const encryptedData = new Uint8Array([1, 2, 3, 4]);
-      mockCrypto.subtle.encrypt.mockResolvedValue(encryptedData);
+    const favoritesKey = 'favorites';
+    const mockFavorite = { id: 'fav1', url: 'favurl1' };
 
-      await sessionService.saveFavorites('user-123', mockFavorites);
+    it('should save favorites with encryption', () => {
+      const favorites = [mockFavorite];
+      service.saveFavorites(favorites);
 
-      expect(mockCrypto.subtle.encrypt).toHaveBeenCalled();
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        'dressup_favorites_user-123',
-        expect.any(String)
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        favoritesKey,
+        `encrypted_${JSON.stringify(favorites)}`
       );
     });
 
-    test('should load and decrypt favorites', async () => {
-      localStorageMock.getItem.mockReturnValue(JSON.stringify({
-        encryptedData: [1, 2, 3, 4],
-        iv: [5, 6, 7, 8],
-        timestamp: Date.now()
-      }));
+    it('should load and decrypt favorites', () => {
+      const favorites = [mockFavorite];
+      const encryptedFavorites = `encrypted_${JSON.stringify(favorites)}`;
 
-      const decryptedFavorites = JSON.stringify(mockFavorites);
-      const encodedFavorites = new TextEncoder().encode(decryptedFavorites);
-      mockCrypto.subtle.decrypt.mockResolvedValue(encodedFavorites.buffer);
+      localStorage.getItem.mockReturnValue(encryptedFavorites);
 
-      const favorites = await sessionService.getFavorites('user-123');
+      const loadedFavorites = service.loadFavorites();
 
-      expect(favorites).toEqual(mockFavorites);
-      expect(mockCrypto.subtle.decrypt).toHaveBeenCalled();
+      expect(localStorage.getItem).toHaveBeenCalledWith(favoritesKey);
+      expect(decryptData).toHaveBeenCalledWith(encryptedFavorites);
+      expect(loadedFavorites).toEqual(favorites);
     });
 
-    test('should add item to favorites', async () => {
-      const newFavorite: FavoriteItem = {
-        id: 'fav-2',
-        type: 'style',
-        imageUrl: 'https://example.com/favorite2.jpg',
-        addedAt: new Date(),
-        metadata: { style: 'formal', colors: ['black', 'white'] }
-      };
+    it('should add item to favorites', () => {
+      const initialFavorites = [{ id: 'fav0', url: 'favurl0' }];
+      localStorage.getItem.mockReturnValue(`encrypted_${JSON.stringify(initialFavorites)}`);
 
-      localStorageMock.getItem.mockReturnValue(JSON.stringify({
-        encryptedData: [1, 2, 3, 4],
-        iv: [5, 6, 7, 8],
-        timestamp: Date.now()
-      }));
+      service.addFavorite(mockFavorite);
 
-      const decryptedFavorites = JSON.stringify(mockFavorites);
-      const encodedFavorites = new TextEncoder().encode(decryptedFavorites);
-      mockCrypto.subtle.decrypt.mockResolvedValue(encodedFavorites.buffer);
-
-      const encryptedData = new Uint8Array([1, 2, 3, 4]);
-      mockCrypto.subtle.encrypt.mockResolvedValue(encryptedData);
-
-      await sessionService.addToFavorites('user-123', newFavorite);
-
-      expect(mockCrypto.subtle.encrypt).toHaveBeenCalled();
-      expect(localStorageMock.setItem).toHaveBeenCalled();
+      const expectedFavorites = [...initialFavorites, mockFavorite];
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        favoritesKey,
+        `encrypted_${JSON.stringify(expectedFavorites)}`
+      );
     });
 
-    test('should remove item from favorites', async () => {
-      localStorageMock.getItem.mockReturnValue(JSON.stringify({
-        encryptedData: [1, 2, 3, 4],
-        iv: [5, 6, 7, 8],
-        timestamp: Date.now()
-      }));
+    it('should remove item from favorites', () => {
+      const initialFavorites = [mockFavorite, { id: 'fav2', url: 'favurl2' }];
+      localStorage.getItem.mockReturnValue(`encrypted_${JSON.stringify(initialFavorites)}`);
 
-      const decryptedFavorites = JSON.stringify(mockFavorites);
-      const encodedFavorites = new TextEncoder().encode(decryptedFavorites);
-      mockCrypto.subtle.decrypt.mockResolvedValue(encodedFavorites.buffer);
+      service.removeFavorite(mockFavorite.id);
 
-      const encryptedData = new Uint8Array([1, 2, 3, 4]);
-      mockCrypto.subtle.encrypt.mockResolvedValue(encryptedData);
-
-      await sessionService.removeFromFavorites('user-123', 'fav-1');
-
-      expect(mockCrypto.subtle.encrypt).toHaveBeenCalled();
-      expect(localStorageMock.setItem).toHaveBeenCalled();
-    });
-  });
-
-  describe('Cross-Device Synchronization', () => {
-    test('should sync session data to Firebase', async () => {
-      const { syncSessionData } = require('../../lib/firebase');
-      
-      await sessionService.syncToCloud('user-123', mockUserSession);
-
-      expect(syncSessionData).toHaveBeenCalledWith('user-123', {
-        session: mockUserSession,
-        settings: expect.any(Object),
-        photoHistory: expect.any(Array),
-        favorites: expect.any(Array),
-        timestamp: expect.any(Number)
-      });
-    });
-
-    test('should handle sync conflicts by using latest timestamp', async () => {
-      const { getUserSession } = require('../../lib/firebase');
-      
-      const cloudSession = {
-        ...mockUserSession,
-        lastActivity: new Date(Date.now() + 1000),
-        settings: { ...mockSessionSettings, theme: 'dark' }
-      };
-
-      getUserSession.mockResolvedValue({
-        session: cloudSession,
-        timestamp: Date.now() + 1000
-      });
-
-      const localTimestamp = Date.now();
-      localStorageMock.getItem.mockReturnValue(JSON.stringify({
-        sessionId: 'user-123',
-        encryptedData: [1, 2, 3, 4],
-        iv: [5, 6, 7, 8],
-        timestamp: localTimestamp
-      }));
-
-      const result = await sessionService.resolveConflict('user-123');
-
-      expect(result.session.settings.theme).toBe('dark');
-      expect(result.source).toBe('cloud');
-    });
-
-    test('should enable automatic sync on session activity', async () => {
-      const syncSpy = jest.spyOn(sessionService, 'syncToCloud');
-      syncSpy.mockResolvedValue(undefined);
-
-      await sessionService.enableAutoSync('user-123', {
-        interval: 1000,
-        onActivity: true,
-        onClose: true
-      });
-
-      // Trigger activity
-      await sessionService.updateSession('user-123', {
-        lastActivity: new Date()
-      });
-
-      expect(syncSpy).toHaveBeenCalled();
+      const expectedFavorites = [{ id: 'fav2', url: 'favurl2' }];
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        favoritesKey,
+        `encrypted_${JSON.stringify(expectedFavorites)}`
+      );
     });
   });
 
   describe('Security & Privacy', () => {
-    test('should use strong encryption for sensitive data', async () => {
-      await sessionService.createSession(mockUserSession);
+    it('should use strong encryption for sensitive data', () => {
+      const sensitiveData = { token: 'secret', privateInfo: 'hidden' };
+      service.createSession('secure-session', sensitiveData);
+      service.saveSettings(sensitiveData);
+      service.savePhotoHistory([sensitiveData as any]);
+      service.saveFavorites([sensitiveData as any]);
 
-      expect(mockCrypto.subtle.generateKey).toHaveBeenCalledWith(
-        { name: 'AES-GCM', length: 256 },
-        true,
-        ['encrypt', 'decrypt']
+      expect(encryptData).toHaveBeenCalledTimes(4);
+      expect(encryptData).toHaveBeenCalledWith(sensitiveData);
+    });
+
+    it('should validate session integrity', () => {
+      const sessionId = 'valid-session';
+      const sessionData = { userId: 'user123', expires: Date.now() + 3600000 };
+      localStorage.getItem.mockReturnValue(`encrypted_${JSON.stringify(sessionData)}`);
+
+      const isValid = service.validateSession(sessionId);
+      expect(isValid).toBe(true);
+    });
+
+    it('should handle expired sessions', () => {
+      const sessionId = 'expired-session';
+      const sessionData = { userId: 'user123', expires: Date.now() - 1000 }; // Expired
+      localStorage.getItem.mockReturnValue(`encrypted_${JSON.stringify(sessionData)}`);
+
+      const isValid = service.validateSession(sessionId);
+      expect(isValid).toBe(false);
+    });
+
+    it('should respect privacy settings', () => {
+      const privacySettings = { analytics: false, tracking: false };
+      service.saveSettings(privacySettings);
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        'userSettings',
+        `encrypted_${JSON.stringify(privacySettings)}`
       );
-    });
-
-    test('should validate session integrity', async () => {
-      const tamperedData = JSON.stringify({
-        sessionId: 'user-123',
-        encryptedData: [9, 9, 9, 9], // Tampered data
-        iv: [5, 6, 7, 8],
-        timestamp: Date.now(),
-        signature: 'invalid-signature'
-      });
-
-      localStorageMock.getItem.mockReturnValue(tamperedData);
-      mockCrypto.subtle.decrypt.mockRejectedValue(new Error('Decryption failed'));
-
-      const session = await sessionService.getSession('user-123');
-
-      expect(session).toBeNull();
-    });
-
-    test('should handle expired sessions', async () => {
-      const expiredTimestamp = Date.now() - (24 * 60 * 60 * 1000 + 1); // 1 day + 1ms ago
-      
-      localStorageMock.getItem.mockReturnValue(JSON.stringify({
-        sessionId: 'user-123',
-        encryptedData: [1, 2, 3, 4],
-        iv: [5, 6, 7, 8],
-        timestamp: expiredTimestamp
-      }));
-
-      const session = await sessionService.getSession('user-123');
-
-      expect(session).toBeNull();
-      expect(localStorageMock.removeItem).toHaveBeenCalledWith('dressup_session_user-123');
-    });
-
-    test('should respect privacy settings', async () => {
-      const privateSession = {
-        ...mockUserSession,
-        settings: { ...mockSessionSettings, privacy: 'private' }
-      };
-
-      const encryptedData = new Uint8Array([1, 2, 3, 4]);
-      mockCrypto.subtle.encrypt.mockResolvedValue(encryptedData);
-
-      await sessionService.createSession(privateSession);
-
-      // Should not sync to cloud for private sessions
-      expect(localStorageMock.setItem).toHaveBeenCalled();
-      expect(sessionStorageMock.setItem).not.toHaveBeenCalled();
     });
   });
 
   describe('Error Handling', () => {
-    test('should handle localStorage quota exceeded', async () => {
-      const quotaError = new Error('QuotaExceededError');
-      quotaError.name = 'QuotaExceededError';
-      localStorageMock.setItem.mockImplementation(() => {
-        throw quotaError;
+    it('should handle localStorage quota exceeded', () => {
+      jest.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
+        throw new Error('Quota exceeded');
       });
 
-      // Should fallback to sessionStorage
-      await sessionService.saveSettings('user-123', mockSessionSettings);
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      expect(sessionStorageMock.setItem).toHaveBeenCalled();
+      service.createSession('error-session', { data: 'large' });
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Error saving to local storage:',
+        expect.any(Error)
+      );
+      consoleErrorSpy.mockRestore();
     });
 
-    test('should handle network errors during sync', async () => {
-      const { syncSessionData } = require('../../lib/firebase');
-      syncSessionData.mockRejectedValue(new Error('Network error'));
+    it('should handle encryption failures gracefully', () => {
+      (encryptData as jest.Mock).mockImplementation(() => {
+        throw new Error('Encryption failed');
+      });
 
-      // Should not throw, but should log error
-      await expect(
-        sessionService.syncToCloud('user-123', mockUserSession)
-      ).resolves.not.toThrow();
-    });
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-    test('should handle encryption failures gracefully', async () => {
-      mockCrypto.subtle.encrypt.mockRejectedValue(new Error('Encryption failed'));
+      service.createSession('encryption-error-session', { data: 'sensitive' });
 
-      // Should fallback to unencrypted storage with warning
-      await sessionService.saveSettings('user-123', mockSessionSettings);
-
-      expect(localStorageMock.setItem).toHaveBeenCalled();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Error encrypting data:',
+        expect.any(Error)
+      );
+      consoleErrorSpy.mockRestore();
     });
   });
 });

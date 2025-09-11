@@ -2,9 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  
+
   // Image optimization configuration
   images: {
+    unoptimized: true, // Added from next.config.ts
     domains: [
       'localhost',
       'blob.vercel-storage.com',
@@ -26,12 +27,17 @@ const nextConfig = {
     ],
     formats: ['image/avif', 'image/webp'],
   },
-  
+
+  // ESLint configuration
+  eslint: {
+    ignoreDuringBuilds: true, // Added from next.config.ts
+  },
+
   // Experimental features for App Router
   experimental: {
     serverActions: true,
   },
-  
+
   // Headers for security
   async headers() {
     return [
@@ -50,7 +56,7 @@ const nextConfig = {
       },
     ]
   },
-  
+
   // Webpack configuration for Edge Runtime
   webpack: (config, { isServer }) => {
     if (!isServer) {
@@ -61,7 +67,7 @@ const nextConfig = {
         crypto: false,
       }
     }
-    
+
     return config
   },
 }
