@@ -52,7 +52,7 @@ const deleteUploadSchema = z.object({
 // ================================
 
 function getRequestContext(request: NextRequest) {
-  const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
   const userAgent = request.headers.get('user-agent');
   const referer = request.headers.get('referer');
   const sessionId = request.headers.get('x-session-id');
@@ -69,7 +69,7 @@ function getRequestContext(request: NextRequest) {
 
 async function checkRateLimit(request: NextRequest, endpoint: 'upload' | 'api' = 'upload') {
   const context = getRequestContext(request);
-  const identifier = getClientIdentifier(context.ip, context.sessionId);
+  const identifier = getClientIdentifier(context.ip, context.sessionId || undefined);
   
   const limiter = rateLimiters[endpoint];
   const result = await limiter.checkLimit(identifier);
@@ -125,15 +125,11 @@ export const POST = withErrorHandler(async (request: NextRequest): Promise<NextR
   // Rate limiting
   const rateLimit = await checkRateLimit(request, 'upload');
   if (!rateLimit.allowed) {
-    return errorResponse(
-      'Too many upload requests',
-      429
-    ).then(response => {
-      Object.entries(rateLimit.headers).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return response;
+    const response = await errorResponse('Too many upload requests', 429);
+    Object.entries(rateLimit.headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
     });
+    return response;
   }
 
   const context = getRequestContext(request);
@@ -164,7 +160,7 @@ export const POST = withErrorHandler(async (request: NextRequest): Promise<NextR
       throw new ValidationError('Invalid upload parameters', validation.errors);
     }
 
-    const uploadData = validation.data;
+    const uploadData = validation.data!;
 
     // Validate session exists and is active
     await validateSession(uploadData.sessionId);
@@ -244,15 +240,11 @@ export const PUT = withErrorHandler(async (request: NextRequest): Promise<NextRe
   // Rate limiting (stricter for batch uploads)
   const rateLimit = await checkRateLimit(request, 'api');
   if (!rateLimit.allowed) {
-    return errorResponse(
-      'Too many requests',
-      429
-    ).then(response => {
-      Object.entries(rateLimit.headers).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return response;
+    const response = await errorResponse('Too many requests', 429);
+    Object.entries(rateLimit.headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
     });
+    return response;
   }
 
   const context = getRequestContext(request);
@@ -384,15 +376,11 @@ export const DELETE = withErrorHandler(async (request: NextRequest): Promise<Nex
   // Rate limiting
   const rateLimit = await checkRateLimit(request, 'api');
   if (!rateLimit.allowed) {
-    return errorResponse(
-      'Too many requests',
-      429
-    ).then(response => {
-      Object.entries(rateLimit.headers).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return response;
+    const response = await errorResponse('Too many requests', 429);
+    Object.entries(rateLimit.headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
     });
+    return response;
   }
 
   const context = getRequestContext(request);
@@ -408,7 +396,7 @@ export const DELETE = withErrorHandler(async (request: NextRequest): Promise<Nex
       throw new ValidationError('Invalid delete parameters', validation.errors);
     }
 
-    const { url: fileUrl, sessionId: validatedSessionId } = validation.data;
+    const { url: fileUrl, sessionId: validatedSessionId } = validation.data!;
 
     // If session ID provided, validate it and remove from session tracking
     if (validatedSessionId) {

@@ -19,7 +19,7 @@ export const runtime = 'edge';
 
 const activitySchema = z.object({
   action: z.string().min(1).max(100),
-  metadata: z.record(z.any()).optional()
+  metadata: z.record(z.string(), z.any()).optional()
 });
 
 // ================================
@@ -28,32 +28,17 @@ const activitySchema = z.object({
 
 export const POST = withErrorHandler(async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> => {
-  const sessionId = params.id;
+  const resolvedParams = await params;
+  const sessionId = resolvedParams.id;
   
   // Light rate limiting for activity tracking (more permissive)
-  const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
   const identifier = getClientIdentifier(ip, sessionId);
   
-  // Use a separate, more permissive rate limiter for activity tracking
-  const activityLimiter = {
-    checkLimit: async (id: string) => {
-      const key = `ratelimit:activity:${id}`;
-      const count = await rateLimiters.api.redis.incr(key);
-      if (count === 1) {
-        await rateLimiters.api.redis.expire(key, 60); // 1 minute window
-      }
-      return {
-        allowed: count <= 60, // 60 activities per minute
-        info: {
-          limit: 60,
-          remaining: Math.max(0, 60 - count),
-          reset: Date.now() + 60000
-        }
-      };
-    }
-  };
+  // Use the standard rate limiter but with permissive checking
+  const activityLimiter = rateLimiters.api;
   
   const rateLimit = await activityLimiter.checkLimit(identifier);
   if (!rateLimit.allowed) {
@@ -69,7 +54,7 @@ export const POST = withErrorHandler(async (
     throw new ValidationError('Invalid activity data', validation.errors);
   }
 
-  const { action, metadata } = validation.data;
+  const { action, metadata } = validation.data!;
 
   try {
     // Get session manager
@@ -136,12 +121,13 @@ export const POST = withErrorHandler(async (
 
 export const GET = withErrorHandler(async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> => {
-  const sessionId = params.id;
+  const resolvedParams = await params;
+  const sessionId = resolvedParams.id;
   
   // Standard rate limiting for reads
-  const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
   const identifier = getClientIdentifier(ip, sessionId);
   const rateLimit = await rateLimiters.api.checkLimit(identifier);
   

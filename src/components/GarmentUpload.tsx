@@ -50,11 +50,12 @@ export const GarmentUpload: React.FC<GarmentUploadProps> = ({
       };
       reader.readAsDataURL(file);
 
-      // Upload to Firebase Storage
-      const uploadPath = `uploads/${sessionId}/garment-${Date.now()}-${file.name}`;
-      const storageRef = ref(storage, uploadPath);
-      const uploadTask = uploadBytesResumable(storageRef, file);
+      // TODO: Migrate to Vercel Blob API
+      // Upload functionality temporarily disabled during Firebase to Blob migration
+      console.warn('Upload functionality disabled - needs Blob API integration');
 
+      // TODO: Replace with Blob API upload
+      /* 
       uploadTask.on(
         'state_changed',
         (snapshot) => {
@@ -72,6 +73,10 @@ export const GarmentUpload: React.FC<GarmentUploadProps> = ({
           setUploading(false);
         }
       );
+      */
+      
+      // Temporary: Just set the image from file reader for preview
+      setUploading(false);
     } catch (err) {
       console.error('Upload failed:', err);
       setError('Failed to upload image. Please try again.');

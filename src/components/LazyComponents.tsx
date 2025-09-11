@@ -77,7 +77,7 @@ export function withLazyLoading<T extends Record<string, any>>(
       <Suspense
         fallback={
           fallback ? (
-            <fallback />
+            React.createElement(fallback, {})
           ) : (
             <div className="flex items-center justify-center min-h-[200px]" role="status">
               <div className="text-center">
@@ -88,7 +88,7 @@ export function withLazyLoading<T extends Record<string, any>>(
           )
         }
       >
-        <WrappedComponent {...props} ref={ref} />
+        <WrappedComponent {...props as T} ref={ref} />
       </Suspense>
     );
   });

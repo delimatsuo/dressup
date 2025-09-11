@@ -101,7 +101,7 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
 
   return (
     <div className="space-y-6">
-      <Instructions>
+      <Instructions id="multi-photo-instructions">
         Upload {category === 'user' ? 'your photos' : 'garment photos'} in three views: front, side, and optionally back.
       </Instructions>
       
@@ -171,9 +171,10 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
         ))}
       </div>
       
-      <StatusAnnouncement>
-        {Object.values(photos).filter(p => p.url).length} of 3 photos uploaded
-      </StatusAnnouncement>
+      <StatusAnnouncement 
+        status={`${Object.values(photos).filter(p => p.url).length} of 3 photos uploaded`}
+        type="info"
+      />
     </div>
   );
 }

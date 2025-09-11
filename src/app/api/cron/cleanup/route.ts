@@ -20,7 +20,8 @@ const CRON_SECRET = process.env.CRON_SECRET;
 export async function GET(request: NextRequest) {
   try {
     // Verify the request is from Vercel Cron
-    const authHeader = headers().get('authorization');
+    const headersList = await headers();
+    const authHeader = headersList.get('authorization');
     
     if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
       console.error('Unauthorized cron request');
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Also check for Vercel's cron header
-    const cronHeader = headers().get('x-vercel-cron');
+    const cronHeader = headersList.get('x-vercel-cron');
     if (!cronHeader && process.env.NODE_ENV === 'production') {
       console.error('Missing x-vercel-cron header in production');
       return NextResponse.json(
@@ -187,7 +188,8 @@ async function storeCleanupMetrics(metrics: {
 export async function POST(request: NextRequest) {
   try {
     // Check for API key or admin authentication
-    const authHeader = headers().get('authorization');
+    const headersList = await headers();
+    const authHeader = headersList.get('authorization');
     const apiKey = process.env.ADMIN_API_KEY;
     
     if (apiKey && authHeader !== `Bearer ${apiKey}`) {
@@ -258,10 +260,10 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET /api/cron/cleanup/metrics
- * Get cleanup metrics
+ * Helper function to get cleanup metrics
+ * (Not an API route export)
  */
-export async function getMetrics() {
+async function getMetrics() {
   try {
     const latest = await kv.get('metrics:cleanup:latest');
     const aggregate = await kv.get('metrics:cleanup:aggregate');

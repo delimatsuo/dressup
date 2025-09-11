@@ -21,7 +21,7 @@ export const runtime = 'edge';
 const updateSessionSchema = z.object({
   userPhotos: z.array(z.string().url()).optional(),
   garmentPhotos: z.array(z.string().url()).optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   status: z.enum(['active', 'expired', 'deleted', 'cleanup']).optional()
 });
 
@@ -30,7 +30,7 @@ const updateSessionSchema = z.object({
 // ================================
 
 function getRequestContext(request: NextRequest) {
-  const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
   const userAgent = request.headers.get('user-agent');
   const referer = request.headers.get('referer');
   const sessionId = request.headers.get('x-session-id');
@@ -47,7 +47,7 @@ function getRequestContext(request: NextRequest) {
 
 async function checkRateLimit(request: NextRequest, endpoint: 'session' | 'api' = 'api') {
   const context = getRequestContext(request);
-  const identifier = getClientIdentifier(context.ip, context.sessionId);
+  const identifier = getClientIdentifier(context.ip, context.sessionId || undefined);
   
   const limiter = rateLimiters[endpoint];
   const result = await limiter.checkLimit(identifier);
@@ -73,23 +73,20 @@ function validateSessionId(sessionId: string) {
 
 export const GET = withErrorHandler(async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> => {
   // Rate limiting
   const rateLimit = await checkRateLimit(request);
   if (!rateLimit.allowed) {
-    return errorResponse(
-      'Too many requests',
-      429
-    ).then(response => {
-      Object.entries(rateLimit.headers).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return response;
+    const response = await errorResponse('Too many requests', 429);
+    Object.entries(rateLimit.headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
     });
+    return response;
   }
 
-  const { id } = params;
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
   validateSessionId(id);
   
   const context = getRequestContext(request);
@@ -143,23 +140,20 @@ export const GET = withErrorHandler(async (
 
 export const PUT = withErrorHandler(async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> => {
   // Rate limiting
   const rateLimit = await checkRateLimit(request);
   if (!rateLimit.allowed) {
-    return errorResponse(
-      'Too many requests',
-      429
-    ).then(response => {
-      Object.entries(rateLimit.headers).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return response;
+    const response = await errorResponse('Too many requests', 429);
+    Object.entries(rateLimit.headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
     });
+    return response;
   }
 
-  const { id } = params;
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
   validateSessionId(id);
   
   // Parse and validate request body
@@ -184,7 +178,7 @@ export const PUT = withErrorHandler(async (
     const enhancedUpdates = {
       ...updates,
       metadata: {
-        ...existingSession.metadata,
+        ...(existingSession as any).metadata,
         ...updates.metadata,
         lastUpdatedBy: {
           ip: context.ip,
@@ -229,23 +223,20 @@ export const PUT = withErrorHandler(async (
 
 export const PATCH = withErrorHandler(async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> => {
   // Rate limiting
   const rateLimit = await checkRateLimit(request);
   if (!rateLimit.allowed) {
-    return errorResponse(
-      'Too many requests',
-      429
-    ).then(response => {
-      Object.entries(rateLimit.headers).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return response;
+    const response = await errorResponse('Too many requests', 429);
+    Object.entries(rateLimit.headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
     });
+    return response;
   }
 
-  const { id } = params;
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
   validateSessionId(id);
   
   // Parse and validate request body (allow partial updates)
@@ -256,7 +247,7 @@ export const PATCH = withErrorHandler(async (
     throw new ValidationError('Invalid request data', validation.errors);
   }
 
-  const updates = validation.data;
+  const updates = validation.data!;
   const context = getRequestContext(request);
 
   try {
@@ -271,7 +262,7 @@ export const PATCH = withErrorHandler(async (
       ...updates,
       ...(updates.metadata && {
         metadata: {
-          ...existingSession.metadata,
+          ...(existingSession as any).metadata,
           ...updates.metadata,
           lastUpdatedBy: {
             ip: context.ip,
@@ -317,23 +308,20 @@ export const PATCH = withErrorHandler(async (
 
 export const DELETE = withErrorHandler(async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> => {
   // Rate limiting
   const rateLimit = await checkRateLimit(request);
   if (!rateLimit.allowed) {
-    return errorResponse(
-      'Too many requests',
-      429
-    ).then(response => {
-      Object.entries(rateLimit.headers).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return response;
+    const response = await errorResponse('Too many requests', 429);
+    Object.entries(rateLimit.headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
     });
+    return response;
   }
 
-  const { id } = params;
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
   validateSessionId(id);
   
   const context = getRequestContext(request);

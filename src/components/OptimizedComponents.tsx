@@ -322,7 +322,7 @@ export const DebouncedSearch = memo<{
 }>(({ onSearch, placeholder = 'Search...', debounceMs = 300, className }) => {
   const { renderStats } = useComponentPerformance('DebouncedSearch');
   const [query, setQuery] = useState('');
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const debouncedSearch = useCallback(
     (searchQuery: string) => {

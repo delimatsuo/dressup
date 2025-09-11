@@ -28,7 +28,7 @@ const STARTUP_TIME = Date.now();
 // ================================
 
 function getRequestContext(request: NextRequest) {
-  const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
   const userAgent = request.headers.get('user-agent');
   
   return {
@@ -320,15 +320,11 @@ export const GET = withErrorHandler(async (request: NextRequest): Promise<NextRe
   // Rate limiting (more lenient for health checks)
   const rateLimit = await checkRateLimit(request);
   if (!rateLimit.allowed) {
-    return errorResponse(
-      'Too many requests',
-      429
-    ).then(response => {
-      Object.entries(rateLimit.headers).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return response;
+    const response = await errorResponse('Too many requests', 429);
+    Object.entries(rateLimit.headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
     });
+    return response;
   }
 
   const context = getRequestContext(request);
@@ -419,15 +415,11 @@ export const POST = withErrorHandler(async (request: NextRequest): Promise<NextR
   // Rate limiting
   const rateLimit = await checkRateLimit(request);
   if (!rateLimit.allowed) {
-    return errorResponse(
-      'Too many requests',
-      429
-    ).then(response => {
-      Object.entries(rateLimit.headers).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return response;
+    const response = await errorResponse('Too many requests', 429);
+    Object.entries(rateLimit.headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
     });
+    return response;
   }
 
   const context = getRequestContext(request);

@@ -1,6 +1,6 @@
 import { kvGet, kvSet, kvDel } from './kv';
 
-export type SessionStatus = 'active' | 'expired' | 'deleted';
+export type SessionStatus = 'active' | 'expired' | 'deleted' | 'cleanup';
 
 export interface SessionData {
   sessionId: string;

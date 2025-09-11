@@ -46,7 +46,14 @@ const processTryOnSchema = z.object({
     quality: z.number().min(1).max(100).optional().default(85),
     backgroundRemoval: z.boolean().optional().default(false),
     styleTransfer: z.boolean().optional().default(false)
-  }).optional().default({})
+  }).optional().default({
+    generateMultiplePoses: false,
+    enhanceBackground: false,
+    outputFormat: 'jpg',
+    quality: 85,
+    backgroundRemoval: false,
+    styleTransfer: false
+  })
 });
 
 const statusQuerySchema = z.object({
@@ -64,7 +71,7 @@ const batchStatusSchema = z.object({
 // ================================
 
 function getRequestContext(request: NextRequest) {
-  const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
   const userAgent = request.headers.get('user-agent');
   const referer = request.headers.get('referer');
   const sessionId = request.headers.get('x-session-id');
@@ -81,7 +88,7 @@ function getRequestContext(request: NextRequest) {
 
 async function checkRateLimit(request: NextRequest, endpoint: 'tryOn' | 'api' = 'tryOn') {
   const context = getRequestContext(request);
-  const identifier = getClientIdentifier(context.ip, context.sessionId);
+  const identifier = getClientIdentifier(context.ip, context.sessionId || undefined);
   
   const limiter = rateLimiters[endpoint];
   const result = await limiter.checkLimit(identifier);
@@ -153,15 +160,11 @@ export const POST = withErrorHandler(async (request: NextRequest): Promise<NextR
   // Rate limiting
   const rateLimit = await checkRateLimit(request, 'tryOn');
   if (!rateLimit.allowed) {
-    return errorResponse(
-      'Too many try-on requests',
-      429
-    ).then(response => {
-      Object.entries(rateLimit.headers).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return response;
+    const response = await errorResponse('Too many try-on requests', 429);
+    Object.entries(rateLimit.headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
     });
+    return response;
   }
 
   const context = getRequestContext(request);
@@ -221,10 +224,10 @@ export const POST = withErrorHandler(async (request: NextRequest): Promise<NextR
           results: Array.isArray(results) ? results : [
             {
               type: 'standing',
-              imageUrl: results.imageUrl || `https://placeholder.com/400x600?text=TryOn+Result`,
-              confidence: results.confidence || 0.95,
-              processingTime: Date.now() - Date.parse(context.timestamp),
-              metadata: results.metadata || {}
+              imageUrl: results.results[0]?.imageUrl || `https://placeholder.com/400x600?text=TryOn+Result`,
+              confidence: results.results[0]?.confidence || 0.95,
+              processingTime: results.processingTime || Date.now() - Date.parse(context.timestamp),
+              metadata: {}
             }
           ]
         };
@@ -326,15 +329,11 @@ export const GET = withErrorHandler(async (request: NextRequest): Promise<NextRe
   // Rate limiting
   const rateLimit = await checkRateLimit(request, 'api');
   if (!rateLimit.allowed) {
-    return errorResponse(
-      'Too many requests',
-      429
-    ).then(response => {
-      Object.entries(rateLimit.headers).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return response;
+    const response = await errorResponse('Too many requests', 429);
+    Object.entries(rateLimit.headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
     });
+    return response;
   }
 
   const context = getRequestContext(request);
@@ -350,7 +349,7 @@ export const GET = withErrorHandler(async (request: NextRequest): Promise<NextRe
       throw new ValidationError('Invalid query parameters', validation.errors);
     }
 
-    const { jobId, includeResults } = validation.data;
+    const { jobId, includeResults } = validation.data!;
 
     // Get job data
     const job = await getJobData(jobId);
@@ -402,15 +401,11 @@ export const PUT = withErrorHandler(async (request: NextRequest): Promise<NextRe
   // Rate limiting
   const rateLimit = await checkRateLimit(request, 'api');
   if (!rateLimit.allowed) {
-    return errorResponse(
-      'Too many requests',
-      429
-    ).then(response => {
-      Object.entries(rateLimit.headers).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return response;
+    const response = await errorResponse('Too many requests', 429);
+    Object.entries(rateLimit.headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
     });
+    return response;
   }
 
   const context = getRequestContext(request);
@@ -423,7 +418,7 @@ export const PUT = withErrorHandler(async (request: NextRequest): Promise<NextRe
       throw new ValidationError('Invalid batch status request', validation.errors);
     }
 
-    const { jobIds, includeResults } = validation.data;
+    const { jobIds, includeResults } = validation.data!;
 
     // Get all job data
     const jobResults = await Promise.allSettled(
@@ -486,15 +481,11 @@ export const DELETE = withErrorHandler(async (request: NextRequest): Promise<Nex
   // Rate limiting
   const rateLimit = await checkRateLimit(request, 'api');
   if (!rateLimit.allowed) {
-    return errorResponse(
-      'Too many requests',
-      429
-    ).then(response => {
-      Object.entries(rateLimit.headers).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return response;
+    const response = await errorResponse('Too many requests', 429);
+    Object.entries(rateLimit.headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
     });
+    return response;
   }
 
   const context = getRequestContext(request);
