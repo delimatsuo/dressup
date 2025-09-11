@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import { Camera, Image as ImageIcon, X, Check, RotateCw } from 'lucide-react';
 import { useSession } from '../hooks/useSession';
 import { ProgressAnnouncement, StatusAnnouncement, Instructions } from './ScreenReaderOnly';
+import { processImageForUpload } from '../utils/imageConversion';
 
 interface MobilePhotoUploadProps {
   views: string[];
@@ -21,6 +22,7 @@ export function MobilePhotoUpload({
   const [photos, setPhotos] = useState<Record<string, string>>({});
   const [localPreviews, setLocalPreviews] = useState<Record<string, string>>({});
   const [uploadingViews, setUploadingViews] = useState<Record<string, boolean>>({});
+  const [error, setError] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState(0);
   const fileInputRefs = useRef<Record<string, HTMLInputElement>>({});
   const { session } = useSession();
@@ -33,17 +35,27 @@ export function MobilePhotoUpload({
     // Set uploading state
     setUploadingViews(prev => ({ ...prev, [view]: true }));
 
-    // Create local preview immediately
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setLocalPreviews(prev => ({
-        ...prev,
-        [view]: reader.result as string
-      }));
-    };
-    reader.readAsDataURL(file);
-
     try {
+      // Process image (converts HEIC to JPEG if needed)
+      const processedFile = await processImageForUpload(file);
+      
+      if (processedFile.size > 50 * 1024 * 1024) {
+        console.error('File too large:', processedFile.size);
+        setUploadingViews(prev => ({ ...prev, [view]: false }));
+        return;
+      }
+
+      // Create local preview with processed file
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLocalPreviews(prev => ({
+          ...prev,
+          [view]: reader.result as string
+        }));
+      };
+      reader.readAsDataURL(processedFile);
+
+      // Upload the processed file
       const formData = new FormData();
       formData.append('file', file);
       formData.append('sessionId', sessionId);

@@ -8,6 +8,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { Upload, Camera, Sparkles, Check, X, ArrowRight, RefreshCw, Download } from 'lucide-react';
 import Image from 'next/image';
+import { processImageForUpload } from '../utils/imageConversion';
 
 // ================================
 // Types
@@ -50,31 +51,34 @@ export function SimplifiedUploadFlow({
   // File Handling
   // ================================
 
-  const handleFile = useCallback((file: File, type: 'user' | 'garment') => {
+  const handleFile = useCallback(async (file: File, type: 'user' | 'garment') => {
     setError(null);
     
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file');
-      return;
-    }
+    try {
+      // Process image (converts HEIC to JPEG if needed)
+      const processedFile = await processImageForUpload(file);
+      
+      // Validate file size (max 50MB)
+      if (processedFile.size > 50 * 1024 * 1024) {
+        setError('Image must be less than 50MB');
+        return;
+      }
 
-    // Validate file size (max 50MB)
-    if (file.size > 50 * 1024 * 1024) {
-      setError('Image must be less than 50MB');
-      return;
+      // Read and set image for display
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        setImages(prev => ({
+          ...prev,
+          [type]: dataUrl
+        }));
+      };
+      reader.readAsDataURL(processedFile);
+      
+    } catch (error) {
+      console.error('Error processing image:', error);
+      setError(error instanceof Error ? error.message : 'Failed to process image');
     }
-
-    // Read and set image
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      setImages(prev => ({
-        ...prev,
-        [type]: dataUrl
-      }));
-    };
-    reader.readAsDataURL(file);
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent, type: 'user' | 'garment') => {

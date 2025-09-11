@@ -33,13 +33,11 @@ export async function convertHeicToJpeg(file: File): Promise<File> {
       { type: 'image/jpeg' }
     );
     
-    console.log('HEIC conversion successful');
+    console.log('HEIC conversion successful:', file.name, '->', convertedFile.name);
     return convertedFile;
   } catch (error) {
     console.error('HEIC conversion failed:', error);
-    // If conversion fails, return original file
-    // The user will see an error but can try with a different format
-    return file;
+    throw new Error('Failed to convert HEIC image. Please try uploading a JPEG or PNG instead.');
   }
 }
 
