@@ -1,8 +1,16 @@
 # DressUp - AI-Powered Virtual Outfit Try-On
 
-A Next.js application that uses AI (Gemini) to allow users to virtually try on different outfits through AI-powered analysis and recommendations.
+A simplified, privacy-focused Next.js application that uses AI (Gemini) to allow users to virtually try on different outfits. Features a streamlined single-screen interface designed for optimal user experience.
 
 🔗 **Repository**: [https://github.com/delimatsuo/dressup](https://github.com/delimatsuo/dressup)
+
+## ✨ Key Features
+
+- **🎯 Simplified UI**: Single-screen workflow eliminates complex navigation
+- **📱 Mobile Optimized**: Dedicated mobile interface with camera integration
+- **🔒 Privacy First**: 30-minute auto-cleanup, no permanent data storage
+- **⚡ Fast Processing**: 15-30 second AI generation with real-time feedback
+- **🎨 Visual Clarity**: Color-coded sections and intuitive drag-and-drop uploads
 
 ## Tech Stack
 
@@ -24,23 +32,24 @@ dressup/
 │   │   ├── api/            # API routes
 │   │   │   ├── try-on/     # AI try-on endpoint with Gemini
 │   │   │   ├── upload/     # Image upload with Blob storage
-│   │   │   ├── session/    # Session management with KV
-│   │   │   ├── feedback/   # User feedback collection
+│   │   │   ├── session/    # Enhanced session management with KV
 │   │   │   └── cron/       # Automatic cleanup jobs
-│   │   └── page.tsx        # Main application page
+│   │   ├── simple/         # Alternative clean interface
+│   │   └── page.tsx        # Simplified main application
 │   ├── components/          # React components
-│   │   ├── PhotoUploadInterface.tsx  # Multi-step photo upload
-│   │   ├── MobilePhotoUpload.tsx     # Mobile-optimized upload
-│   │   ├── GarmentGallery.tsx        # Outfit selection
-│   │   ├── ResultsDisplay.tsx        # Results viewer
-│   │   └── FeedbackSection.tsx       # User feedback
+│   │   ├── SimplifiedUploadFlow.tsx   # ✨ NEW: Single-screen upload
+│   │   ├── MobileOptimizedFlow.tsx    # ✨ NEW: Mobile-focused interface
+│   │   ├── PhotoUploadInterface.tsx   # Legacy multi-step upload
+│   │   ├── MobilePhotoUpload.tsx      # Mobile upload component
+│   │   └── ResultsDisplay.tsx         # Results viewer
 │   ├── lib/
 │   │   ├── gemini.ts       # Gemini 2.5 Flash Image Preview
 │   │   ├── blob-storage.ts # Vercel Blob with auto-cleanup
-│   │   ├── session.ts      # Session management with KV
+│   │   ├── session-manager.ts # ✨ Enhanced session management
 │   │   ├── rate-limit.ts   # Rate limiting implementation
 │   │   └── tryon-processing.ts # Try-on processing logic
 │   └── hooks/              # Custom React hooks
+│       └── useEnhancedSession.ts # ✨ Enhanced session hook
 ├── tests/                   # Comprehensive test suite
 ├── vercel.json             # Vercel configuration & cron jobs
 ├── jest.config.ui.js       # UI test configuration
@@ -48,41 +57,41 @@ dressup/
 └── .taskmaster/            # Task management and progress tracking
 ```
 
-## Setup Instructions
+## 🚀 Quick Start
 
 ### Prerequisites
 
 - Node.js 18+
 - npm or yarn
-- Firebase CLI (`npm install -g firebase-tools`)
-- GCP account with billing enabled
+- Vercel account (for deployment)
 
-### Installation
+### Local Development
 
-1. Clone the repository:
+1. **Clone and Install**:
 ```bash
 git clone [repository-url]
 cd dressup
-```
-
-2. Install dependencies:
-```bash
 npm install
 ```
 
-3. Configure Firebase:
+2. **Environment Configuration**:
 ```bash
-# Copy the example env file
+# Copy environment template
 cp .env.local.example .env.local
 
-# Add your Firebase credentials to .env.local
+# Add your API keys to .env.local:
+# GOOGLE_AI_API_KEY=your_gemini_api_key
+# BLOB_READ_WRITE_TOKEN=your_vercel_blob_token
+# KV_URL=your_vercel_kv_url
+# KV_REST_API_URL=your_vercel_kv_rest_url
+# KV_REST_API_TOKEN=your_vercel_kv_token
+# KV_REST_API_READ_ONLY_TOKEN=your_vercel_kv_readonly_token
 ```
 
-4. Initialize Firebase (when credentials are available):
+3. **Start Development**:
 ```bash
-firebase init
-# Select: Functions, Hosting, Storage
-# Choose existing project or create new
+npm run dev
+# Open http://localhost:3000
 ```
 
 ## Development

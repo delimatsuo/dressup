@@ -8,7 +8,7 @@ import { cleanupExpiredBlobs } from '@/lib/blob-storage';
 import { kv } from '@vercel/kv';
 import { headers } from 'next/headers';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 // Vercel Cron Job secret for authentication
 const CRON_SECRET = process.env.CRON_SECRET;

@@ -545,4 +545,4 @@ export function validateSecureUrl(url: string): boolean {
 // Export utilities
 // ================================
 
-export { BLOB_EXPIRY_MS, SUPPORTED_FORMATS };
+export { BLOB_EXPIRY_MS };

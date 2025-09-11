@@ -1,15 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
 
   // Image optimization configuration
   images: {
-    unoptimized: true, // Added from next.config.ts
+    unoptimized: true,
     domains: [
       'localhost',
       'blob.vercel-storage.com',
-      // Add your production domain here
     ],
     remotePatterns: [
       {
@@ -30,12 +28,14 @@ const nextConfig = {
 
   // ESLint configuration
   eslint: {
-    ignoreDuringBuilds: true, // Added from next.config.ts
+    ignoreDuringBuilds: true,
   },
 
   // Experimental features for App Router
   experimental: {
-    serverActions: true,
+    serverActions: {
+      allowedOrigins: ['localhost:3000', '*.vercel.app']
+    },
   },
 
   // Headers for security

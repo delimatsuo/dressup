@@ -1,15 +1,16 @@
+/**
+ * Simplified DressUp AI Application
+ * Clean, user-friendly interface focused on ease of use
+ */
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { SimplifiedUploadFlow } from '../components/SimplifiedUploadFlow';
-import { WelcomeConsentModal } from '../components/WelcomeConsentModal';
-import { useConsent } from '../hooks/useConsent';
-import { useEnhancedSession } from '../hooks/useEnhancedSession';
+import { SimplifiedUploadFlow } from '@/components/SimplifiedUploadFlow';
+import { useEnhancedSession } from '@/hooks/useEnhancedSession';
 import { Sparkles, Info, ChevronDown, ChevronUp } from 'lucide-react';
 
-export default function HomePage() {
-  const { hasConsented, isLoading: consentLoading, shouldShowConsentModal, grantConsent } = useConsent();
-  
+export default function SimplePage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState<{ imageUrl: string; description?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +31,7 @@ export default function HomePage() {
   // Track page view
   useEffect(() => {
     if (session && trackActivity) {
-      trackActivity('page_view', { page: 'home' });
+      trackActivity('page_view', { page: 'simple' });
     }
   }, [session, trackActivity]);
 
@@ -118,49 +119,6 @@ export default function HomePage() {
       setIsProcessing(false);
     }
   };
-
-  const handleConsent = () => {
-    grantConsent();
-  };
-
-  // Show loading spinner while checking consent
-  if (consentLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div 
-            className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" 
-            role="status" 
-            aria-label="Loading"
-          ></div>
-          <p className="text-gray-700">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show consent modal if user hasn't consented
-  if (!hasConsented && typeof window !== 'undefined') {
-    return (
-      <>
-        <WelcomeConsentModal
-          isOpen={shouldShowConsentModal}
-          onConsent={handleConsent}
-          onClose={() => {
-            // For now, just keep the modal open since consent is required
-          }}
-        />
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-          <div className="text-center">
-            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-              DressUp AI
-            </h1>
-            <p className="text-lg text-gray-800 font-medium">Please review and accept our terms to continue.</p>
-          </div>
-        </div>
-      </>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
