@@ -326,7 +326,7 @@ export const API_VERSION = 'v1';
 export const DEFAULT_SESSION_TTL_MINUTES = 30;
 export const MAX_SESSION_TTL_MINUTES = 240; // 4 hours
 export const DEFAULT_RATE_LIMIT_PER_MINUTE = 100;
-export const DEFAULT_FILE_MAX_SIZE = 4 * 1024 * 1024; // 4MB
+export const DEFAULT_FILE_MAX_SIZE = 50 * 1024 * 1024; // 50MB - supports modern phone cameras
 
 export const ALLOWED_IMAGE_TYPES = [
   'image/jpeg',

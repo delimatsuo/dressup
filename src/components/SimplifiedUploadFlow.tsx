@@ -59,9 +59,9 @@ export function SimplifiedUploadFlow({
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image must be less than 5MB');
+    // Validate file size (max 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      setError('Image must be less than 50MB');
       return;
     }
 
@@ -254,7 +254,7 @@ export function SimplifiedUploadFlow({
                     Click to upload or drag & drop
                   </p>
                   <p className="text-xs text-gray-500">
-                    JPG, PNG up to 5MB
+                    JPG, PNG, WebP, HEIC up to 50MB
                   </p>
                 </div>
               </div>
@@ -315,7 +315,7 @@ export function SimplifiedUploadFlow({
                     Click to upload or drag & drop
                   </p>
                   <p className="text-xs text-gray-500">
-                    JPG, PNG up to 5MB
+                    JPG, PNG, WebP, HEIC up to 50MB
                   </p>
                 </div>
               </div>

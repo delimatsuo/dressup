@@ -174,8 +174,8 @@ export class PerformanceMonitor {
 
   private sendToAnalytics(metric: any): void {
     // This would integrate with analytics services like Google Analytics 4
-    if (typeof gtag !== 'undefined') {
-      gtag('event', metric.name, {
+    if (typeof (window as any).gtag !== 'undefined') {
+      (window as any).gtag('event', metric.name, {
         event_category: 'Web Vitals',
         value: Math.round(metric.name === 'CLS' ? metric.value * 1000 : metric.value),
         custom_parameter_1: metric.id,
@@ -335,7 +335,7 @@ export class MemoryMonitor {
   }
 
   private recordMemoryUsage(): void {
-    if (typeof performance === 'undefined' || !performance.memory) return;
+    if (typeof performance === 'undefined' || !(performance as any).memory) return;
 
     const memory = (performance as any).memory;
     this.measurements.push({

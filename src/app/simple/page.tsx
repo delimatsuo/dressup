@@ -225,7 +225,7 @@ export default function SimplePage() {
               <div className="bg-white rounded-lg p-6 shadow-sm">
                 <h4 className="font-semibold text-gray-900 mb-2">What image formats are supported?</h4>
                 <p className="text-gray-600 text-sm">
-                  We support JPEG, PNG, WebP, and HEIC formats. Images should be less than 5MB in size.
+                  We support JPEG, PNG, WebP, HEIC, and HEIF formats. Files up to 50MB are supported.
                 </p>
               </div>
               

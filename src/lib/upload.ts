@@ -1,10 +1,11 @@
-export const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
+export const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB - supports modern phone cameras
 export const ALLOWED_TYPES = [
   'image/jpeg',
   'image/jpg',
   'image/png',
   'image/webp',
   'image/heic',
+  'image/heif',
 ];
 
 export type UploadCategory = 'user' | 'garment' | string;
@@ -44,7 +45,7 @@ export function validateUpload(input: UploadInput): ValidationResult {
     return { ok: false, error: 'Invalid file type. Allowed: JPEG, PNG, WebP, HEIC' };
   }
   if (input.size > MAX_FILE_SIZE) {
-    return { ok: false, error: 'File size exceeds 4MB limit' };
+    return { ok: false, error: 'File size exceeds 50MB limit' };
   }
   const session = sanitize(input.sessionId);
   const category = sanitize(input.category);

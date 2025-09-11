@@ -33,9 +33,9 @@ export const GarmentUpload: React.FC<GarmentUploadProps> = ({
       return;
     }
 
-    // Validate file size (10MB max)
-    if (file.size > 10 * 1024 * 1024) {
-      setError('Image size must be less than 10MB');
+    // Validate file size (50MB max)
+    if (file.size > 50 * 1024 * 1024) {
+      setError('Image size must be less than 50MB');
       return;
     }
 
@@ -202,7 +202,7 @@ export const GarmentUpload: React.FC<GarmentUploadProps> = ({
                   Screenshots or product photos
                 </span>
                 <span className="text-xs text-gray-400 mt-4 px-4 text-center">
-                  Supports JPG, PNG, HEIC • Max 10MB
+                  Supports JPG, PNG, WebP, HEIC • Max 50MB
                 </span>
               </>
             )}

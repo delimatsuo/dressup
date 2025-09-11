@@ -37,8 +37,8 @@ export const tryOnRequestSchema = z.object({
 
 // File validation
 export const validateFile = (file: File) => {
-  const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
-  const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic'];
+  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB - supports modern phone cameras
+  const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
   
   const errors: string[] = [];
   
@@ -47,7 +47,7 @@ export const validateFile = (file: File) => {
   }
   
   if (file.size > MAX_FILE_SIZE) {
-    errors.push(`File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`);
+    errors.push(`File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit. Please use a smaller image or compress it.`);
   }
   
   if (!ALLOWED_TYPES.includes(file.type)) {

@@ -316,7 +316,7 @@ export function enableBackgroundSync(tag: string = 'background-sync'): Promise<v
     }
 
     navigator.serviceWorker.ready.then(registration => {
-      return registration.sync.register(tag);
+      return (registration as any).sync?.register(tag);
     }).then(() => {
       console.log('Background sync registered');
       resolve();

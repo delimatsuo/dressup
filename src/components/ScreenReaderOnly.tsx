@@ -218,7 +218,7 @@ export function GalleryInstructions() {
 export function PhotoUploadInstructions() {
   return (
     <Instructions id="photo-upload-instructions" title="Photo Upload Instructions">
-      <p>Upload photos by clicking the upload areas or dragging and dropping files. Supported formats: JPG, PNG, HEIC, WebP. Maximum file size: 10MB.</p>
+      <p>Upload photos by clicking the upload areas or dragging and dropping files. Supported formats: JPG, PNG, HEIC, HEIF, WebP. Maximum file size: 50MB.</p>
       <p>For best results, use good lighting and a plain background. Ensure the entire subject is visible in the frame.</p>
     </Instructions>
   );

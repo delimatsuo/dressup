@@ -52,9 +52,9 @@
 - **No User Accounts**: Anonymous usage, session-based
 
 ### 3.3 Image Quality Standards
-- **Input Photos**: Minimum 512x512px, maximum 4MB
+- **Input Photos**: Minimum 512x512px, maximum 50MB (supports modern phone cameras)
 - **Output Quality**: High-resolution results (1024x1024 or higher)
-- **Format Support**: JPEG, PNG, WebP, HEIC
+- **Format Support**: JPEG, PNG, WebP, HEIC, HEIF
 - **Background Handling**: Automatic background enhancement
 
 ## 4. Recommended Tech Stack (Fresh Start)
