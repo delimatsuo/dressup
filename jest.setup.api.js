@@ -1,5 +1,19 @@
-// jest.setup.js
-// Minimal mocks for Request and Response to satisfy Next.js API route testing
+// jest.setup.api.js
+// Minimal mocks for Next.js API routes in a Node.js environment
+
+// Mock the global fetch function if it's not already defined (Node.js 18+ has it)
+if (typeof global.fetch === 'undefined') {
+  global.fetch = jest.fn(() =>
+    Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({}),
+      text: () => Promise.resolve(''),
+    })
+  );
+}
+
+// Mock Request and Response objects for Next.js API routes
+// These are simplified mocks to allow NextRequest/NextResponse to be constructed
 if (typeof global.Request === 'undefined') {
   global.Request = class MockRequest {
     constructor(input, init) {
@@ -33,39 +47,33 @@ if (typeof global.Response === 'undefined') {
   };
 }
 
-// Polyfill for web-streams-polyfill
-import { TransformStream } from 'web-streams-polyfill/ponyfill';
-global.TransformStream = TransformStream;
+// Mock TextEncoder and TextDecoder if not available (Node.js 11+ has them)
+if (typeof global.TextEncoder === 'undefined') {
+  const { TextEncoder, TextDecoder } = require('util');
+  global.TextEncoder = TextEncoder;
+  global.TextDecoder = TextDecoder;
+}
 
-// Mock TextEncoder and TextDecoder
-import { TextEncoder, TextDecoder } from 'util';
-global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder;
+// Mock FormData if not available
+if (typeof global.FormData === 'undefined') {
+  global.FormData = class MockFormData {
+    constructor() {
+      this._data = {};
+    }
+    append(name, value) {
+      this._data[name] = value;
+    }
+    // Add other FormData methods if needed by your tests
+  };
+}
 
-// Mock window.crypto
-const mockEncryptedData = new TextEncoder().encode(JSON.stringify([]));
-
-Object.defineProperty(global, 'crypto', {
-  value: {
-    subtle: {
-      generateKey: jest.fn().mockResolvedValue({}),
-      importKey: jest.fn().mockResolvedValue({}),
-      encrypt: jest.fn().mockResolvedValue(mockEncryptedData.buffer),
-      decrypt: jest.fn().mockResolvedValue(mockEncryptedData.buffer),
-    },
-    getRandomValues: jest.fn().mockReturnValue(new Uint8Array(16)),
-  },
-  configurable: true,
+// Mock URL.createObjectURL and URL.revokeObjectURL
+Object.defineProperty(global.URL, 'createObjectURL', {
+  writable: true,
+  value: jest.fn(() => 'blob:mock-url'),
 });
 
-// Mock IntersectionObserver
-const IntersectionObserverMock = class {
-  constructor() {}
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-Object.defineProperty(global, 'IntersectionObserver', {
-  value: IntersectionObserverMock,
-  configurable: true,
+Object.defineProperty(global.URL, 'revokeObjectURL', {
+  writable: true,
+  value: jest.fn(),
 });

@@ -111,8 +111,8 @@ describe('Gemini Client', () => {
       const startTime = Date.now();
       await geminiGenerateTryOn({
         prompt: 'Test',
-        userPhotos: { front: 'u.jpg' },
-        garmentPhotos: { front: 'g.jpg' },
+        userPhotos: { front: 'data:image/jpeg;base64,user-data' },
+        garmentPhotos: { front: 'data:image/jpeg;base64,garment-data' },
         options: { timeout: 5000 },
       });
       const endTime = Date.now();
@@ -126,8 +126,8 @@ describe('Gemini Client', () => {
     it('should throw error when API key is not set', async () => {
       await expect(geminiGenerateTryOn({
         prompt: 'Test',
-        userPhotos: { front: 'u.jpg' },
-        garmentPhotos: { front: 'g.jpg' },
+        userPhotos: { front: 'data:image/jpeg;base64,user-data' },
+        garmentPhotos: { front: 'data:image/jpeg;base64,garment-data' },
       })).rejects.toThrow('GOOGLE_AI_API_KEY environment variable is not set');
     });
 
@@ -148,8 +148,8 @@ describe('Gemini Client', () => {
 
       const result = await geminiGenerateTryOn({
         prompt: 'Test',
-        userPhotos: { front: 'u.jpg' },
-        garmentPhotos: { front: 'g.jpg' },
+        userPhotos: { front: 'data:image/jpeg;base64,user-data' },
+        garmentPhotos: { front: 'data:image/jpeg;base64,garment-data' },
         options: { maxRetries: 2 },
       });
 
@@ -164,8 +164,8 @@ describe('Gemini Client', () => {
 
       await expect(geminiGenerateTryOn({
         prompt: 'Test',
-        userPhotos: { front: 'u.jpg' },
-        garmentPhotos: { front: 'g.jpg' },
+        userPhotos: { front: 'data:image/jpeg;base64,user-data' },
+        garmentPhotos: { front: 'data:image/jpeg;base64,garment-data' },
         options: { maxRetries: 2 },
       })).rejects.toThrow('Persistent error');
 
@@ -183,8 +183,8 @@ describe('Gemini Client', () => {
 
       await expect(geminiGenerateTryOn({
         prompt: 'Test',
-        userPhotos: { front: 'u.jpg' },
-        garmentPhotos: { front: 'g.jpg' },
+        userPhotos: { front: 'data:image/jpeg;base64,user-data' },
+        garmentPhotos: { front: 'data:image/jpeg;base64,garment-data' },
       })).rejects.toThrow('Invalid response format from Gemini API');
     });
 
@@ -202,8 +202,8 @@ describe('Gemini Client', () => {
 
       await expect(geminiGenerateTryOn({
         prompt: 'Test',
-        userPhotos: { front: 'u.jpg' },
-        garmentPhotos: { front: 'g.jpg' },
+        userPhotos: { front: 'data:image/jpeg;base64,user-data' },
+        garmentPhotos: { front: 'data:image/jpeg;base64,garment-data' },
       })).rejects.toThrow('Invalid response format from Gemini API');
     });
 
@@ -223,8 +223,8 @@ describe('Gemini Client', () => {
 
       await expect(geminiGenerateTryOn({
         prompt: 'Test',
-        userPhotos: { front: 'u.jpg' },
-        garmentPhotos: { front: 'g.jpg' },
+        userPhotos: { front: 'data:image/jpeg;base64,user-data' },
+        garmentPhotos: { front: 'data:image/jpeg;base64,garment-data' },
         options: { timeout: 100 },
       })).rejects.toThrow('Request timeout');
     });
@@ -254,8 +254,8 @@ describe('Gemini Client', () => {
 
       const result = await geminiGenerateTryOn({
         prompt: 'Test',
-        userPhotos: { front: 'u.jpg' },
-        garmentPhotos: { front: 'g.jpg' },
+        userPhotos: { front: 'data:image/jpeg;base64,user-data' },
+        garmentPhotos: { front: 'data:image/jpeg;base64,garment-data' },
       });
 
       expect(result).toEqual({
@@ -290,8 +290,8 @@ describe('Gemini Client', () => {
 
       const result = await geminiGenerateTryOn({
         prompt: 'Test',
-        userPhotos: { front: 'u.jpg' },
-        garmentPhotos: { front: 'g.jpg' },
+        userPhotos: { front: 'data:image/jpeg;base64,user-data' },
+        garmentPhotos: { front: 'data:image/jpeg;base64,garment-data' },
       });
 
       // For backward compatibility with the existing test

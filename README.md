@@ -7,12 +7,13 @@ A Next.js application that uses AI (Gemini) to allow users to virtually try on d
 ## Tech Stack
 
 - **Frontend**: Next.js 15.5.2, React 19, TypeScript, Tailwind CSS
-- **Backend**: Next.js API Routes (migrating from Firebase to Vercel Edge Functions)
-- **AI**: Google AI (Gemini 2.0 Flash) via Gemini API
-- **Storage**: Vercel Blob Storage (migrating from Firebase Storage)
-- **Hosting**: Vercel Platform
+- **Backend**: Next.js API Routes with Vercel Edge Functions
+- **AI**: Google AI (Gemini 2.5 Flash Image Preview) for image generation
+- **Storage**: Vercel Blob Storage with automatic 30-minute cleanup
+- **Session Management**: Vercel KV Redis with TTL support
+- **Hosting**: Vercel Platform with Edge Runtime
 - **Testing**: Jest with SWC, React Testing Library, separate API/UI test configs
-- **Session Management**: Vercel KV (planned)
+- **Rate Limiting**: Sliding window algorithm with Vercel KV
 
 ## Project Structure
 
@@ -20,7 +21,12 @@ A Next.js application that uses AI (Gemini) to allow users to virtually try on d
 dressup/
 ├── src/
 │   ├── app/                 # Next.js app directory
-│   │   ├── api/            # API routes (try-on, upload, feedback)
+│   │   ├── api/            # API routes
+│   │   │   ├── try-on/     # AI try-on endpoint with Gemini
+│   │   │   ├── upload/     # Image upload with Blob storage
+│   │   │   ├── session/    # Session management with KV
+│   │   │   ├── feedback/   # User feedback collection
+│   │   │   └── cron/       # Automatic cleanup jobs
 │   │   └── page.tsx        # Main application page
 │   ├── components/          # React components
 │   │   ├── PhotoUploadInterface.tsx  # Multi-step photo upload
@@ -29,13 +35,16 @@ dressup/
 │   │   ├── ResultsDisplay.tsx        # Results viewer
 │   │   └── FeedbackSection.tsx       # User feedback
 │   ├── lib/
-│   │   ├── gemini.ts       # Gemini AI integration
+│   │   ├── gemini.ts       # Gemini 2.5 Flash Image Preview
+│   │   ├── blob-storage.ts # Vercel Blob with auto-cleanup
+│   │   ├── session.ts      # Session management with KV
+│   │   ├── rate-limit.ts   # Rate limiting implementation
 │   │   └── tryon-processing.ts # Try-on processing logic
 │   └── hooks/              # Custom React hooks
-├── tests/                   # Test files (API and lib tests)
+├── tests/                   # Comprehensive test suite
+├── vercel.json             # Vercel configuration & cron jobs
 ├── jest.config.ui.js       # UI test configuration
 ├── jest.config.api.js      # API test configuration
-├── public/                  # Static assets
 └── .taskmaster/            # Task management and progress tracking
 ```
 
@@ -134,25 +143,32 @@ npm test -- src/components/__tests__/UploadArea.test.tsx
 ### Current Features (Implemented)
 - ✅ Next.js application scaffold with TypeScript
 - ✅ Component structure for main UI elements  
-- ✅ Firebase SDK integration with Cloud Functions
-- ✅ Vertex AI integration configured for Gemini 2.5 Flash Image
-- ✅ Cloud Firestore for data storage
-- ✅ Basic session ID generation
+- ✅ **Vercel Edge Functions** for all API routes
+- ✅ **Gemini 2.5 Flash Image Preview** integration for actual image generation
+- ✅ **Vercel KV** for session management with 30-minute TTL
+- ✅ **Vercel Blob Storage** with automatic cleanup (30-minute expiry)
+- ✅ Session tracking and restoration for page refreshes
 - ✅ Garment gallery with 10 sample items
-- ✅ Single photo upload functionality
-- ✅ Basic feedback collection (single rating)
-- ✅ Comprehensive test suite (TDD approach)
-- ✅ Responsive design with Tailwind CSS
-- ✅ Deployed to Firebase Hosting
+- ✅ Multi-photo upload support (front, side, back views)
+- ✅ Image optimization and format conversion (JPEG, PNG, WebP, HEIC)
+- ✅ Thumbnail generation for uploaded images
+- ✅ Rate limiting with sliding window algorithm
+- ✅ Automatic cleanup via cron jobs (every 15 minutes)
+- ✅ Secure URL generation with expiration
+- ✅ Comprehensive test suite (83.5% coverage)
+- ✅ Responsive design with mobile optimization
+- ✅ Error handling and validation across all endpoints
 
-### Features Per PRD Not Yet Implemented
-- ⏳ Multi-pose generation (Standing Front, Standing Side, Walking Side)
-- ⏳ Session management with 60-minute expiry
-- ⏳ Multi-photo upload (front, side, back views)
-- ⏳ Automatic photo deletion after 60 minutes
-- ⏳ Dual feedback scoring (realism + helpfulness)
-- ⏳ Actual image generation with Gemini 2.5 Flash Image
-- ⏳ Firebase Storage lifecycle rules for privacy
+### Features In Progress
+- 🔄 Multi-pose generation with Gemini (front, side, walking)
+- 🔄 Enhanced feedback collection (realism + helpfulness scores)
+- 🔄 Production deployment to Vercel
+
+### Features Planned
+- ⏳ Advanced garment type detection (formal, casual, athletic, etc.)
+- ⏳ Background enhancement options
+- ⏳ Batch processing for multiple outfits
+- ⏳ Export and sharing functionality
 
 ## Task Management
 
@@ -174,6 +190,21 @@ task-master set-status --id=<id> --status=done
 Required environment variables (add to `.env.local`):
 
 ```env
+# Google AI (Gemini) Configuration
+GOOGLE_AI_API_KEY=your-gemini-api-key
+
+# Vercel KV (Redis) Configuration
+KV_REST_API_URL=your-kv-rest-api-url
+KV_REST_API_TOKEN=your-kv-rest-api-token
+
+# Vercel Blob Storage Configuration
+BLOB_READ_WRITE_TOKEN=your-blob-token
+
+# Optional: Cron Job Authentication
+CRON_SECRET=your-cron-secret
+ADMIN_API_KEY=your-admin-api-key
+
+# Legacy Firebase (if still using)
 NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-auth-domain
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id

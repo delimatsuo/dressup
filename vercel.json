@@ -5,10 +5,25 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "regions": ["sfo1"],
+  "crons": [
+    {
+      "path": "/api/cron/cleanup",
+      "schedule": "*/15 * * * *"
+    }
+  ],
   "functions": {
     "src/app/api/**/*.ts": {
       "runtime": "edge",
       "maxDuration": 30
+    },
+    "src/app/api/cron/cleanup/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/upload/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/try-on/route.ts": {
+      "maxDuration": 60
     }
   },
   "env": {
