@@ -184,6 +184,16 @@ export const POST = withErrorHandler(async (request: NextRequest): Promise<NextR
     // Validate session exists and is active
     await validateSession(tryOnData.sessionId);
 
+    // Fallback: If userPhotos.front is missing, try to load it from session
+    if (!tryOnData.userPhotos || !tryOnData.userPhotos.front) {
+      const sess = await getSession(tryOnData.sessionId);
+      const sessFront = Array.isArray(sess?.userPhotos) && sess!.userPhotos.length > 0 ? sess!.userPhotos[0] : null;
+      if (!sessFront) {
+        throw new ValidationError('User front photo not found in request or session');
+      }
+      tryOnData.userPhotos = { front: sessFront } as any;
+    }
+
     // Validate photos
     await validatePhotos(tryOnData.userPhotos);
     await validatePhotos(tryOnData.garmentPhotos);

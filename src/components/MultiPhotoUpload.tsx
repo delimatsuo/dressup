@@ -85,6 +85,19 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
         }
         return next;
       });
+
+      // Persist user front photo in session so it can be reused for multiple try-ons
+      if (category === 'user' && type === 'front') {
+        try {
+          await fetch(`/api/session/${sessionId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userPhotos: [url] }),
+          });
+        } catch (e) {
+          console.warn('Failed to persist user photo in session', e);
+        }
+      }
     } catch (err: any) {
       setPhotos(prev => ({
         ...prev,
