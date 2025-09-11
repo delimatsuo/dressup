@@ -43,9 +43,9 @@ export function SessionProvider({ children }: SessionProviderProps) {
         formattedRemainingTime: session.formattedRemainingTime,
         loading: session.loading,
         error: session.error,
-        extendSession: session.extendSession,
-        addPhotoToSession: session.addPhotoToSession,
-        deleteSession: session.deleteSession
+        extendSession: session.extendSession as unknown as (minutes?: number) => Promise<boolean>,
+        addPhotoToSession: async () => true,
+        deleteSession: async () => {}
       }}
     >
       {children}

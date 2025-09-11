@@ -24,7 +24,7 @@ const errorReportSchema = z.object({
     method: z.string().optional(),
     statusCode: z.number().optional()
   }).optional(),
-  metadata: z.record(z.any()).optional()
+  metadata: z.record(z.string(), z.any()).optional()
 });
 
 /**

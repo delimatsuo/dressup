@@ -292,7 +292,7 @@ export class OutfitComposer {
     bottom: GarmentItem,
     options: OutfitGenerationOptions
   ): boolean {
-    return (
+    return !!(
       options.season === 'fall' ||
       options.season === 'winter' ||
       (options.formalityLevel && options.formalityLevel > 3)
@@ -645,18 +645,18 @@ export class OutfitComposer {
     const presentCategories = new Set(items.map(item => item.category));
     
     if (requiredCategories) {
-      const missingRequired = requiredCategories.filter(cat => !presentCategories.has(cat));
+      const missingRequired = requiredCategories.filter(cat => !presentCategories.has(cat as any));
       return 1 - (missingRequired.length / requiredCategories.length);
     }
 
     // Default completeness scoring
     const basicCategories = ['top', 'bottom', 'shoes'];
-    const hasBasics = basicCategories.filter(cat => presentCategories.has(cat));
+    const hasBasics = basicCategories.filter(cat => presentCategories.has(cat as any));
     
     // Special case for dresses
-    if (presentCategories.has('dress')) {
+    if (presentCategories.has('dress' as any)) {
       const baseScore = 0.8; // Dress alone is fairly complete
-      if (presentCategories.has('shoes')) return Math.min(1, baseScore + 0.2);
+      if (presentCategories.has('shoes' as any)) return Math.min(1, baseScore + 0.2);
       return baseScore;
     }
 
@@ -839,7 +839,7 @@ export class OutfitComposer {
     if (recommendations.length < 3 && garments.length >= 3) {
       // Create additional basic combinations
       const additionalOutfits = this.createFallbackRecommendations(garments, preferences, 3 - recommendations.length);
-      recommendations.push(...additionalOutfits);
+      recommendations.push(...additionalOutfits.map(outfit => ({...outfit, personalizedScore: outfit.personalizedScore || 0})));
     }
 
     return recommendations.slice(0, 3);
@@ -987,8 +987,8 @@ export class OutfitComposer {
         ...outfit,
         appropriateness,
         formalityScore: outfit.items.reduce((sum, item) => sum + item.formality, 0) / outfit.items.length,
-        professionalRating: occasion === 'work' ? appropriateness.work! : 0.5,
-        attractivenessScore: occasion === 'date' ? appropriateness.romantic! : 0.5,
+        professionalRating: occasion === 'work' ? appropriateness?.work || 0.5 : 0.5,
+        attractivenessScore: occasion === 'date' ? appropriateness?.romantic || 0.5 : 0.5,
         confidenceBoost: 0.7
       };
     });

@@ -29,9 +29,9 @@ export async function processWithGemini(req: TryOnRequest): Promise<TryOnProcess
         // Determine pose from request options or default
         pose: determinePose(req.options),
         // Use longer timeout for image generation
-        timeout: req.options?.timeout || 60000,
+        timeout: (req.options as any)?.timeout || 60000,
         // More retries for image generation as it's more resource intensive
-        maxRetries: req.options?.maxRetries || 3,
+        maxRetries: (req.options as any)?.maxRetries || 3,
       };
       
       // Use the new image generation API

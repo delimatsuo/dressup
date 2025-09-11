@@ -127,9 +127,9 @@ export class SessionPersistenceService {
     }
 
     const decryptedData = await this.crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: encryptedData.iv },
+      { name: 'AES-GCM', iv: encryptedData.iv } as any,
       this.encryptionKey,
-      encryptedData.data
+      encryptedData.data as any
     );
 
     const decoder = new TextDecoder();

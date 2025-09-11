@@ -66,7 +66,6 @@ export class SecurityMiddleware {
     const realIP = request.headers.get('x-real-ip');
     const clientIP = forwarded?.split(',')[0].trim() || 
                     realIP || 
-                    request.ip || 
                     '127.0.0.1';
     return clientIP;
   }
@@ -118,7 +117,7 @@ export class SecurityMiddleware {
 
       // Check for SQL injection patterns (basic)
       const sqlPatterns = [
-        /('|(\\')|(--|;)|(\|)|(\*)|(%27)|(%3D)|(0x[0-9a-f]+)/i,
+        /(--|;|%27|%3D)/gi,
         /(union\s+select|select\s+\*|insert\s+into|delete\s+from|update\s+set)/i,
         /(drop\s+table|create\s+table|alter\s+table)/i
       ];

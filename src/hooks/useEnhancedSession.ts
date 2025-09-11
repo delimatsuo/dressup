@@ -73,8 +73,8 @@ export function useEnhancedSession(options: UseEnhancedSessionOptions = {}) {
   });
 
   // Refs for intervals and debouncing
-  const intervalRef = useRef<NodeJS.Timeout>();
-  const activityTimeoutRef = useRef<NodeJS.Timeout>();
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const activityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastActivityRef = useRef<Date>(new Date());
 
   // ================================

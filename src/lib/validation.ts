@@ -3,7 +3,7 @@ import { z } from 'zod';
 // Session validation schemas
 export const createSessionSchema = z.object({
   // Optional initial data
-  metadata: z.record(z.any()).optional()
+  metadata: z.record(z.string(), z.any()).optional()
 });
 
 export const sessionIdSchema = z.string().min(1).regex(/^session_/);

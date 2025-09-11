@@ -275,7 +275,7 @@ export function PhotoUploadInterface({ onComplete, existingUserPhotos }: PhotoUp
             
             {isMobileOrTouch ? (
               <GarmentUpload
-                onComplete={handleGarmentPhotosComplete}
+                onComplete={handleGarmentPhotosComplete as any}
                 title="Upload Garment"
                 description="Upload a screenshot or photo of the garment you want to try on"
               />

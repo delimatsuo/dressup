@@ -64,7 +64,7 @@ async function gatherDashboardMetrics(timeRange: string) {
     timeRange,
     system: {
       status: 'unknown',
-      uptime: null,
+      uptime: null as number | null,
       version: process.env.npm_package_version || '1.0.0'
     },
     storage: {
@@ -75,7 +75,7 @@ async function gatherDashboardMetrics(timeRange: string) {
       lastRun: null,
       totalRuns: 0,
       averageDuration: 0,
-      recentMetrics: []
+      recentMetrics: [] as any[]
     },
     sessions: {
       active: 0,
@@ -85,13 +85,13 @@ async function gatherDashboardMetrics(timeRange: string) {
     api: {
       health: 'unknown',
       endpoints: {
-        upload: { status: 'unknown', lastCheck: null },
-        tryon: { status: 'unknown', lastCheck: null },
-        session: { status: 'unknown', lastCheck: null }
+        upload: { status: 'unknown', lastCheck: null as string | null },
+        tryon: { status: 'unknown', lastCheck: null as string | null },
+        session: { status: 'unknown', lastCheck: null as string | null }
       }
     },
     errors: {
-      recent: [],
+      recent: [] as any[],
       counts: {
         total: 0,
         critical: 0,
@@ -108,7 +108,7 @@ async function gatherDashboardMetrics(timeRange: string) {
   try {
     // System health check
     dashboard.system.status = 'healthy';
-    dashboard.system.uptime = process.uptime ? Math.floor(process.uptime()) : null;
+    dashboard.system.uptime = typeof process.uptime === 'function' ? Math.floor(process.uptime()) : null;
 
     // KV Storage metrics
     try {

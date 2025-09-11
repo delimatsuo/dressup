@@ -62,7 +62,7 @@ export const DEFAULT_RATE_LIMITS = {
 // ================================
 
 export class RateLimiter {
-  constructor(private config: RateLimitConfig) {}
+  constructor(public config: RateLimitConfig) {}
 
   private getKey(identifier: string): string {
     const keyGen = this.config.keyGenerator || ((id) => `ratelimit:${id}`);

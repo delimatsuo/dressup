@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, GoogleAIFileManager, Part } from '@google/generative-ai';
+import { GoogleGenerativeAI, Part } from '@google/generative-ai';
 
 export interface GeminiGenerateOptions {
   generateMultiplePoses?: boolean;
@@ -245,7 +245,7 @@ export async function geminiGenerateTryOn({
         const response = result.response;
         
         // Process the generated images
-        const results = [];
+        const results: any[] = [];
         
         // Check if we have generated images in the response
         if (response.candidates && response.candidates.length > 0) {

@@ -30,6 +30,7 @@ interface ResultsDisplayProps {
   error?: string;
   showComparison?: boolean;
   onDownload?: (result: Result) => void;
+  onShare?: (result: Result) => void;
   onTryAnother?: () => void;
   onStartOver?: () => void;
   onRegenerateWithInstructions?: (instructions: string) => void;
@@ -41,6 +42,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
   error,
   showComparison = false,
   onDownload,
+  onShare,
   onTryAnother,
   onStartOver,
   onRegenerateWithInstructions,

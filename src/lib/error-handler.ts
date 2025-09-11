@@ -50,7 +50,7 @@ export function formatErrorResponse(error: unknown) {
     return NextResponse.json({
       success: false,
       error: 'Validation failed',
-      details: error.errors.map(err => ({
+      details: (error as any).errors?.map((err: any) => ({
         field: err.path.join('.'),
         message: err.message
       }))

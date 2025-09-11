@@ -89,7 +89,7 @@ const uploadOptionsSchema = z.object({
   customExpiry: z.number().positive().optional()
 });
 
-const formatSchema = z.enum(SUPPORTED_FORMATS as [string, ...string[]]);
+const formatSchema = z.enum(SUPPORTED_FORMATS as unknown as [string, ...string[]]);
 
 // ================================
 // Image Processing
@@ -132,7 +132,7 @@ async function processImage(
     pipeline = pipeline.rotate();
     
     // Convert format if specified
-    const targetFormat = options.format || (originalFormat === 'heic' || originalFormat === 'heif' ? 'jpeg' : originalFormat as any);
+    const targetFormat = options.format || (String(originalFormat) === 'heic' || String(originalFormat) === 'heif' ? 'jpeg' : originalFormat as any);
     let mimeType = `image/${targetFormat}`;
     
     switch (targetFormat) {
