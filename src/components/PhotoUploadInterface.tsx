@@ -20,12 +20,12 @@ interface PhotoData {
   userPhotos: {
     front: string;
     side: string;
-    back: string;
+    back?: string;
   };
   garmentPhotos: {
     front: string;
     side: string;
-    back: string;
+    back?: string;
   };
 }
 
@@ -61,13 +61,13 @@ export function PhotoUploadInterface({ onComplete, existingUserPhotos }: PhotoUp
     description: string;
   } | null>(null);
 
-  const handleUserPhotosComplete = (photos: Record<string, string>) => {
+  const handleUserPhotosComplete = (photos: { front: string; side: string; back?: string }) => {
     setUserPhotos(photos);
     // Automatically move to garment upload step
     setTimeout(() => setStep('garment'), 500);
   };
 
-  const handleGarmentPhotosComplete = (photos: Record<string, string>) => {
+  const handleGarmentPhotosComplete = (photos: { front: string; side: string; back?: string }) => {
     setGarmentPhotos(photos);
     // DO NOT set step to complete, just call the callback
     if (onComplete && userPhotos) {

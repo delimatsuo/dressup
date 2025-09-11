@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { isHttpOrDataUrl } from '@/lib/url';
 import { type TryOnRequest, submitTryOn } from '@/lib/tryon';
 import { updateSession, getSession } from '@/lib/session';
 import { processWithGemini } from '@/lib/tryon-processing';
@@ -30,14 +31,14 @@ export const runtime = 'edge';
 const processTryOnSchema = z.object({
   sessionId: z.string().min(1),
   userPhotos: z.object({
-    front: z.string().url(),
-    side: z.string().url(),
-    back: z.string().url().optional()
+    front: z.string().refine(isHttpOrDataUrl, 'Invalid image URL'),
+    side: z.union([z.string().refine(isHttpOrDataUrl, 'Invalid image URL'), z.null(), z.undefined()]).optional(),
+    back: z.union([z.string().refine(isHttpOrDataUrl, 'Invalid image URL'), z.null(), z.undefined()]).optional()
   }),
   garmentPhotos: z.object({
-    front: z.string().url(),
-    side: z.string().url(),
-    back: z.string().url().optional()
+    front: z.string().refine(isHttpOrDataUrl, 'Invalid image URL'),
+    side: z.union([z.string().refine(isHttpOrDataUrl, 'Invalid image URL'), z.null(), z.undefined()]).optional(),
+    back: z.union([z.string().refine(isHttpOrDataUrl, 'Invalid image URL'), z.null(), z.undefined()]).optional()
   }),
   options: z.object({
     generateMultiplePoses: z.boolean().optional().default(false),
@@ -147,8 +148,8 @@ async function validatePhotos(photos: any): Promise<void> {
   // - Check file types
   
   // For now, just ensure required photos exist
-  if (!front || !side) {
-    throw new ValidationError('Front and side photos are required');
+  if (!front) {
+    throw new ValidationError('Front photo is required');
   }
 }
 

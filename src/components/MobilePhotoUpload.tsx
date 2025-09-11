@@ -57,7 +57,7 @@ export function MobilePhotoUpload({
 
       // Upload the processed file
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', processedFile);
       formData.append('sessionId', sessionId);
       formData.append('view', view);
 

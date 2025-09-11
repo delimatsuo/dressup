@@ -21,7 +21,7 @@ interface PhotoUpload {
 
 interface MultiPhotoUploadProps {
   category: PhotoCategory;
-  onUploadComplete?: (photos: Record<PhotoType, string>) => void;
+  onUploadComplete?: (photos: { front: string; side: string; back?: string }) => void;
 }
 
 const PHOTO_LABELS = {
@@ -76,11 +76,12 @@ export function MultiPhotoUpload({ category, onUploadComplete }: MultiPhotoUploa
           [type]: { ...prev[type], file, url, uploading: false, progress: 100, error: null }
         } as typeof prev;
         if (next.front.url && next.side.url && onUploadComplete) {
-          onUploadComplete({
+          const payload: { front: string; side: string; back?: string } = {
             front: next.front.url!,
             side: next.side.url!,
-            back: next.back.url || ''
-          });
+          };
+          if (next.back.url) payload.back = next.back.url;
+          onUploadComplete(payload);
         }
         return next;
       });

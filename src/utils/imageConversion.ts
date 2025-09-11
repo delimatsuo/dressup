@@ -1,11 +1,10 @@
-import heic2any from 'heic2any';
-
 /**
- * Convert HEIC/HEIF images to JPEG format
- * @param file - The file to convert
- * @returns Promise with converted file or original if not HEIC
+ * Process HEIC/HEIF images for upload
+ * No client-side conversion - server will handle HEIC processing
+ * @param file - The file to process
+ * @returns Promise with original file (server handles conversion)
  */
-export async function convertHeicToJpeg(file: File): Promise<File> {
+export async function processHeicFile(file: File): Promise<File> {
   // Check if file is HEIC/HEIF format
   const isHeic = file.type === 'image/heic' || 
                  file.type === 'image/heif' || 
@@ -16,44 +15,33 @@ export async function convertHeicToJpeg(file: File): Promise<File> {
     return file; // Return original file if not HEIC
   }
 
-  try {
-    console.log('Converting HEIC image to JPEG...');
-    
-    // Convert HEIC to JPEG blob
-    const convertedBlob = await heic2any({
-      blob: file,
-      toType: 'image/jpeg',
-      quality: 0.9
-    }) as Blob;
-    
-    // Create new File object with converted data
-    const convertedFile = new File(
-      [convertedBlob], 
-      file.name.replace(/\.(heic|heif)$/i, '.jpg'),
-      { type: 'image/jpeg' }
-    );
-    
-    console.log('HEIC conversion successful:', file.name, '->', convertedFile.name);
-    return convertedFile;
-  } catch (error) {
-    console.error('HEIC conversion failed:', error);
-    throw new Error('Failed to convert HEIC image. Please try uploading a JPEG or PNG instead.');
-  }
+  console.log('HEIC file detected - will be processed on server');
+  
+  // Ensure proper MIME type for HEIC files
+  const processedFile = new File([file], file.name, { 
+    type: file.type || 'image/heic',
+    lastModified: file.lastModified 
+  });
+  
+  return processedFile;
 }
 
 /**
  * Process image file for upload
- * - Converts HEIC to JPEG if needed
- * - Validates image type
+ * - Accepts all image formats including HEIC
+ * - Server handles any necessary conversions
  * @param file - The file to process
  * @returns Promise with processed file
  */
 export async function processImageForUpload(file: File): Promise<File> {
-  // Convert HEIC if needed
-  const processedFile = await convertHeicToJpeg(file);
+  // Process HEIC files (no client-side conversion)
+  const processedFile = await processHeicFile(file);
   
-  // Validate it's an image
-  if (!processedFile.type.startsWith('image/')) {
+  // Validate it's an image file
+  const isValidImage = processedFile.type.startsWith('image/') || 
+                      processedFile.name.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp|heic|heif)$/);
+  
+  if (!isValidImage) {
     throw new Error('Please upload an image file');
   }
   

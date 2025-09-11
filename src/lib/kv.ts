@@ -1,17 +1,34 @@
 // Minimal KV REST client for Vercel KV (Upstash-compatible)
 // Uses KV_REST_API_URL and KV_REST_API_TOKEN
+// Falls back to in-memory storage for local development
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
 
+// In-memory fallback for local development
+const memoryStore = new Map<string, { value: any; expires?: number }>();
+
+function isConfigured() {
+  return !!(KV_URL && KV_TOKEN);
+}
+
 function assertConfigured() {
   if (!KV_URL || !KV_TOKEN) {
-    throw new Error('KV not configured: set KV_REST_API_URL and KV_REST_API_TOKEN');
+    console.warn('KV not configured: using in-memory storage for local development');
   }
 }
 
 export async function kvSet<T>(key: string, value: T, ttlSeconds?: number): Promise<void> {
-  assertConfigured();
+  if (!isConfigured()) {
+    // Use in-memory storage for local development
+    assertConfigured(); // Just for warning
+    const expires = typeof ttlSeconds === 'number' && ttlSeconds > 0 
+      ? Date.now() + (ttlSeconds * 1000) 
+      : undefined;
+    memoryStore.set(key, { value, expires });
+    return;
+  }
+
   const url = new URL(`${KV_URL}/set/${encodeURIComponent(key)}`);
   if (typeof ttlSeconds === 'number' && ttlSeconds > 0) {
     url.searchParams.set('ex', String(ttlSeconds));
@@ -30,7 +47,21 @@ export async function kvSet<T>(key: string, value: T, ttlSeconds?: number): Prom
 }
 
 export async function kvGet<T>(key: string): Promise<T | null> {
-  assertConfigured();
+  if (!isConfigured()) {
+    // Use in-memory storage for local development
+    assertConfigured(); // Just for warning
+    const stored = memoryStore.get(key);
+    if (!stored) return null;
+    
+    // Check if expired
+    if (stored.expires && Date.now() > stored.expires) {
+      memoryStore.delete(key);
+      return null;
+    }
+    
+    return stored.value as T;
+  }
+
   const url = `${KV_URL}/get/${encodeURIComponent(key)}`;
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${KV_TOKEN}` },
@@ -46,7 +77,13 @@ export async function kvGet<T>(key: string): Promise<T | null> {
 }
 
 export async function kvDel(key: string): Promise<void> {
-  assertConfigured();
+  if (!isConfigured()) {
+    // Use in-memory storage for local development
+    assertConfigured(); // Just for warning
+    memoryStore.delete(key);
+    return;
+  }
+
   const url = `${KV_URL}/del/${encodeURIComponent(key)}`;
   const res = await fetch(url, {
     method: 'POST',

@@ -21,13 +21,13 @@ export const tryOnRequestSchema = z.object({
   sessionId: z.string().min(1),
   userPhotos: z.object({
     front: z.string().url(),
-    side: z.string().url(),
-    back: z.string().url().optional()
+    side: z.union([z.string().url(), z.null(), z.undefined()]).optional(),
+    back: z.union([z.string().url(), z.null(), z.undefined()]).optional()
   }),
   garmentPhotos: z.object({
     front: z.string().url(),
-    side: z.string().url(),
-    back: z.string().url().optional()
+    side: z.union([z.string().url(), z.null(), z.undefined()]).optional(),
+    back: z.union([z.string().url(), z.null(), z.undefined()]).optional()
   }),
   options: z.object({
     generateMultiplePoses: z.boolean().optional(),

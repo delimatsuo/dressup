@@ -15,8 +15,8 @@ import { processImageForUpload } from '../utils/imageConversion';
 // ================================
 
 interface UploadedImages {
-  user: string | null;
-  garment: string | null;
+  user: { url: string | null; isHeic: boolean };
+  garment: { url: string | null; isHeic: boolean };
 }
 
 interface SimplifiedUploadFlowProps {
@@ -38,8 +38,8 @@ export function SimplifiedUploadFlow({
   result 
 }: SimplifiedUploadFlowProps) {
   const [images, setImages] = useState<UploadedImages>({
-    user: null,
-    garment: null
+    user: { url: null, isHeic: false },
+    garment: { url: null, isHeic: false },
   });
   const [dragActive, setDragActive] = useState<'user' | 'garment' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -66,11 +66,12 @@ export function SimplifiedUploadFlow({
 
       // Read and set image for display
       const reader = new FileReader();
+      const isHeic = /heic|heif/i.test(processedFile.type) || /\.hei[c|f]$/i.test(processedFile.name);
       reader.onload = (e) => {
         const dataUrl = e.target?.result as string;
         setImages(prev => ({
           ...prev,
-          [type]: dataUrl
+          [type]: { url: dataUrl, isHeic }
         }));
       };
       reader.readAsDataURL(processedFile);
@@ -123,11 +124,11 @@ export function SimplifiedUploadFlow({
   }, [images, onGenerate]);
 
   const handleReset = useCallback(() => {
-    setImages({ user: null, garment: null });
+    setImages({ user: { url: null, isHeic: false }, garment: { url: null, isHeic: false } });
     setError(null);
   }, []);
 
-  const canGenerate = images.user && images.garment && !isProcessing;
+  const canGenerate = images.user.url && images.garment.url && !isProcessing;
 
   // ================================
   // Render
@@ -220,17 +221,24 @@ export function SimplifiedUploadFlow({
           </div>
           
           <div className="p-6">
-            {images.user ? (
+            {images.user.url ? (
               <div className="relative">
                 <div className="aspect-[3/4] rounded-lg overflow-hidden bg-gray-100">
-                  <img
-                    src={images.user}
-                    alt="Your photo"
-                    className="w-full h-full object-cover"
-                  />
+                  {images.user.isHeic ? (
+                    <div className="w-full h-full flex items-center justify-center text-gray-600 p-4 text-center">
+                      HEIC preview isn’t supported in this browser.<br/>
+                      The image will be processed on the server.
+                    </div>
+                  ) : (
+                    <img
+                      src={images.user.url}
+                      alt="Your photo"
+                      className="w-full h-full object-cover"
+                    />
+                  )}
                 </div>
                 <button
-                  onClick={() => setImages(prev => ({ ...prev, user: null }))}
+                  onClick={() => setImages(prev => ({ ...prev, user: { url: null, isHeic: false } }))}
                   className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 transition-colors"
                   aria-label="Remove photo"
                 >
@@ -281,17 +289,24 @@ export function SimplifiedUploadFlow({
           </div>
           
           <div className="p-6">
-            {images.garment ? (
+            {images.garment.url ? (
               <div className="relative">
                 <div className="aspect-[3/4] rounded-lg overflow-hidden bg-gray-100">
-                  <img
-                    src={images.garment}
-                    alt="Garment photo"
-                    className="w-full h-full object-cover"
-                  />
+                  {images.garment.isHeic ? (
+                    <div className="w-full h-full flex items-center justify-center text-gray-600 p-4 text-center">
+                      HEIC preview isn’t supported in this browser.<br/>
+                      The image will be processed on the server.
+                    </div>
+                  ) : (
+                    <img
+                      src={images.garment.url}
+                      alt="Garment photo"
+                      className="w-full h-full object-cover"
+                    />
+                  )}
                 </div>
                 <button
-                  onClick={() => setImages(prev => ({ ...prev, garment: null }))}
+                  onClick={() => setImages(prev => ({ ...prev, garment: { url: null, isHeic: false } }))}
                   className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 transition-colors"
                   aria-label="Remove garment"
                 >

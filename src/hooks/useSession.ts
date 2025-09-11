@@ -80,7 +80,7 @@ export function useSession() {
     setError(null);
     
     try {
-      const res = await fetch('/api/session/create', { method: 'POST' });
+      const res = await fetch('/api/session', { method: 'POST' });
       if (!res.ok) throw new Error('Failed to create session');
       const json = await res.json();
       const data = json.data || json;

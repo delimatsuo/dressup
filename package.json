@@ -19,7 +19,6 @@
     "@vercel/blob": "^1.1.1",
     "@vercel/kv": "^3.0.0",
     "file-type": "^21.0.0",
-    "heic2any": "^0.0.4",
     "lucide-react": "^0.542.0",
     "nanoid": "^5.1.5",
     "next": "15.5.2",

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live HEIC Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        #app-frame {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        .test-results {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Panel: Live App -->
+        <div class="panel">
+            <h2>🖥️ Live DressUp App</h2>
+            <iframe id="app-frame" src="http://localhost:3000"></iframe>
+            <div style="margin-top: 10px;">
+                <button onclick="reloadApp()">🔄 Reload App</button>
+                <button onclick="openInNewTab()">🔗 Open in New Tab</button>
+            </div>
+        </div>
+        
+        <!-- Right Panel: Testing Tools -->
+        <div class="panel">
+            <h2>🧪 HEIC Testing Tools</h2>
+            
+            <div id="test-status" class="status info">
+                Ready to test HEIC functionality
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <h3>Test Actions</h3>
+                <button onclick="testLibraryLoading()">📦 Test Library Loading</button>
+                <button onclick="testFileConversion()">🔄 Test File Conversion</button>
+                <button onclick="monitorConsole()">👀 Monitor Console</button>
+                <button onclick="createMockHeic()">📁 Create Mock HEIC</button>
+                <button onclick="clearResults()">🗑️ Clear Results</button>
+            </div>
+            
+            <div>
+                <h3>Test Results</h3>
+                <div id="test-results" class="test-results"></div>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <h3>Console Monitor</h3>
+                <div id="console-output" class="test-results" style="font-family: monospace; font-size: 12px;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- File input for testing -->
+    <input type="file" id="test-file-input" accept="image/*" style="display: none;">
+
+    <script>
+        let testResults = [];
+        let consoleMonitor = null;
+        
+        // Logging function
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = { timestamp, message, type };
+            testResults.push(entry);
+            
+            const resultsDiv = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `[${timestamp}] ${message}`;
+            resultsDiv.appendChild(div);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        // Console monitoring
+        function monitorConsole() {
+            if (consoleMonitor) {
+                log('Console monitoring already active', 'warning');
+                return;
+            }
+            
+            const iframe = document.getElementById('app-frame');
+            const iframeWindow = iframe.contentWindow;
+            
+            if (!iframeWindow) {
+                log('Cannot access iframe window', 'error');
+                return;
+            }
+            
+            const originalLog = iframeWindow.console.log;
+            const originalError = iframeWindow.console.error;
+            const originalWarn = iframeWindow.console.warn;
+            
+            iframeWindow.console.log = function(...args) {
+                logConsoleMessage('LOG', args.join(' '));
+                originalLog.apply(iframeWindow.console, args);
+            };
+            
+            iframeWindow.console.error = function(...args) {
+                logConsoleMessage('ERROR', args.join(' '));
+                originalError.apply(iframeWindow.console, args);
+            };
+            
+            iframeWindow.console.warn = function(...args) {
+                logConsoleMessage('WARN', args.join(' '));
+                originalWarn.apply(iframeWindow.console, args);
+            };
+            
+            consoleMonitor = { originalLog, originalError, originalWarn };
+            log('Console monitoring started', 'success');
+        }
+        
+        function logConsoleMessage(level, message) {
+            const consoleDiv = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.style.color = level === 'ERROR' ? '#721c24' : level === 'WARN' ? '#856404' : '#0c5460';
+            div.innerHTML = `[${timestamp}] ${level}: ${message}`;
+            consoleDiv.appendChild(div);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+        
+        // Test library loading
+        async function testLibraryLoading() {
+            log('Testing heic2any library loading...', 'info');
+            
+            const iframe = document.getElementById('app-frame');
+            const iframeWindow = iframe.contentWindow;
+            
+            if (!iframeWindow) {
+                log('Cannot access iframe window', 'error');
+                return;
+            }
+            
+            try {
+                // Try to access the library in the iframe context
+                const testScript = \`
+                    (async function() {
+                        try {
+                            console.log('🔍 Testing heic2any library in iframe...');
+                            const heic2any = await import('heic2any');
+                            console.log('✅ heic2any loaded successfully:', typeof heic2any.default);
+                            return { success: true, type: typeof heic2any.default };
+                        } catch (error) {
+                            console.error('❌ heic2any loading failed:', error);
+                            return { success: false, error: error.message };
+                        }
+                    })();
+                \`;
+                
+                const result = await iframeWindow.eval(testScript);
+                if (result.success) {
+                    log(\`heic2any library loaded successfully (type: \${result.type})\`, 'success');
+                } else {
+                    log(\`heic2any library loading failed: \${result.error}\`, 'error');
+                }
+            } catch (error) {
+                log(\`Library test failed: \${error.message}\`, 'error');
+            }
+        }
+        
+        // Create mock HEIC file
+        function createMockHeic() {
+            log('Creating mock HEIC file for testing...', 'info');
+            
+            // Create a small PNG as base64, then create a File with HEIC mimetype
+            const canvas = document.createElement('canvas');
+            canvas.width = 100;
+            canvas.height = 100;
+            const ctx = canvas.getContext('2d');
+            
+            // Draw a simple pattern
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(0, 0, 50, 50);
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(50, 0, 50, 50);
+            ctx.fillStyle = '#0000ff';
+            ctx.fillRect(0, 50, 50, 50);
+            ctx.fillStyle = '#ffff00';
+            ctx.fillRect(50, 50, 50, 50);
+            
+            canvas.toBlob((blob) => {
+                // Create a "fake" HEIC file by changing the type
+                const heicFile = new File([blob], 'test-image.heic', { 
+                    type: 'image/heic',
+                    lastModified: Date.now()
+                });
+                
+                log(\`Mock HEIC file created: \${heicFile.name}, \${heicFile.type}, \${heicFile.size} bytes\`, 'success');
+                
+                // Store for testing
+                window.mockHeicFile = heicFile;
+                
+                // Try to trigger the upload process
+                testFileUpload(heicFile);
+                
+            }, 'image/png');
+        }
+        
+        // Test file upload with mock HEIC
+        function testFileUpload(file) {
+            log(\`Testing file upload with \${file.name} (\${file.type})\`, 'info');
+            
+            const iframe = document.getElementById('app-frame');
+            const iframeDoc = iframe.contentDocument;
+            
+            if (!iframeDoc) {
+                log('Cannot access iframe document', 'error');
+                return;
+            }
+            
+            // Find file inputs in the iframe
+            const fileInputs = iframeDoc.querySelectorAll('input[type="file"]');
+            log(\`Found \${fileInputs.length} file input(s) in the app\`, 'info');
+            
+            if (fileInputs.length > 0) {
+                const firstInput = fileInputs[0];
+                log(\`Using first file input: \${firstInput.id || 'no-id'}\`, 'info');
+                
+                // Simulate file selection
+                try {
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    firstInput.files = dataTransfer.files;
+                    
+                    // Trigger change event
+                    const changeEvent = new Event('change', { bubbles: true });
+                    firstInput.dispatchEvent(changeEvent);
+                    
+                    log('File upload event triggered', 'success');
+                    
+                    // Monitor for results
+                    setTimeout(() => checkUploadResults(iframeDoc), 2000);
+                    
+                } catch (error) {
+                    log(\`File upload simulation failed: \${error.message}\`, 'error');
+                }
+            } else {
+                log('No file inputs found in the app', 'warning');
+            }
+        }
+        
+        // Check upload results
+        function checkUploadResults(doc) {
+            log('Checking upload results...', 'info');
+            
+            // Look for "Ready" status indicators
+            const readyElements = doc.querySelectorAll('*');
+            let readyCount = 0;
+            let previewCount = 0;
+            
+            for (let element of readyElements) {
+                if (element.textContent && element.textContent.includes('Ready')) {
+                    readyCount++;
+                    log(\`Found "Ready" status: \${element.textContent.trim()}\`, 'info');
+                }
+            }
+            
+            // Look for image previews
+            const images = doc.querySelectorAll('img');
+            images.forEach((img, index) => {
+                if (img.src && img.src.startsWith('data:image/')) {
+                    previewCount++;
+                    log(\`Found image preview \${index + 1}: \${img.src.substring(0, 50)}...\`, 'success');
+                }
+            });
+            
+            // Summary
+            if (readyCount > 0 && previewCount > 0) {
+                log(\`✅ Upload appears successful: \${readyCount} ready status, \${previewCount} image preview(s)\`, 'success');
+            } else if (readyCount > 0 && previewCount === 0) {
+                log(\`⚠️ Issue detected: \${readyCount} ready status but no image previews\`, 'warning');
+                log('This matches the reported issue: HEIC shows Ready but no preview', 'error');
+            } else {
+                log(\`❌ Upload may have failed: \${readyCount} ready, \${previewCount} previews\`, 'error');
+            }
+        }
+        
+        // Test file conversion
+        async function testFileConversion() {
+            if (!window.mockHeicFile) {
+                log('No mock HEIC file available. Create one first.', 'warning');
+                createMockHeic();
+                return;
+            }
+            
+            log('Testing file conversion process...', 'info');
+            
+            const iframe = document.getElementById('app-frame');
+            const iframeWindow = iframe.contentWindow;
+            
+            if (!iframeWindow) {
+                log('Cannot access iframe window', 'error');
+                return;
+            }
+            
+            // Try to test the conversion directly
+            const testScript = \`
+                (async function() {
+                    try {
+                        console.log('🔄 Testing HEIC conversion...');
+                        
+                        // Access the conversion function if available
+                        if (window.processImageForUpload || window.convertHeicToJpeg) {
+                            console.log('✅ Conversion functions found');
+                            return { success: true, functions: 'available' };
+                        } else {
+                            console.log('❌ Conversion functions not found in global scope');
+                            return { success: false, error: 'Functions not accessible' };
+                        }
+                    } catch (error) {
+                        console.error('❌ Conversion test failed:', error);
+                        return { success: false, error: error.message };
+                    }
+                })();
+            \`;
+            
+            try {
+                const result = await iframeWindow.eval(testScript);
+                log(\`Conversion test result: \${JSON.stringify(result)}\`, result.success ? 'success' : 'error');
+            } catch (error) {
+                log(\`Conversion test failed: \${error.message}\`, 'error');
+            }
+        }
+        
+        // Utility functions
+        function reloadApp() {
+            const iframe = document.getElementById('app-frame');
+            iframe.src = iframe.src;
+            log('App reloaded', 'info');
+        }
+        
+        function openInNewTab() {
+            window.open('http://localhost:3000', '_blank');
+        }
+        
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+            document.getElementById('console-output').innerHTML = '';
+            testResults = [];
+            log('Results cleared', 'info');
+        }
+        
+        // Auto-start monitoring
+        setTimeout(() => {
+            log('Live HEIC test tool ready', 'success');
+            log('1. Click "Monitor Console" to capture app logs', 'info');
+            log('2. Click "Create Mock HEIC" to test upload', 'info');
+            log('3. Watch for HEIC conversion behavior', 'info');
+        }, 1000);
+        
+        // Monitor iframe load
+        document.getElementById('app-frame').onload = function() {
+            log('App iframe loaded successfully', 'success');
+        };
+        
+        document.getElementById('app-frame').onerror = function() {
+            log('App iframe failed to load', 'error');
+        };
+    </script>
+</body>
+</html>

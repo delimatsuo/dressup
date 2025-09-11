@@ -1,7 +1,7 @@
 export interface TryOnRequest {
   sessionId: string;
-  userPhotos: { front: string; side: string; back?: string };
-  garmentPhotos: { front: string; side: string; back?: string };
+  userPhotos: { front: string; side?: string | null; back?: string | null };
+  garmentPhotos: { front: string; side?: string | null; back?: string | null };
   options?: { generateMultiplePoses?: boolean; enhanceBackground?: boolean };
 }
 
@@ -15,11 +15,11 @@ export interface TryOnJob {
 
 export function validateTryOnInput(req: TryOnRequest): Validation<TryOnRequest> {
   if (!req.sessionId) return { ok: false, error: 'Session ID is required' };
-  if (!req.userPhotos?.front || !req.userPhotos?.side) {
-    return { ok: false, error: 'User front and side photos are required' };
+  if (!req.userPhotos?.front) {
+    return { ok: false, error: 'User front photo is required' };
   }
-  if (!req.garmentPhotos?.front || !req.garmentPhotos?.side) {
-    return { ok: false, error: 'Garment front and side photos are required' };
+  if (!req.garmentPhotos?.front) {
+    return { ok: false, error: 'Garment front photo is required' };
   }
   return { ok: true, value: req };
 }
