@@ -12,12 +12,7 @@
     }
   ],
   "functions": {
-    "src/app/api/**/*.ts": {
-      "runtime": "edge",
-      "maxDuration": 30
-    },
     "src/app/api/cron/cleanup/route.ts": {
-      "runtime": "nodejs20.x",
       "maxDuration": 60
     },
     "src/app/api/upload/route.ts": {
@@ -32,7 +27,7 @@
   },
   "build": {
     "env": {
-      "NEXT_PUBLIC_APP_URL": "@app_url"
+      "NEXT_PUBLIC_APP_URL": "$VERCEL_URL"
     }
   },
   "headers": [
