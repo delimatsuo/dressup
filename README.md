@@ -7,11 +7,12 @@ A Next.js application that uses AI (Gemini) to allow users to virtually try on d
 ## Tech Stack
 
 - **Frontend**: Next.js 15.5.2, React 19, TypeScript, Tailwind CSS
-- **Backend**: Firebase Cloud Functions (2nd Gen)
-- **AI**: Google Vertex AI (Gemini 2.5 Flash Image)
-- **Storage**: Firebase Cloud Storage & Firestore
-- **Hosting**: Firebase Hosting
-- **Testing**: Jest, React Testing Library
+- **Backend**: Next.js API Routes (migrating from Firebase to Vercel Edge Functions)
+- **AI**: Google AI (Gemini 2.0 Flash) via Gemini API
+- **Storage**: Vercel Blob Storage (migrating from Firebase Storage)
+- **Hosting**: Vercel Platform
+- **Testing**: Jest with SWC, React Testing Library, separate API/UI test configs
+- **Session Management**: Vercel KV (planned)
 
 ## Project Structure
 
@@ -19,16 +20,23 @@ A Next.js application that uses AI (Gemini) to allow users to virtually try on d
 dressup/
 ├── src/
 │   ├── app/                 # Next.js app directory
+│   │   ├── api/            # API routes (try-on, upload, feedback)
+│   │   └── page.tsx        # Main application page
 │   ├── components/          # React components
-│   │   ├── UploadArea.tsx  # Photo upload component
-│   │   ├── GarmentGallery.tsx # Outfit selection
-│   │   ├── ResultsDisplay.tsx  # Results viewer
-│   │   └── FeedbackSection.tsx # User feedback
-│   └── lib/
-│       └── firebase.ts      # Firebase configuration
-├── tests/                   # Test files
+│   │   ├── PhotoUploadInterface.tsx  # Multi-step photo upload
+│   │   ├── MobilePhotoUpload.tsx     # Mobile-optimized upload
+│   │   ├── GarmentGallery.tsx        # Outfit selection
+│   │   ├── ResultsDisplay.tsx        # Results viewer
+│   │   └── FeedbackSection.tsx       # User feedback
+│   ├── lib/
+│   │   ├── gemini.ts       # Gemini AI integration
+│   │   └── tryon-processing.ts # Try-on processing logic
+│   └── hooks/              # Custom React hooks
+├── tests/                   # Test files (API and lib tests)
+├── jest.config.ui.js       # UI test configuration
+├── jest.config.api.js      # API test configuration
 ├── public/                  # Static assets
-└── .taskmaster/            # Task management
+└── .taskmaster/            # Task management and progress tracking
 ```
 
 ## Setup Instructions
@@ -93,18 +101,33 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ### Testing
 
-This project follows TDD methodology. Tests are written before implementation:
+This project follows TDD methodology with separate test configurations for UI and API:
 
 ```bash
 # Run all tests
 npm test
 
+# Run UI tests only
+npm run test:ui
+
+# Run API tests only  
+npm run test:api
+
 # Run tests in watch mode
-npm test:watch
+npm run test:watch
+
+# Run with coverage
+npm run test:coverage
 
 # Run specific test file
-npm test -- UploadArea.test.tsx
+npm test -- src/components/__tests__/UploadArea.test.tsx
 ```
+
+**Test Coverage Status (as of latest commit):**
+- Overall: 83.5% (96/115 tests passing)
+- UI Components: Most components fully tested
+- API Routes: Core functionality tested
+- Known Issues: Complex integration tests for PhotoUploadInterface and responsive behavior
 
 ## Features
 
