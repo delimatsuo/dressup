@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { validateUpload, ALLOWED_TYPES, MAX_FILE_SIZE } from '@/lib/upload';
 import { uploadToBlob } from '@/lib/blob';
+import { shouldConvertHeic, convertHeicToJpeg } from '@/lib/convert';
 import { getSession, updateSession } from '@/lib/session';
 import { rateLimiters, getClientIdentifier, getRateLimitHeaders } from '@/lib/rate-limit';
 import { withErrorHandler, ValidationError, NotFoundError } from '@/lib/error-handler';
@@ -20,7 +21,7 @@ import type {
   UploadMetadata 
 } from '@/types/api';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 // ================================
 // Request Validation Schemas
@@ -185,8 +186,27 @@ export const POST = withErrorHandler(async (request: NextRequest): Promise<NextR
       throw new ValidationError(uploadValidation.error);
     }
 
+    // Optional HEIC conversion
+    let uploadPath = uploadValidation.value.path;
+    let contentType = file.type || 'application/octet-stream';
+    let body: Uint8Array | File = file;
+    try {
+      if (shouldConvertHeic(file.name, file.type)) {
+        const ab = await file.arrayBuffer();
+        const out = await convertHeicToJpeg(ab);
+        if (out) {
+          body = out.buffer;
+          contentType = out.type;
+          uploadPath = uploadPath.replace(/\.(heic|heif)$/i, '.jpg');
+        }
+      }
+    } catch (e) {
+      // Fall through with original file
+      console.warn('HEIC conversion failed; using original file:', e);
+    }
+
     // Upload to Blob storage
-    const { url } = await uploadToBlob(uploadValidation.value.path, file, file.type);
+    const { url } = await uploadToBlob(uploadPath, body as any, contentType);
 
     // Generate thumbnail if requested
     let thumbnailUrl: string | undefined;
@@ -200,7 +220,7 @@ export const POST = withErrorHandler(async (request: NextRequest): Promise<NextR
       category: uploadData.category,
       type: uploadData.type,
       fileName: file.name,
-      contentType: file.type,
+      contentType,
       size: file.size,
       uploadedAt: context.timestamp,
       url,
