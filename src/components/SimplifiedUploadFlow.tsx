@@ -9,6 +9,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { Upload, Camera, Sparkles, Check, X, ArrowRight, RefreshCw, Download } from 'lucide-react';
 import Image from 'next/image';
 import { processImageForUpload } from '../utils/imageConversion';
+import { useSessionContext } from './SessionProvider';
 
 // ================================
 // Types
@@ -37,6 +38,7 @@ export function SimplifiedUploadFlow({
   isProcessing = false,
   result 
 }: SimplifiedUploadFlowProps) {
+  const sessionCtx = useSessionContext();
   const [images, setImages] = useState<UploadedImages>({
     user: { url: null, isHeic: false },
     garment: { url: null, isHeic: false },
@@ -113,15 +115,52 @@ export function SimplifiedUploadFlow({
   }, [handleFile]);
 
   const handleGenerate = useCallback(async () => {
-    if (images.user && images.garment) {
-      setError(null);
-      try {
-        await onGenerate(images.user, images.garment);
-      } catch (err) {
-        setError('Failed to generate. Please try again.');
+    if (!images.user.url || !images.garment.url) return;
+    setError(null);
+    try {
+      // Ensure session
+      let sessionId = sessionCtx.sessionId;
+      if (!sessionId) {
+        const created = await fetch('/api/session/create', { method: 'POST' });
+        const j = await created.json();
+        sessionId = j?.data?.sessionId || j?.sessionId;
+        if (!sessionId) throw new Error('No active session');
       }
+
+      // Helper: upload data URL then return Blob URL
+      async function uploadDataUrl(dataUrl: string, category: 'user'|'garment', type: 'front'|'side'|'back') {
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        const file = new File([blob], `${category}-${type}.jpg`, { type: blob.type || 'image/jpeg' });
+        const form = new FormData();
+        form.append('file', file);
+        form.append('sessionId', sessionId!);
+        form.append('category', category);
+        form.append('type', type);
+        const up = await fetch('/api/upload', { method: 'POST', body: form });
+        const uj = await up.json();
+        if (!up.ok || !uj?.success) throw new Error(uj?.error || 'Upload failed');
+        return uj.data.url as string;
+      }
+
+      // Upload user once and persist in session
+      const userUrl = await uploadDataUrl(images.user.url, 'user', 'front');
+      try {
+        await fetch(`/api/session/${sessionId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userPhotos: [userUrl] })
+        });
+      } catch {}
+
+      // Upload garment
+      const garmentUrl = await uploadDataUrl(images.garment.url, 'garment', 'front');
+
+      await onGenerate(userUrl, garmentUrl);
+    } catch (err) {
+      setError('Failed to generate. Please try again.');
     }
-  }, [images, onGenerate]);
+  }, [images, onGenerate, sessionCtx.sessionId]);
 
   const handleReset = useCallback(() => {
     setImages({ user: { url: null, isHeic: false }, garment: { url: null, isHeic: false } });

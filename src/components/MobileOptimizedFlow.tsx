@@ -6,6 +6,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef } from 'react';
+import { useSessionContext } from './SessionProvider';
 import { Camera, Upload, Sparkles, Check, X, ArrowRight, RotateCcw } from 'lucide-react';
 
 // ================================
@@ -32,6 +33,7 @@ export function MobileOptimizedFlow({
   isProcessing = false,
   result 
 }: MobileFlowProps) {
+  const sessionCtx = useSessionContext();
   const [step, setStep] = useState<UploadStep>('instructions');
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [garmentPhoto, setGarmentPhoto] = useState<string | null>(null);
@@ -71,15 +73,48 @@ export function MobileOptimizedFlow({
   }, []);
 
   const handleGenerate = useCallback(async () => {
-    if (userPhoto && garmentPhoto) {
-      try {
-        await onGenerate(userPhoto, garmentPhoto);
-        setStep('result');
-      } catch (err) {
-        setError('Failed to generate. Please try again.');
+    if (!userPhoto || !garmentPhoto) return;
+    try {
+      let sessionId = sessionCtx.sessionId;
+      if (!sessionId) {
+        const created = await fetch('/api/session/create', { method: 'POST' });
+        const j = await created.json();
+        sessionId = j?.data?.sessionId || j?.sessionId;
       }
+      if (!sessionId) throw new Error('No active session');
+
+      async function uploadDataUrl(dataUrl: string, category: 'user'|'garment', type: 'front'|'side'|'back') {
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        const file = new File([blob], `${category}-${type}.jpg`, { type: blob.type || 'image/jpeg' });
+        const form = new FormData();
+        form.append('file', file);
+        form.append('sessionId', sessionId!);
+        form.append('category', category);
+        form.append('type', type);
+        const up = await fetch('/api/upload', { method: 'POST', body: form });
+        const uj = await up.json();
+        if (!up.ok || !uj?.success) throw new Error(uj?.error || 'Upload failed');
+        return uj.data.url as string;
+      }
+
+      const userUrl = await uploadDataUrl(userPhoto, 'user', 'front');
+      try {
+        await fetch(`/api/session/${sessionId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userPhotos: [userUrl] })
+        });
+      } catch {}
+
+      const garmentUrl = await uploadDataUrl(garmentPhoto, 'garment', 'front');
+
+      await onGenerate(userUrl, garmentUrl);
+      setStep('result');
+    } catch (err) {
+      setError('Failed to generate. Please try again.');
     }
-  }, [userPhoto, garmentPhoto, onGenerate]);
+  }, [userPhoto, garmentPhoto, onGenerate, sessionCtx.sessionId]);
 
   const handleReset = useCallback(() => {
     setStep('instructions');
